@@ -10,99 +10,222 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- Enums ---
+
+enum UserStatus {
+  active
+  suspended
+  pending
+}
+
+enum CafeStatus {
+  active
+  trial
+  expired
+  suspended
+  pending
+  archived
+}
+
+enum BranchStatus {
+  active
+  inactive
+  suspended
+}
+
+enum SubscriptionStatus {
+  trial
+  active
+  expired
+  cancelled
+  suspended
+}
+
+enum PaymentStatus {
+  paid
+  unpaid
+  pending
+  overdue
+  refunded
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  preparing
+  ready
+  completed
+  cancelled
+}
+
+enum OrderType {
+  dine_in
+  car
+  pickup
+}
+
+enum OrderSource {
+  qr
+  cashier
+  admin
+}
+
+enum QRType {
+  table
+  car
+  general_menu
+}
+
+enum OptionType {
+  single
+  multiple
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+  critical
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+enum NotificationType {
+  system
+  billing
+  subscription
+  support
+  order
+}
+
+// --- Models ---
+
+model User {
+  id              BigInt       @id @default(autoincrement())
+  uuid            String       @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName        String       @map("full_name")
+  email           String       @unique
+  phone           String?
+  passwordHash    String       @map("password_hash")
+  avatar          String?
+  status          UserStatus   @default(pending)
+  lastLoginAt     DateTime?    @map("last_login_at")
+  emailVerifiedAt DateTime?    @map("email_verified_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  deletedAt       DateTime?    @map("deleted_at")
+
+  roles           UserRole[]
+  ownedCafes      Cafe[]       @relation("CafeOwner")
+  cafeUsers       CafeUser[]
+  supportTickets  SupportTicket[] @relation("TicketCreator")
+  assignedTickets SupportTicket[] @relation("TicketAssignee")
+  ticketMessages  SupportTicketMessage[]
+  notifications   Notification[]
+  activityLogs    ActivityLog[]
+
+  @@map("users")
+}
+
 model Role {
-  id           BigInt           @id @default(autoincrement())
-  name         String           @unique @db.VarChar(100)
-  displayName  String           @map("display_name") @db.VarChar(150)
-  description  String?          @db.Text
-  createdAt    DateTime         @default(now()) @map("created_at")
-  updatedAt    DateTime         @updatedAt @map("updated_at")
-  permissions  RolePermission[]
-  userRoles    UserRole[]
-  cafeUsers    CafeUser[]
+  id          BigInt       @id @default(autoincrement())
+  name        String       @unique
+  displayName String       @map("display_name")
+  description String?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  users       UserRole[]
+  permissions RolePermission[]
+  cafeUsers   CafeUser[]
 
   @@map("roles")
 }
 
 model Permission {
-  id           BigInt           @id @default(autoincrement())
-  name         String           @unique @db.VarChar(100)
-  displayName  String           @map("display_name") @db.VarChar(150)
-  module       String           @db.VarChar(100)
-  createdAt    DateTime         @default(now()) @map("created_at")
-  updatedAt    DateTime         @updatedAt @map("updated_at")
-  roles        RolePermission[]
+  id          BigInt       @id @default(autoincrement())
+  name        String       @unique
+  displayName String       @map("display_name")
+  module      String
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  roles       RolePermission[]
 
   @@map("permissions")
 }
 
-model User {
-  id               BigInt           @id @default(autoincrement())
-  uuid             String           @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  fullName         String           @map("full_name") @db.VarChar(150)
-  email            String           @unique @db.VarChar(150)
-  phone            String?          @db.VarChar(30)
-  passwordHash     String           @map("password_hash") @db.Text
-  avatar           String?          @db.Text
-  status           String           @default("pending") @db.VarChar(30)
-  lastLoginAt      DateTime?        @map("last_login_at")
-  emailVerifiedAt  DateTime?        @map("email_verified_at")
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
-  deletedAt        DateTime?        @map("deleted_at")
-  userRoles        UserRole[]
-  ownedCafes       Cafe[]           @relation("CafeOwner")
-  cafeUsers        CafeUser[]
-  supportTickets   SupportTicket[]  @relation("CreatedBy")
-  assignedTickets  SupportTicket[]  @relation("AssignedTo")
-  ticketMessages   SupportTicketMessage[]
-  notifications    Notification[]
-  activityLogs     ActivityLog[]
-
-  @@map("users")
-}
-
-model RolePermission {
-  id           BigInt     @id @default(autoincrement())
-  roleId       BigInt     @map("role_id")
-  permissionId BigInt     @map("permission_id")
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@unique([roleId, permissionId])
-  @@map("role_permissions")
-}
-
 model UserRole {
-  id      BigInt @id @default(autoincrement())
-  userId  BigInt @map("user_id")
-  roleId  BigInt @map("role_id")
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role    Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  id     BigInt @id @default(autoincrement())
+  userId BigInt @map("user_id")
+  roleId BigInt @map("role_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
   @@map("user_roles")
 }
 
+model RolePermission {
+  id           BigInt @id @default(autoincrement())
+  roleId       BigInt @map("role_id")
+  permissionId BigInt @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
 model Cafe {
-  id                BigInt           @id @default(autoincrement())
-  uuid              String           @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cafeCode          String           @unique @map("cafe_code") @db.VarChar(50)
-  name              String           @db.VarChar(150)
-  slug              String           @unique @db.VarChar(180)
-  logo              String?          @db.Text
-  ownerUserId       BigInt?          @map("owner_user_id")
-  owner             User?            @relation("CafeOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
-  city              String           @db.VarChar(100)
-  status            String           @default("pending") @db.VarChar(30)
-  currency          String           @default("OMR") @db.VarChar(10)
-  joinedAt          DateTime?        @map("joined_at")
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
+  id                BigInt       @id @default(autoincrement())
+  uuid              String       @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeCode          String       @unique @map("cafe_code")
+  name              String
+  slug              String       @unique
+  logo              String?
+  coverImage        String?      @map("cover_image")
+  description       String?
+  ownerUserId       BigInt?      @map("owner_user_id")
+  phone             String?
+  email             String?
+  country           String?
+  city              String
+  address           String?
+  latitude          Decimal?     @db.Decimal(10, 7)
+  longitude         Decimal?     @db.Decimal(10, 7)
+  timezone          String       @default("Asia/Muscat")
+  currency          String       @default("OMR")
+  status            CafeStatus   @default(pending)
+  onboardingStatus  String       @default("not_started") @map("onboarding_status")
+  joinedAt          DateTime?    @map("joined_at")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  deletedAt         DateTime?    @map("deleted_at")
+
+  owner             User?        @relation("CafeOwner", fields: [ownerUserId], references: [id])
   branches          CafeBranch[]
-  cafeUsers         CafeUser[]
+  users             CafeUser[]
   subscriptions     Subscription[]
+  tables            CafeTable[]
+  qrCodes           QRCode[]
+  scanLogs          QRScanLog[]
+  menuCategories    MenuCategory[]
+  menuItems         MenuItem[]
   orders            Order[]
+  customers         Customer[]
+  loyaltyProgram    LoyaltyProgram?
+  loyaltyAccounts   LoyaltyAccount[]
+  loyaltyTransactions LoyaltyTransaction[]
+  invoices          Invoice[]
+  payments          Payment[]
   supportTickets    SupportTicket[]
   notifications     Notification[]
   activityLogs      ActivityLog[]
@@ -111,126 +234,513 @@ model Cafe {
 }
 
 model CafeBranch {
-  id           BigInt      @id @default(autoincrement())
-  uuid         String      @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cafeId       BigInt      @map("cafe_id")
-  branchCode   String      @map("branch_code") @db.VarChar(50)
-  name         String      @db.VarChar(150)
-  city         String?     @db.VarChar(100)
-  status       String      @default("active") @db.VarChar(30)
-  isMainBranch Boolean     @default(false) @map("is_main_branch")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
-  cafe         Cafe        @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  cafeUsers    CafeUser[]
-  orders       Order[]
+  id            BigInt       @id @default(autoincrement())
+  uuid          String       @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId        BigInt       @map("cafe_id")
+  branchCode    String       @map("branch_code")
+  name          String
+  phone         String?
+  email         String?
+  city          String?
+  address       String?
+  latitude      Decimal?     @db.Decimal(10, 7)
+  longitude     Decimal?     @db.Decimal(10, 7)
+  status        BranchStatus @default(active)
+  isMainBranch  Boolean      @default(false) @map("is_main_branch")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at")
+
+  cafe          Cafe         @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  cafeUsers     CafeUser[]
+  tables        CafeTable[]
+  qrCodes       QRCode[]
+  scanLogs      QRScanLog[]
+  menuCategories MenuCategory[]
+  menuItems     MenuItem[]
+  orders        Order[]
 
   @@unique([cafeId, branchCode])
   @@map("cafe_branches")
 }
 
 model CafeUser {
-  id        BigInt      @id @default(autoincrement())
-  cafeId    BigInt      @map("cafe_id")
-  userId    BigInt      @map("user_id")
-  branchId  BigInt?     @map("branch_id")
-  roleId    BigInt?     @map("role_id")
-  status    String      @default("active") @db.VarChar(30)
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
+  id        BigInt @id @default(autoincrement())
+  cafeId    BigInt @map("cafe_id")
+  userId    BigInt @map("user_id")
+  branchId  BigInt? @map("branch_id")
+  roleId    BigInt? @map("role_id")
+  status    String @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   cafe      Cafe        @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  branch    CafeBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  role      Role?       @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  branch    CafeBranch? @relation(fields: [branchId], references: [id])
+  role      Role?       @relation(fields: [roleId], references: [id])
 
   @@unique([cafeId, userId, branchId])
   @@map("cafe_users")
 }
 
+model Plan {
+  id               BigInt       @id @default(autoincrement())
+  uuid             String       @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String       @unique
+  slug             String       @unique
+  description      String?
+  monthlyPrice     Decimal      @default(0) @map("monthly_price") @db.Decimal(12, 3)
+  yearlyPrice      Decimal      @default(0) @map("yearly_price") @db.Decimal(12, 3)
+  currency         String       @default("OMR")
+  billingCycleType String       @default("monthly") @map("billing_cycle_type")
+  maxBranches      Int          @default(1) @map("max_branches")
+  maxTables        Int          @default(0) @map("max_tables")
+  maxProducts      Int          @default(0) @map("max_products")
+  maxStaffUsers    Int          @default(0) @map("max_staff_users")
+  trialDays        Int          @default(0) @map("trial_days")
+  isPopular        Boolean      @default(false) @map("is_popular")
+  status           String       @default("active") @map("status")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  features         PlanFeature[]
+  subscriptions    Subscription[]
+
+  @@map("plans")
+}
+
+model PlanFeature {
+  id           BigInt   @id @default(autoincrement())
+  planId       BigInt   @map("plan_id")
+  featureKey   String   @map("feature_key")
+  featureValue String   @map("feature_value")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  plan         Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, featureKey])
+  @@map("plan_features")
+}
+
 model Subscription {
-  id               BigInt     @id @default(autoincrement())
-  uuid             String     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cafeId           BigInt     @map("cafe_id")
-  planId           String     @map("plan_id")
-  subscriptionType String     @map("subscription_type") @db.VarChar(20)
-  startDate        DateTime   @map("start_date") @db.Date
-  endDate          DateTime   @map("end_date") @db.Date
-  amount           Decimal    @db.Decimal(12, 3)
-  totalAmount      Decimal    @map("total_amount") @db.Decimal(12, 3)
-  currency         String     @default("OMR") @db.VarChar(10)
-  status           String     @db.VarChar(20)
-  paymentStatus    String     @default("unpaid") @map("payment_status") @db.VarChar(20)
-  autoRenew        Boolean    @default(false) @map("auto_renew")
-  createdAt        DateTime   @default(now()) @map("created_at")
-  updatedAt        DateTime   @updatedAt @map("updated_at")
-  cafe             Cafe       @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  id               BigInt             @id @default(autoincrement())
+  uuid             String             @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId           BigInt             @map("cafe_id")
+  planId           BigInt             @map("plan_id")
+  subscriptionType String             @map("subscription_type")
+  startDate        DateTime           @map("start_date") @db.Date
+  endDate          DateTime           @map("end_date") @db.Date
+  nextBillingDate  DateTime?          @map("next_billing_date") @db.Date
+  trialStartDate   DateTime?          @map("trial_start_date") @db.Date
+  trialEndDate     DateTime?          @map("trial_end_date") @db.Date
+  amount           Decimal            @default(0) @db.Decimal(12, 3)
+  discountAmount   Decimal            @default(0) @map("discount_amount") @db.Decimal(12, 3)
+  taxAmount        Decimal            @default(0) @map("tax_amount") @db.Decimal(12, 3)
+  totalAmount      Decimal            @default(0) @map("total_amount") @db.Decimal(12, 3)
+  currency         String             @default("OMR")
+  status           SubscriptionStatus
+  paymentStatus    PaymentStatus      @default(UNPAID) @map("payment_status")
+  autoRenew        Boolean            @default(false) @map("auto_renew")
+  cancelledAt      DateTime?          @map("cancelled_at")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  cafe             Cafe               @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  plan             Plan               @relation(fields: [planId], references: [id])
+  invoices         Invoice[]
+  payments         Payment[]
 
   @@map("subscriptions")
 }
 
+model CafeTable {
+  id          BigInt   @id @default(autoincrement())
+  uuid        String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId      BigInt   @map("cafe_id")
+  branchId    BigInt?  @map("branch_id")
+  tableNumber String   @map("table_number")
+  tableName   String?  @map("table_name")
+  seatsCount  Int      @default(0) @map("seats_count")
+  status      String   @default("active")
+  qrCodeId    BigInt?  @unique @map("qr_code_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  cafe        Cafe        @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  branch      CafeBranch? @relation(fields: [branchId], references: [id])
+  qrCode      QRCode?     @relation("TableQRCode", fields: [qrCodeId], references: [id])
+  scanLogs    QRScanLog[]
+  orders      Order[]
+
+  @@unique([cafeId, branchId, tableNumber])
+  @@map("cafe_tables")
+}
+
+model QRCode {
+  id             BigInt    @id @default(autoincrement())
+  uuid           String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId         BigInt    @map("cafe_id")
+  branchId       BigInt?   @map("branch_id")
+  tableId        BigInt?   @map("table_id")
+  qrType         QRType    @map("qr_type")
+  code           String    @unique
+  token          String    @unique
+  url            String
+  imagePath      String?   @map("image_path")
+  scanCount      Int       @default(0) @map("scan_count")
+  lastScannedAt  DateTime? @map("last_scanned_at")
+  status         String    @default("active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  cafe           Cafe        @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  branch         CafeBranch? @relation(fields: [branchId], references: [id])
+  table          CafeTable?  @relation("TableQRCode")
+  scanLogs       QRScanLog[]
+
+  @@map("qr_codes")
+}
+
+model QRScanLog {
+  id           BigInt   @id @default(autoincrement())
+  qrCodeId     BigInt   @map("qr_code_id")
+  cafeId       BigInt   @map("cafe_id")
+  branchId     BigInt?  @map("branch_id")
+  tableId      BigInt?  @map("table_id")
+  customerIp   String?  @map("customer_ip")
+  deviceType   String?  @map("device_type")
+  browser      String?
+  os           String?
+  scannedAt    DateTime @default(now()) @map("scanned_at")
+
+  qrCode       QRCode      @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+  cafe         Cafe        @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  branch       CafeBranch? @relation(fields: [branchId], references: [id])
+  table        CafeTable?  @relation(fields: [tableId], references: [id])
+
+  @@map("qr_scan_logs")
+}
+
+model MenuCategory {
+  id          BigInt   @id @default(autoincrement())
+  uuid        String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId      BigInt   @map("cafe_id")
+  branchId    BigInt?  @map("branch_id")
+  name        String
+  description String?
+  image       String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  status      String   @default("active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  cafe        Cafe        @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  branch      CafeBranch? @relation(fields: [branchId], references: [id])
+  items       MenuItem[]
+
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id              BigInt   @id @default(autoincrement())
+  uuid            String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId          BigInt   @map("cafe_id")
+  branchId        BigInt?  @map("branch_id")
+  categoryId      BigInt?  @map("category_id")
+  sku             String?
+  name            String
+  description     String?
+  image           String?
+  price           Decimal  @default(0) @db.Decimal(12, 3)
+  costPrice       Decimal  @default(0) @map("cost_price") @db.Decimal(12, 3)
+  preparationTime Int?     @map("preparation_time")
+  calories        Int?
+  isAvailable     Boolean  @default(true) @map("is_available")
+  isFeatured      Boolean  @default(false) @map("is_featured")
+  status          String   @default("active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  cafe            Cafe          @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  branch          CafeBranch?   @relation(fields: [branchId], references: [id])
+  category        MenuCategory? @relation(fields: [categoryId], references: [id])
+  options         MenuItemOption[]
+  orderItems      OrderItem[]
+
+  @@map("menu_items")
+}
+
+model MenuItemOption {
+  id         BigInt     @id @default(autoincrement())
+  menuItemId BigInt     @map("menu_item_id")
+  name       String
+  type       OptionType
+  isRequired Boolean    @default(false) @map("is_required")
+  minSelect  Int        @default(0) @map("min_select")
+  maxSelect  Int        @default(1) @map("max_select")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  menuItem   MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  values     MenuItemOptionValue[]
+
+  @@map("menu_item_options")
+}
+
+model MenuItemOptionValue {
+  id         BigInt   @id @default(autoincrement())
+  optionId   BigInt   @map("option_id")
+  valueName  String   @map("value_name")
+  extraPrice Decimal  @default(0) @map("extra_price") @db.Decimal(12, 3)
+  sortOrder  Int      @default(0) @map("sort_order")
+  status     String   @default("active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  option     MenuItemOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@map("menu_item_option_values")
+}
+
+model Customer {
+  id              BigInt   @id @default(autoincrement())
+  uuid            String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId          BigInt   @map("cafe_id")
+  name            String?
+  phone           String?
+  email           String?
+  carPlateNumber  String?  @map("car_plate_number")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  cafe            Cafe     @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  orders          Order[]
+  loyaltyAccount  LoyaltyAccount?
+  loyaltyTransactions LoyaltyTransaction[]
+
+  @@map("customers")
+}
+
 model Order {
-  id            BigInt      @id @default(autoincrement())
-  uuid          String      @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cafeId        BigInt      @map("cafe_id")
-  branchId      BigInt?     @map("branch_id")
-  orderNumber   String      @unique @map("order_number") @db.VarChar(50)
-  orderType     String      @map("order_type") @db.VarChar(20)
-  source        String      @db.VarChar(20)
-  totalAmount   Decimal     @map("total_amount") @db.Decimal(12, 3)
-  status        String      @db.VarChar(20)
-  paymentStatus String      @default("unpaid") @map("payment_status") @db.VarChar(20)
-  placedAt      DateTime    @default(now()) @map("placed_at")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  cafe          Cafe        @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  branch        CafeBranch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  id             BigInt      @id @default(autoincrement())
+  uuid           String      @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId         BigInt      @map("cafe_id")
+  branchId       BigInt?     @map("branch_id")
+  tableId        BigInt?     @map("table_id")
+  customerId     BigInt?     @map("customer_id")
+  orderNumber    String      @unique @map("order_number")
+  orderType      OrderType   @map("order_type")
+  source         OrderSource
+  subtotal       Decimal     @default(0) @db.Decimal(12, 3)
+  discountAmount Decimal     @default(0) @map("discount_amount") @db.Decimal(12, 3)
+  taxAmount      Decimal     @default(0) @map("tax_amount") @db.Decimal(12, 3)
+  totalAmount    Decimal     @default(0) @map("total_amount") @db.Decimal(12, 3)
+  notes          String?
+  status         OrderStatus
+  paymentStatus  String      @default("unpaid") @map("payment_status")
+  placedAt       DateTime    @default(now()) @map("placed_at")
+  completedAt    DateTime?   @map("completed_at")
+  cancelledAt    DateTime?   @map("cancelled_at")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  cafe           Cafe        @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  branch         CafeBranch? @relation(fields: [branchId], references: [id])
+  table          CafeTable?  @relation(fields: [tableId], references: [id])
+  customer       Customer?   @relation(fields: [customerId], references: [id])
+  items          OrderItem[]
+  loyaltyTransactions LoyaltyTransaction[]
 
   @@map("orders")
 }
 
+model OrderItem {
+  id         BigInt   @id @default(autoincrement())
+  orderId    BigInt   @map("order_id")
+  menuItemId BigInt?  @map("menu_item_id")
+  itemName   String   @map("item_name")
+  unitPrice  Decimal  @default(0) @map("unit_price") @db.Decimal(12, 3)
+  quantity   Int      @default(1)
+  totalPrice Decimal  @default(0) @map("total_price") @db.Decimal(12, 3)
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  order      Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem   MenuItem? @relation(fields: [menuItemId], references: [id])
+  options    OrderItemOption[]
+
+  @@map("order_items")
+}
+
+model OrderItemOption {
+  id           BigInt   @id @default(autoincrement())
+  orderItemId  BigInt   @map("order_item_id")
+  optionName   String   @map("option_name")
+  optionValue  String   @map("option_value")
+  extraPrice   Decimal  @default(0) @map("extra_price") @db.Decimal(12, 3)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  orderItem    OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@map("order_item_options")
+}
+
+model LoyaltyProgram {
+  id               BigInt   @id @default(autoincrement())
+  cafeId           BigInt   @unique @map("cafe_id")
+  isEnabled        Boolean  @default(false) @map("is_enabled")
+  pointsPerCurrency Decimal  @default(1) @map("points_per_currency") @db.Decimal(10, 2)
+  minimumRedeemPoints Int    @default(0) @map("minimum_redeem_points")
+  redeemValue      Decimal  @default(0) @map("redeem_value") @db.Decimal(12, 3)
+  birthdayRewardPoints Int   @default(0) @map("birthday_reward_points")
+  status           String   @default("active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  cafe             Cafe     @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@map("loyalty_programs")
+}
+
+model LoyaltyAccount {
+  id             BigInt   @id @default(autoincrement())
+  cafeId         BigInt   @map("cafe_id")
+  customerId     BigInt   @map("customer_id")
+  totalPoints    Int      @default(0) @map("total_points")
+  totalEarned    Int      @default(0) @map("total_earned")
+  totalRedeemed  Int      @default(0) @map("total_redeemed")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  cafe           Cafe     @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([cafeId, customerId])
+  @@map("loyalty_accounts")
+}
+
+model LoyaltyTransaction {
+  id              BigInt   @id @default(autoincrement())
+  cafeId          BigInt   @map("cafe_id")
+  customerId      BigInt   @map("customer_id")
+  orderId         BigInt?  @map("order_id")
+  transactionType String   @map("transaction_type")
+  points          Int
+  description     String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  cafe            Cafe     @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  order           Order?   @relation(fields: [orderId], references: [id])
+
+  @@map("loyalty_transactions")
+}
+
+model Invoice {
+  id             BigInt   @id @default(autoincrement())
+  uuid           String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId         BigInt   @map("cafe_id")
+  subscriptionId BigInt?  @map("subscription_id")
+  invoiceNumber  String   @unique @map("invoice_number")
+  amount         Decimal  @default(0) @db.Decimal(12, 3)
+  taxAmount      Decimal  @default(0) @map("tax_amount") @db.Decimal(12, 3)
+  discountAmount Decimal  @default(0) @map("discount_amount") @db.Decimal(12, 3)
+  totalAmount    Decimal  @default(0) @map("total_amount") @db.Decimal(12, 3)
+  currency       String   @default("OMR")
+  issueDate      DateTime @map("issue_date") @db.Date
+  dueDate        DateTime? @map("due_date") @db.Date
+  status         String   @default("unpaid")
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  cafe           Cafe          @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  payments       Payment[]
+
+  @@map("invoices")
+}
+
+model Payment {
+  id               BigInt   @id @default(autoincrement())
+  uuid             String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId           BigInt   @map("cafe_id")
+  invoiceId        BigInt?  @map("invoice_id")
+  subscriptionId   BigInt?  @map("subscription_id")
+  paymentReference String?  @map("payment_reference")
+  paymentMethod    String   @map("payment_method")
+  amount           Decimal  @default(0) @db.Decimal(12, 3)
+  currency         String   @default("OMR")
+  paymentDate      DateTime? @map("payment_date")
+  status           String   @default("pending")
+  gatewayResponse  String?  @map("gateway_response")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  cafe             Cafe          @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  invoice          Invoice?      @relation(fields: [invoiceId], references: [id])
+  subscription     Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@map("payments")
+}
+
 model SupportTicket {
-  id           BigInt     @id @default(autoincrement())
-  uuid         String     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cafeId       BigInt     @map("cafe_id")
-  createdBy    BigInt?    @map("created_by")
-  assignedTo   BigInt?    @map("assigned_to")
-  ticketNumber String     @unique @map("ticket_number") @db.VarChar(50)
-  subject      String     @db.VarChar(255)
-  priority     String     @db.VarChar(20)
-  status       String     @db.VarChar(20)
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  cafe         Cafe       @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  creator      User?      @relation("CreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
-  assignee     User?      @relation("AssignedTo", fields: [assignedTo], references: [id], onDelete: SetNull)
-  messages     SupportTicketMessage[]
+  id          BigInt         @id @default(autoincrement())
+  uuid        String         @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId      BigInt         @map("cafe_id")
+  createdBy   BigInt?        @map("created_by")
+  assignedTo  BigInt?        @map("assigned_to")
+  ticketNumber String        @unique @map("ticket_number")
+  subject     String
+  description String?
+  priority    TicketPriority @default(medium)
+  status      TicketStatus   @default(open)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  closedAt    DateTime?      @map("closed_at")
+
+  cafe        Cafe           @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  creator     User?          @relation("TicketCreator", fields: [createdBy], references: [id])
+  assignee    User?          @relation("TicketAssignee", fields: [assignedTo], references: [id])
+  messages    SupportTicketMessage[]
 
   @@map("support_tickets")
 }
 
 model SupportTicketMessage {
-  id        BigInt        @id @default(autoincrement())
-  ticketId  BigInt        @map("ticket_id")
-  senderId  BigInt?       @map("sender_id")
-  message   String        @db.Text
-  createdAt DateTime      @default(now()) @map("created_at")
+  id        BigInt   @id @default(autoincrement())
+  ticketId  BigInt   @map("ticket_id")
+  senderId  BigInt?  @map("sender_id")
+  message   String
+  isInternal Boolean @default(false) @map("is_internal")
+  createdAt DateTime @default(now()) @map("created_at")
+
   ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  sender    User?         @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  sender    User?         @relation(fields: [senderId], references: [id])
 
   @@map("support_ticket_messages")
 }
 
 model Notification {
-  id        BigInt   @id @default(autoincrement())
-  userId    BigInt?  @map("user_id")
-  cafeId    BigInt?  @map("cafe_id")
-  title     String   @db.VarChar(255)
-  message   String   @db.Text
-  type      String   @db.VarChar(30)
-  isRead    Boolean  @default(false) @map("is_read")
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cafe      Cafe?    @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  id        BigInt           @id @default(autoincrement())
+  userId    BigInt?          @map("user_id")
+  cafeId    BigInt?          @map("cafe_id")
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false) @map("is_read")
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user      User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafe      Cafe?            @relation(fields: [cafeId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
 }
@@ -239,12 +749,25 @@ model ActivityLog {
   id          BigInt   @id @default(autoincrement())
   userId      BigInt?  @map("user_id")
   cafeId      BigInt?  @map("cafe_id")
-  module      String   @db.VarChar(100)
-  action      String   @db.VarChar(100)
-  description String?  @db.Text
+  module      String
+  action      String
+  description String?
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
   createdAt   DateTime @default(now()) @map("created_at")
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  user        User?    @relation(fields: [userId], references: [id])
   cafe        Cafe?    @relation(fields: [cafeId], references: [id], onDelete: Cascade)
 
   @@map("activity_logs")
+}
+
+model SystemSetting {
+  id          BigInt   @id @default(autoincrement())
+  settingKey  String   @unique @map("setting_key")
+  settingValue String?  @map("setting_value")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
 }
