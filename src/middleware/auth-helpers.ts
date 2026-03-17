@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { verifyToken, TokenPayload } from '@/lib/auth';
 
 /**
+ * @fileOverview Auth Middleware helpers for route protection.
+ */
+
+/**
  * Helper to validate JWT from request headers
  */
 export function getAuthorizedUser(req: Request): TokenPayload | null {
@@ -16,12 +20,35 @@ export function getAuthorizedUser(req: Request): TokenPayload | null {
  * Standard unauthorized response
  */
 export function unauthorizedResponse() {
-  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  return NextResponse.json({ 
+    success: false, 
+    error: 'Unauthorized: No valid token provided' 
+  }, { status: 401 });
 }
 
 /**
  * Standard forbidden response
  */
 export function forbiddenResponse() {
-  return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  return NextResponse.json({ 
+    success: false, 
+    error: 'Forbidden: You do not have the required role to access this resource' 
+  }, { status: 403 });
+}
+
+/**
+ * Functional wrapper for role-based authorization
+ */
+export function withRole(req: Request, roles: string[], handler: (user: TokenPayload) => Promise<NextResponse>) {
+  const user = getAuthorizedUser(req);
+  
+  if (!user) {
+    return unauthorizedResponse();
+  }
+
+  if (!roles.includes(user.role)) {
+    return forbiddenResponse();
+  }
+
+  return handler(user);
 }
