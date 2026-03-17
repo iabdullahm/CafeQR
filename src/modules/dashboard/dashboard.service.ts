@@ -5,6 +5,9 @@ import prisma from '../../config/prisma';
  */
 
 export const dashboardService = {
+  /**
+   * Fetches high-level platform statistics.
+   */
   async getStats() {
     const [
       totalCafes,
@@ -28,12 +31,15 @@ export const dashboardService = {
       totalCafes,
       activeSubscriptions,
       expiredSubscriptions,
-      monthlyRevenue: 39.000, // Seed data revenue (1 Premium active)
+      monthlyRevenue: 39.000, // Seed data revenue based on Premium active
       ordersThisMonth,
       newRegistrations: totalCafes // Simplification for demo
     };
   },
 
+  /**
+   * Fetches the most recently registered cafes.
+   */
   async getRecentCafes() {
     const cafes = await prisma.cafe.findMany({
       where: { deletedAt: null },
@@ -46,6 +52,9 @@ export const dashboardService = {
     }));
   },
 
+  /**
+   * Fetches subscriptions that are nearing their end date.
+   */
   async getExpiringSubscriptions() {
     const subs = await prisma.subscription.findMany({
       where: {
@@ -68,8 +77,11 @@ export const dashboardService = {
     }));
   },
 
+  /**
+   * Fetches revenue data formatted for charting.
+   */
   async getRevenueData(period: string) {
-    // Return mock data for the chart based on the period
+    // Return mock data for the chart based on the period (monthly/weekly/etc)
     return [
       { name: 'Jan', revenue: 12000 },
       { name: 'Feb', revenue: 15000 },
