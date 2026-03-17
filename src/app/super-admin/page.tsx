@@ -1,5 +1,8 @@
+
 "use client";
 
+import { useEffect, useState } from "react";
+import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
   Store, 
@@ -12,15 +15,12 @@ import {
   QrCode, 
   UserPlus,
   ArrowUpRight,
-  ArrowDownRight,
-  MoreVertical
+  ArrowDownRight
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
-  LineChart, 
-  Line, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -29,39 +29,52 @@ import {
   AreaChart, 
   Area 
 } from 'recharts';
-
-const revenueData = [
-  { name: 'Jan', revenue: 32000, subscriptions: 850 },
-  { name: 'Feb', revenue: 35000, subscriptions: 920 },
-  { name: 'Mar', revenue: 42000, subscriptions: 1050 },
-  { name: 'Apr', revenue: 45000, subscriptions: 1120 },
-  { name: 'May', revenue: 48000, subscriptions: 1180 },
-  { name: 'Jun', revenue: 52430, subscriptions: 1240 },
-];
+import { useAuthStore } from "@/store/auth-store";
 
 export default function SuperAdminDashboard() {
-  const stats = [
-    { title: "Total Cafes", value: "1,240", icon: Store, trend: "+12%", trendUp: true, color: "text-blue-600" },
-    { title: "Active Subs", value: "1,150", icon: CheckCircle2, trend: "+8%", trendUp: true, color: "text-green-600" },
-    { title: "Expired Subs", value: "45", icon: AlertCircle, trend: "-2%", trendUp: false, color: "text-destructive" },
-    { title: "Monthly Revenue", value: "$52,430", icon: CreditCard, trend: "+15%", trendUp: true, color: "text-primary" },
-    { title: "Total Orders", value: "84.2k", icon: ShoppingBag, trend: "+22%", trendUp: true, color: "text-orange-600" },
+  const [stats, setStats] = useState<any>(null);
+  const [recentCafes, setRecentCafes] = useState<any[]>([]);
+  const [expiringSubs, setExpiringSubs] = useState<any[]>([]);
+  const [revenueData, setRevenueData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const hydrate = useAuthStore(s => s.hydrate);
+
+  useEffect(() => {
+    hydrate();
+    const fetchData = async () => {
+      try {
+        const [statsRes, recentRes, expiringRes, revenueRes] = await Promise.all([
+          api.get('/dashboard/stats'),
+          api.get('/dashboard/recent-cafes'),
+          api.get('/dashboard/expiring-subscriptions'),
+          api.get('/dashboard/revenue-chart?period=monthly')
+        ]);
+
+        setStats(statsRes.data.data);
+        setRecentCafes(recentRes.data.data);
+        setExpiringSubs(expiringRes.data.data);
+        setRevenueData(revenueRes.data.data);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [hydrate]);
+
+  if (isLoading) return <div className="p-8 text-center font-bold text-muted-foreground">Loading dashboard...</div>;
+
+  const dashboardStats = [
+    { title: "Total Cafes", value: stats?.totalCafes || 0, icon: Store, trend: "+12%", trendUp: true, color: "text-blue-600" },
+    { title: "Active Subs", value: stats?.activeSubscriptions || 0, icon: CheckCircle2, trend: "+8%", trendUp: true, color: "text-green-600" },
+    { title: "Expired Subs", value: stats?.expiredSubscriptions || 0, icon: AlertCircle, trend: "-2%", trendUp: false, color: "text-destructive" },
+    { title: "Monthly Revenue", value: `${stats?.monthlyRevenue?.toFixed(3) || "0.000"} OMR`, icon: CreditCard, trend: "+15%", trendUp: true, color: "text-primary" },
+    { title: "Total Orders", value: stats?.ordersThisMonth || 0, icon: ShoppingBag, trend: "+22%", trendUp: true, color: "text-orange-600" },
     { title: "Total Customers", value: "125k", icon: Users, trend: "+5%", trendUp: true, color: "text-indigo-600" },
     { title: "QR Scans Today", value: "12,402", icon: QrCode, trend: "+18%", trendUp: true, color: "text-accent" },
-    { title: "New Registrations", value: "24", icon: UserPlus, trend: "Stable", trendUp: true, color: "text-pink-600" },
-  ];
-
-  const recentCafes = [
-    { name: "Coffee Haven", status: "active", plan: "Premium", joinDate: "2024-03-10", email: "contact@coffeehaven.com" },
-    { name: "The Bean Sprout", status: "active", plan: "Basic", joinDate: "2024-03-09", email: "hello@beansprout.cafe" },
-    { name: "Rustic Roast", status: "suspended", plan: "Pro", joinDate: "2024-03-08", email: "admin@rusticroast.co" },
-    { name: "Urban Brew", status: "active", plan: "Enterprise", joinDate: "2024-03-07", email: "hq@urbanbrew.net" },
-  ];
-
-  const expiringSubs = [
-    { cafe: "Green Leaf Cafe", plan: "Pro", expiry: "In 2 days", amount: "$49.00" },
-    { cafe: "Mocha Magic", plan: "Premium", expiry: "In 5 days", amount: "$99.00" },
-    { cafe: "Sunset Sips", plan: "Basic", expiry: "In 1 week", amount: "$19.00" },
+    { title: "New Registrations", value: stats?.newRegistrations || 0, icon: UserPlus, trend: "Stable", trendUp: true, color: "text-pink-600" },
   ];
 
   return (
@@ -78,7 +91,7 @@ export default function SuperAdminDashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {dashboardStats.map((stat) => (
           <Card key={stat.title} className="border-none shadow-sm hover:shadow-md transition-shadow bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
@@ -110,7 +123,7 @@ export default function SuperAdminDashboard() {
             <div className="flex items-center justify-between">
                <div>
                   <CardTitle>Revenue Analytics</CardTitle>
-                  <CardDescription>Monthly revenue and subscription growth trends.</CardDescription>
+                  <CardDescription>Monthly revenue trends across all tenants.</CardDescription>
                </div>
                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">Live Data</Badge>
             </div>
@@ -135,7 +148,7 @@ export default function SuperAdminDashboard() {
                     axisLine={false} 
                     tickLine={false} 
                     tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}}
-                    tickFormatter={(value) => `$${value/1000}k`}
+                    tickFormatter={(value) => `${(value/1000).toFixed(1)}k`}
                    />
                    <Tooltip 
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
@@ -164,10 +177,10 @@ export default function SuperAdminDashboard() {
                 {expiringSubs.map((sub, i) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/50">
                     <div className="flex flex-col">
-                      <span className="font-bold text-sm">{sub.cafe}</span>
-                      <span className="text-xs text-muted-foreground">{sub.plan} • {sub.amount}</span>
+                      <span className="font-bold text-sm">{sub.cafe?.name || "Unknown Cafe"}</span>
+                      <span className="text-xs text-muted-foreground">{sub.plan?.name || "Free"} • {sub.total_amount?.toFixed(3)} OMR</span>
                     </div>
-                    <Badge variant="secondary" className="bg-accent/10 text-accent text-[10px]">{sub.expiry}</Badge>
+                    <Badge variant="secondary" className="bg-accent/10 text-accent text-[10px]">Expiring soon</Badge>
                   </div>
                 ))}
               </div>
@@ -212,22 +225,18 @@ export default function SuperAdminDashboard() {
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
                   <TableHead className="font-bold">Cafe Details</TableHead>
-                  <TableHead className="font-bold">Plan</TableHead>
                   <TableHead className="font-bold">Status</TableHead>
                   <TableHead className="font-bold text-right">Join Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {recentCafes.map((cafe) => (
-                  <TableRow key={cafe.name} className="hover:bg-muted/20">
+                  <TableRow key={cafe.id} className="hover:bg-muted/20">
                     <TableCell>
                        <div className="flex flex-col">
                           <span className="font-bold">{cafe.name}</span>
                           <span className="text-xs text-muted-foreground">{cafe.email}</span>
                        </div>
-                    </TableCell>
-                    <TableCell>
-                       <Badge variant="outline" className="font-medium">{cafe.plan}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge 
@@ -237,47 +246,13 @@ export default function SuperAdminDashboard() {
                         {cafe.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right text-muted-foreground font-medium">{cafe.joinDate}</TableCell>
+                    <TableCell className="text-right text-muted-foreground font-medium">
+                      {new Date(cafe.createdAt).toLocaleDateString()}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm bg-card">
-          <CardHeader>
-             <CardTitle>System Alerts</CardTitle>
-             <CardDescription>Real-time platform notifications.</CardDescription>
-          </CardHeader>
-          <CardContent>
-             <div className="space-y-4">
-                <div className="flex gap-3 items-start p-3 rounded-lg border-l-4 border-l-accent bg-accent/5">
-                   <AlertCircle className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-                   <div>
-                      <p className="text-sm font-bold">Payout Error</p>
-                      <p className="text-xs text-muted-foreground">3 payouts failed for Stripe Connect users.</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">2 hours ago</p>
-                   </div>
-                </div>
-                <div className="flex gap-3 items-start p-3 rounded-lg border-l-4 border-l-primary bg-primary/5">
-                   <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                   <div>
-                      <p className="text-sm font-bold">Security Scan Complete</p>
-                      <p className="text-xs text-muted-foreground">0 vulnerabilities found across all instances.</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">5 hours ago</p>
-                   </div>
-                </div>
-                <div className="flex gap-3 items-start p-3 rounded-lg border-l-4 border-l-blue-500 bg-blue-500/5">
-                   <MoreVertical className="h-5 w-5 text-blue-500 shrink-0 mt-0.5 rotate-90" />
-                   <div>
-                      <p className="text-sm font-bold">System Update Scheduled</p>
-                      <p className="text-xs text-muted-foreground">Version 2.4.0 rollout scheduled for tonight.</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">10 hours ago</p>
-                   </div>
-                </div>
-             </div>
-             <Button variant="outline" className="w-full mt-6 text-xs font-bold">View Activity Logs</Button>
           </CardContent>
         </Card>
       </div>

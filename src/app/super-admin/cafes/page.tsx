@@ -1,6 +1,8 @@
+
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import api from "@/lib/api";
 import { 
   Card, 
   CardContent, 
@@ -26,17 +28,13 @@ import {
   MapPin, 
   Download, 
   RefreshCw, 
-  Phone, 
   Clock, 
   User, 
-  CreditCard, 
   AlertCircle, 
-  CheckCircle2,
-  Trash2,
-  LogIn,
-  ClipboardList,
   ChevronRight,
-  LayoutGrid
+  LayoutGrid,
+  LogIn,
+  ClipboardList
 } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -56,45 +54,36 @@ import {
 import Link from "next/link";
 import { CafeStatus, PaymentStatus } from "@/lib/db-types";
 
-const CAFES = [
-  { 
-    uuid: "caf-001-uuid", 
-    cafe_code: "CAF-001",
-    name: "Brew Corner", 
-    owner: "Ahmed Al Balushi", 
-    email: "brew@cafe.com", 
-    phone: "91111111",
-    city: "Muscat",
-    plan: "Premium", 
-    status: "active" as CafeStatus, 
-    paymentStatus: "paid" as PaymentStatus,
-    branches: 1, 
-    tables: 1,
-    orders: 142,
-    expiryDate: "Dec 30, 2024", 
-    lastActivity: "Just now"
-  },
-  { 
-    uuid: "caf-002-uuid", 
-    cafe_code: "CAF-002",
-    name: "Qahwa House", 
-    owner: "Ahmed Al Balushi", 
-    email: "qahwa@cafe.com", 
-    phone: "92222222",
-    city: "Muscat",
-    plan: "Standard", 
-    status: "trial" as CafeStatus, 
-    paymentStatus: "unpaid" as PaymentStatus,
-    branches: 1, 
-    tables: 0,
-    orders: 0,
-    expiryDate: "Dec 14, 2024", 
-    lastActivity: "2 days ago"
-  }
-];
-
 export default function CafeManagement() {
+  const [cafes, setCafes] = useState<any[]>([]);
+  const [pagination, setPagination] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchCafes = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.get('/cafes', {
+        params: {
+          search: searchTerm,
+          status: statusFilter === 'all' ? undefined : statusFilter,
+          page: 1,
+          limit: 10
+        }
+      });
+      setCafes(res.data.data.items);
+      setPagination(res.data.data.pagination);
+    } catch (err) {
+      console.error("Failed to fetch cafes", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCafes();
+  }, [searchTerm, statusFilter]);
 
   const getStatusBadge = (status: CafeStatus) => {
     switch (status) {
@@ -102,15 +91,6 @@ export default function CafeManagement() {
       case 'suspended': return <Badge variant="destructive" className="font-bold">Suspended</Badge>;
       case 'trial': return <Badge variant="outline" className="border-blue-500 text-blue-500 font-bold">Trial</Badge>;
       case 'expired': return <Badge variant="secondary" className="font-bold">Expired</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  const getPaymentBadge = (status: PaymentStatus) => {
-    switch (status) {
-      case 'paid': return <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 font-bold">Paid</Badge>;
-      case 'unpaid': return <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-yellow-200 font-bold">Unpaid</Badge>;
-      case 'overdue': return <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200 font-bold">Overdue</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -123,8 +103,8 @@ export default function CafeManagement() {
           <p className="text-muted-foreground mt-1">Directly manage all registered tenants and platform access.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" className="gap-2 bg-card">
-            <RefreshCw className="h-4 w-4" /> Refresh
+          <Button variant="outline" className="gap-2 bg-card" onClick={fetchCafes}>
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
           </Button>
           <Button variant="outline" className="gap-2 bg-card">
             <Download className="h-4 w-4" /> Export
@@ -133,29 +113,6 @@ export default function CafeManagement() {
             <Plus className="h-4 w-4" /> Add New Cafe
           </Button>
         </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {[
-          { title: "Total Cafes", value: "2", color: "text-blue-600", bg: "bg-blue-50" },
-          { title: "Active Cafes", value: "1", color: "text-green-600", bg: "bg-green-50" },
-          { title: "Trial Cafes", value: "1", color: "text-orange-600", bg: "bg-orange-50" },
-          { title: "Expired Subs", value: "0", color: "text-destructive", bg: "bg-red-50" },
-          { title: "Suspended", value: "0", color: "text-gray-600", bg: "bg-gray-100" },
-          { title: "New This Month", value: "2", color: "text-primary", bg: "bg-primary/5" },
-        ].map((stat, i) => (
-          <Card key={i} className="border-none shadow-sm">
-            <CardContent className="p-4 flex flex-col justify-between h-full">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{stat.title}</p>
-              <div className="flex items-end justify-between mt-2">
-                 <span className={`text-2xl font-black ${stat.color}`}>{stat.value}</span>
-                 <div className={`p-1.5 rounded-lg ${stat.bg}`}>
-                   <Store className={`h-4 w-4 ${stat.color}`} />
-                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
       </div>
 
       <Card className="border-none shadow-sm bg-card">
@@ -170,7 +127,7 @@ export default function CafeManagement() {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Select defaultValue="all">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[140px] h-11">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -190,92 +147,87 @@ export default function CafeManagement() {
 
       <Card className="border-none shadow-sm bg-card overflow-hidden">
         <CardContent className="p-0">
-           <div className="overflow-x-auto">
-             <Table>
-               <TableHeader>
-                 <TableRow className="bg-muted/30">
-                   <TableHead className="font-bold px-6">Cafe</TableHead>
-                   <TableHead className="font-bold">Owner & Contact</TableHead>
-                   <TableHead className="font-bold">City</TableHead>
-                   <TableHead className="font-bold text-center">Plan</TableHead>
-                   <TableHead className="font-bold text-center">Units</TableHead>
-                   <TableHead className="font-bold">Expiry Date</TableHead>
-                   <TableHead className="font-bold">Status</TableHead>
-                   <TableHead className="font-bold">Payment</TableHead>
-                   <TableHead className="font-bold text-right pr-6">Actions</TableHead>
-                 </TableRow>
-               </TableHeader>
-               <TableBody>
-                 {CAFES.map((cafe) => (
-                   <TableRow key={cafe.uuid} className="hover:bg-muted/10 group transition-colors">
-                     <TableCell className="px-6">
-                        <div className="flex items-center gap-3">
-                           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
-                              {cafe.name.substring(0, 2).toUpperCase()}
-                           </div>
-                           <div className="flex flex-col">
-                              <span className="font-bold">{cafe.name}</span>
-                              <span className="text-[10px] text-muted-foreground uppercase font-mono">{cafe.cafe_code}</span>
-                           </div>
-                        </div>
-                     </TableCell>
-                     <TableCell>
-                        <div className="flex flex-col text-sm">
-                           <span className="font-medium flex items-center gap-1.5"><User className="h-3 w-3" /> {cafe.owner}</span>
-                           <span className="text-muted-foreground text-xs flex items-center gap-1.5 mt-0.5"><Mail className="h-3 w-3" /> {cafe.email}</span>
-                        </div>
-                     </TableCell>
-                     <TableCell>
-                        <span className="text-sm font-medium flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-muted-foreground" /> {cafe.city}</span>
-                     </TableCell>
-                     <TableCell className="text-center">
-                        <Badge variant="outline" className="border-primary/30 text-primary">{cafe.plan}</Badge>
-                     </TableCell>
-                     <TableCell className="text-center">
-                        <div className="flex flex-col items-center">
-                           <span className="text-sm font-bold">{cafe.branches} Br</span>
-                           <span className="text-[10px] text-muted-foreground">{cafe.tables} Tb</span>
-                        </div>
-                     </TableCell>
-                     <TableCell>
-                        <div className="flex flex-col">
-                           <span className="text-sm font-medium">{cafe.expiryDate}</span>
-                           <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> {cafe.lastActivity}</span>
-                        </div>
-                     </TableCell>
-                     <TableCell>{getStatusBadge(cafe.status)}</TableCell>
-                     <TableCell>{getPaymentBadge(cafe.paymentStatus)}</TableCell>
-                     <TableCell className="text-right pr-6">
-                        <div className="flex items-center justify-end gap-1">
-                           <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                              <Link href={`/super-admin/cafes/${cafe.uuid}`}>
-                                <ChevronRight className="h-5 w-5" />
-                              </Link>
-                           </Button>
-                           <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                 <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                 </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-56">
-                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                 <DropdownMenuItem asChild>
-                                    <Link href={`/super-admin/cafes/${cafe.uuid}`} className="flex gap-2"><LayoutGrid className="h-4 w-4" /> View Details</Link>
-                                 </DropdownMenuItem>
-                                 <DropdownMenuItem className="gap-2"><LogIn className="h-4 w-4" /> Login as Admin</DropdownMenuItem>
-                                 <DropdownMenuItem className="gap-2"><ClipboardList className="h-4 w-4" /> View Orders</DropdownMenuItem>
-                                 <DropdownMenuSeparator />
-                                 <DropdownMenuItem className="text-destructive gap-2 font-bold"><AlertCircle className="h-4 w-4" /> Suspend Account</DropdownMenuItem>
-                              </DropdownMenuContent>
-                           </DropdownMenu>
-                        </div>
-                     </TableCell>
+           {isLoading ? (
+             <div className="p-20 text-center text-muted-foreground font-bold">Updating list...</div>
+           ) : (
+             <div className="overflow-x-auto">
+               <Table>
+                 <TableHeader>
+                   <TableRow className="bg-muted/30">
+                     <TableHead className="font-bold px-6">Cafe</TableHead>
+                     <TableHead className="font-bold">Owner & Contact</TableHead>
+                     <TableHead className="font-bold">City</TableHead>
+                     <TableHead className="font-bold text-center">Plan</TableHead>
+                     <TableHead className="font-bold">Expiry Date</TableHead>
+                     <TableHead className="font-bold">Status</TableHead>
+                     <TableHead className="font-bold text-right pr-6">Actions</TableHead>
                    </TableRow>
-                 ))}
-               </TableBody>
-             </Table>
-           </div>
+                 </TableHeader>
+                 <TableBody>
+                   {cafes.map((cafe) => (
+                     <TableRow key={cafe.id} className="hover:bg-muted/10 group transition-colors">
+                       <TableCell className="px-6">
+                          <div className="flex items-center gap-3">
+                             <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                {cafe.name.substring(0, 2).toUpperCase()}
+                             </div>
+                             <div className="flex flex-col">
+                                <span className="font-bold">{cafe.name}</span>
+                                <span className="text-[10px] text-muted-foreground uppercase font-mono">{cafe.cafe_code}</span>
+                             </div>
+                          </div>
+                       </TableCell>
+                       <TableCell>
+                          <div className="flex flex-col text-sm">
+                             <span className="font-medium flex items-center gap-1.5"><User className="h-3 w-3" /> {cafe.owner_name}</span>
+                             <span className="text-muted-foreground text-xs flex items-center gap-1.5 mt-0.5"><Mail className="h-3 w-3" /> {cafe.email}</span>
+                          </div>
+                       </TableCell>
+                       <TableCell>
+                          <span className="text-sm font-medium flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-muted-foreground" /> {cafe.city}</span>
+                       </TableCell>
+                       <TableCell className="text-center">
+                          <Badge variant="outline" className="border-primary/30 text-primary">{cafe.plan_name}</Badge>
+                       </TableCell>
+                       <TableCell>
+                          <div className="flex flex-col">
+                             <span className="text-sm font-medium">{cafe.subscription_end_date}</span>
+                             <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> Recent</span>
+                          </div>
+                       </TableCell>
+                       <TableCell>{getStatusBadge(cafe.status)}</TableCell>
+                       <TableCell className="text-right pr-6">
+                          <div className="flex items-center justify-end gap-1">
+                             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                                <Link href={`/super-admin/cafes/${cafe.id}`}>
+                                  <ChevronRight className="h-5 w-5" />
+                                </Link>
+                             </Button>
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                   <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                   </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                   <DropdownMenuItem asChild>
+                                      <Link href={`/super-admin/cafes/${cafe.id}`} className="flex gap-2"><LayoutGrid className="h-4 w-4" /> View Details</Link>
+                                   </DropdownMenuItem>
+                                   <DropdownMenuItem className="gap-2"><LogIn className="h-4 w-4" /> Login as Admin</DropdownMenuItem>
+                                   <DropdownMenuItem className="gap-2"><ClipboardList className="h-4 w-4" /> View Orders</DropdownMenuItem>
+                                   <DropdownMenuSeparator />
+                                   <DropdownMenuItem className="text-destructive gap-2 font-bold"><AlertCircle className="h-4 w-4" /> Suspend Account</DropdownMenuItem>
+                                </DropdownMenuContent>
+                             </DropdownMenu>
+                          </div>
+                       </TableCell>
+                     </TableRow>
+                   ))}
+                 </TableBody>
+               </Table>
+             </div>
+           )}
         </CardContent>
       </Card>
     </div>
