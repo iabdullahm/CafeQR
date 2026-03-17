@@ -1,8 +1,5 @@
+import { dashboardController } from '@/modules/dashboard/dashboard.controller';
 
-import { NextResponse } from 'next/server';
-import { dashboardService } from '@/services/dashboard-service';
-
-export async function GET() {
-  const stats = await dashboardService.getStats();
-  return NextResponse.json(stats);
+export async function GET(req: Request) {
+  return dashboardController.getStats(req);
 }
