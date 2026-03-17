@@ -1,3 +1,22 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-cafe",
+      "description": "A cozy modern cafe interior with warm lighting.",
+      "imageUrl": "https://picsum.photos/seed/cafe1/1200/800",
+      "imageHint": "cafe interior"
+    },
+    {
+      "id": "coffee-cup",
+      "description": "A beautifully crafted latte art in a ceramic cup.",
+      "imageUrl": "https://picsum.photos/seed/coffee/600/600",
+      "imageHint": "latte art"
+    },
+    {
+      "id": "pastry",
+      "description": "Freshly baked croissants on a wooden board.",
+      "imageUrl": "https://picsum.photos/seed/pastry/600/600",
+      "imageHint": "fresh pastry"
+    }
+  ]
 }
