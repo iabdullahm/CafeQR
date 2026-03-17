@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -58,27 +59,13 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { 
-  Sheet, 
-  SheetContent, 
-  SheetDescription, 
-  SheetHeader, 
-  SheetTitle, 
-  SheetTrigger 
-} from "@/components/ui/sheet";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
   Select, 
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import Link from "next/link";
 
 // Mock Data for the Cafe Table
 const CAFES = [
@@ -176,7 +163,6 @@ const CAFES = [
 
 export default function CafeManagement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCafe, setSelectedCafe] = useState<any>(null);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -363,131 +349,16 @@ export default function CafeManagement() {
                      <TableCell>{getPaymentBadge(cafe.paymentStatus)}</TableCell>
                      <TableCell className="text-right pr-6">
                         <div className="flex items-center justify-end gap-1">
-                           <Sheet>
-                              <SheetTrigger asChild>
-                                 <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                    onClick={() => setSelectedCafe(cafe)}
-                                 >
-                                    <ChevronRight className="h-5 w-5" />
-                                 </Button>
-                              </SheetTrigger>
-                              <SheetContent className="w-full sm:max-w-3xl p-0 flex flex-col" side="right">
-                                 <SheetHeader className="p-6 border-b bg-muted/20">
-                                    <div className="flex items-start justify-between">
-                                       <div className="flex items-center gap-4">
-                                          <div className="h-16 w-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-2xl font-black text-primary">
-                                             {selectedCafe?.name.substring(0, 2).toUpperCase()}
-                                          </div>
-                                          <div>
-                                             <SheetTitle className="text-2xl font-black text-primary">{selectedCafe?.name}</SheetTitle>
-                                             <div className="flex items-center gap-2 mt-1">
-                                                <Badge className="bg-green-600">Active</Badge>
-                                                <Badge variant="outline">{selectedCafe?.plan} Plan</Badge>
-                                                <span className="text-xs text-muted-foreground font-medium">ID: {selectedCafe?.id}</span>
-                                             </div>
-                                          </div>
-                                       </div>
-                                       <div className="flex items-center gap-2">
-                                          <Button size="sm" variant="outline" className="gap-2"><LogIn className="h-4 w-4" /> Login as Admin</Button>
-                                          <DropdownMenu>
-                                             <DropdownMenuTrigger asChild>
-                                                <Button size="sm" variant="ghost" className="h-9 w-9 p-0"><MoreHorizontal className="h-5 w-5" /></Button>
-                                             </DropdownMenuTrigger>
-                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem className="gap-2"><ExternalLink className="h-4 w-4" /> View Live Site</DropdownMenuItem>
-                                                <DropdownMenuItem className="gap-2"><Lock className="h-4 w-4" /> Reset Password</DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem className="text-destructive gap-2"><Trash2 className="h-4 w-4" /> Delete Cafe</DropdownMenuItem>
-                                             </DropdownMenuContent>
-                                          </DropdownMenu>
-                                       </div>
-                                    </div>
-                                 </SheetHeader>
-                                 <ScrollArea className="flex-1">
-                                    <div className="p-6">
-                                       <Tabs defaultValue="overview" className="w-full">
-                                          <TabsList className="bg-muted p-1 h-auto flex flex-wrap mb-6">
-                                             <TabsTrigger value="overview" className="gap-2"><LayoutGrid className="h-4 w-4" /> Overview</TabsTrigger>
-                                             <TabsTrigger value="subscription" className="gap-2"><CreditCard className="h-4 w-4" /> Subscription</TabsTrigger>
-                                             <TabsTrigger value="branches" className="gap-2"><Store className="h-4 w-4" /> Branches</TabsTrigger>
-                                             <TabsTrigger value="tables" className="gap-2"><LayoutGrid className="h-4 w-4" /> Tables</TabsTrigger>
-                                             <TabsTrigger value="menu" className="gap-2"><ChefHat className="h-4 w-4" /> Menu</TabsTrigger>
-                                             <TabsTrigger value="orders" className="gap-2"><ClipboardList className="h-4 w-4" /> Orders</TabsTrigger>
-                                             <TabsTrigger value="qr" className="gap-2"><QrCode className="h-4 w-4" /> QR Codes</TabsTrigger>
-                                             <TabsTrigger value="loyalty" className="gap-2"><Users className="h-4 w-4" /> Loyalty</TabsTrigger>
-                                             <TabsTrigger value="payments" className="gap-2"><Wallet className="h-4 w-4" /> Payments</TabsTrigger>
-                                             <TabsTrigger value="support" className="gap-2"><MessageSquare className="h-4 w-4" /> Tickets</TabsTrigger>
-                                             <TabsTrigger value="logs" className="gap-2"><History className="h-4 w-4" /> Logs</TabsTrigger>
-                                          </TabsList>
-                                          
-                                          <TabsContent value="overview" className="space-y-6">
-                                             <div className="grid gap-4 md:grid-cols-2">
-                                                <Card className="shadow-none bg-muted/30 border-dashed">
-                                                   <CardHeader className="pb-2"><CardTitle className="text-sm font-bold uppercase text-muted-foreground">Owner Information</CardTitle></CardHeader>
-                                                   <CardContent className="space-y-3">
-                                                      <div className="flex items-center justify-between text-sm">
-                                                         <span className="text-muted-foreground">Full Name</span>
-                                                         <span className="font-bold">{selectedCafe?.owner}</span>
-                                                      </div>
-                                                      <div className="flex items-center justify-between text-sm">
-                                                         <span className="text-muted-foreground">Email Address</span>
-                                                         <span className="font-bold underline text-primary">{selectedCafe?.email}</span>
-                                                      </div>
-                                                      <div className="flex items-center justify-between text-sm">
-                                                         <span className="text-muted-foreground">Phone Number</span>
-                                                         <span className="font-bold">{selectedCafe?.phone}</span>
-                                                      </div>
-                                                   </CardContent>
-                                                </Card>
-                                                <Card className="shadow-none bg-muted/30 border-dashed">
-                                                   <CardHeader className="pb-2"><CardTitle className="text-sm font-bold uppercase text-muted-foreground">Location Details</CardTitle></CardHeader>
-                                                   <CardContent className="space-y-3">
-                                                      <div className="flex items-center justify-between text-sm">
-                                                         <span className="text-muted-foreground">City</span>
-                                                         <span className="font-bold">{selectedCafe?.city}</span>
-                                                      </div>
-                                                      <div className="flex items-center justify-between text-sm">
-                                                         <span className="text-muted-foreground">Location</span>
-                                                         <span className="font-bold">{selectedCafe?.location}</span>
-                                                      </div>
-                                                   </CardContent>
-                                                </Card>
-                                             </div>
-                                             
-                                             <div className="grid grid-cols-3 gap-4">
-                                                <div className="p-4 rounded-xl border bg-card text-center">
-                                                   <p className="text-xs font-bold text-muted-foreground uppercase">Revenue</p>
-                                                   <p className="text-xl font-black mt-1">$45.2k</p>
-                                                </div>
-                                                <div className="p-4 rounded-xl border bg-card text-center">
-                                                   <p className="text-xs font-bold text-muted-foreground uppercase">Orders</p>
-                                                   <p className="text-xl font-black mt-1">1.2k</p>
-                                                </div>
-                                                <div className="p-4 rounded-xl border bg-card text-center">
-                                                   <p className="text-xs font-bold text-muted-foreground uppercase">Avg. Ticket</p>
-                                                   <p className="text-xl font-black mt-1">$32.5</p>
-                                                </div>
-                                             </div>
-                                          </TabsContent>
-                                          <TabsContent value="subscription" className="p-12 text-center space-y-4">
-                                             <CreditCard className="h-12 w-12 text-muted-foreground/30 mx-auto" />
-                                             <p className="text-muted-foreground">Subscription management details for <b>{selectedCafe?.name}</b></p>
-                                             <Button className="bg-primary">Manage Billing</Button>
-                                          </TabsContent>
-                                          {/* Add placeholders for other tabs to keep the UI clean */}
-                                          {["branches", "tables", "menu", "orders", "qr", "loyalty", "payments", "support", "logs"].map(tab => (
-                                             <TabsContent key={tab} value={tab} className="p-12 text-center text-muted-foreground italic">
-                                                Details for {tab} will appear here.
-                                             </TabsContent>
-                                          ))}
-                                       </Tabs>
-                                    </div>
-                                 </ScrollArea>
-                              </SheetContent>
-                           </Sheet>
+                           <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              asChild
+                           >
+                              <Link href={`/super-admin/cafes/${cafe.id}`}>
+                                <ChevronRight className="h-5 w-5" />
+                              </Link>
+                           </Button>
                            <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
@@ -496,7 +367,9 @@ export default function CafeManagement() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-56">
                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                 <DropdownMenuItem className="gap-2"><LayoutGrid className="h-4 w-4" /> View Details</DropdownMenuItem>
+                                 <DropdownMenuItem className="gap-2" asChild>
+                                    <Link href={`/super-admin/cafes/${cafe.id}`}><LayoutGrid className="h-4 w-4" /> View Details</Link>
+                                 </DropdownMenuItem>
                                  <DropdownMenuItem className="gap-2"><Store className="h-4 w-4" /> Edit Cafe</DropdownMenuItem>
                                  <DropdownMenuItem className="gap-2"><CreditCard className="h-4 w-4" /> View Subscription</DropdownMenuItem>
                                  <DropdownMenuItem className="gap-2"><RefreshCw className="h-4 w-4" /> Renew Subscription</DropdownMenuItem>
@@ -539,5 +412,3 @@ export default function CafeManagement() {
     </div>
   );
 }
-
-import { Wallet } from "lucide-react";
