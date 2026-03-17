@@ -59,44 +59,35 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 const SYSTEM_USERS = [
-  { id: "USR-001", name: "Ahmed Mansour", email: "ahmed@cafeqr.io", role: "Super Admin", status: "active", lastLogin: "10 mins ago", created: "Jan 12, 2024", phone: "+971 50 123 4567" },
-  { id: "USR-002", name: "Sarah Jenkins", email: "sarah@cafeqr.io", role: "Finance", status: "active", lastLogin: "2 hours ago", created: "Feb 05, 2024", phone: "+1 234 567 890" },
-  { id: "USR-003", name: "Michael Chen", email: "m.chen@cafeqr.io", role: "Support", status: "active", lastLogin: "Yesterday", created: "Mar 15, 2024", phone: "+44 7700 900000" },
-  { id: "USR-004", name: "Lina Al-Farsi", email: "lina@cafeqr.io", role: "Sales", status: "suspended", lastLogin: "12 days ago", created: "Mar 20, 2024", phone: "+966 50 123 4567" },
-  { id: "USR-005", name: "Robert Wilson", email: "robert@cafeqr.io", role: "Admin", status: "active", lastLogin: "3 hours ago", created: "Apr 02, 2024", phone: "+1 987 654 321" },
+  { id: "USR-001", name: "Super Admin", email: "admin@cafeqr.com", role: "Super Admin", status: "active", lastLogin: "Just now", created: "Dec 01, 2024", phone: "90000000" },
+  { id: "USR-002", name: "Ahmed Al Balushi", email: "owner@demo-cafe.com", role: "Cafe Owner", status: "active", lastLogin: "1 hour ago", created: "Dec 01, 2024", phone: "91111111" },
 ];
 
 const ROLES_PERMISSIONS = [
   { 
     role: "Super Admin", 
     description: "Full system access including platform settings and root security.",
-    userCount: 2,
+    userCount: 1,
     permissions: ["all"]
   },
   { 
     role: "Admin", 
     description: "Platform management access, managing cafes and subscriptions.",
-    userCount: 4,
+    userCount: 0,
     permissions: ["view_dashboard", "manage_cafes", "manage_subs", "view_reports"]
+  },
+  { 
+    role: "Cafe Owner", 
+    description: "Full access to their owned cafe and branches.",
+    userCount: 1,
+    permissions: ["view_dashboard", "manage_branches", "manage_menu"]
   },
   { 
     role: "Support", 
     description: "Handles customer support and support tickets.",
-    userCount: 8,
+    userCount: 0,
     permissions: ["view_dashboard", "view_support_tickets", "manage_support_tickets"]
   },
-  { 
-    role: "Finance", 
-    description: "Access to billing, payments, and financial reporting.",
-    userCount: 3,
-    permissions: ["view_dashboard", "manage_payments", "manage_invoices"]
-  },
-  { 
-    role: "Sales", 
-    description: "Handles subscriptions and customer onboarding.",
-    userCount: 5,
-    permissions: ["view_dashboard", "manage_cafes", "manage_subscriptions", "manage_plans"]
-  }
 ];
 
 const PERMISSION_LIST = [
@@ -125,10 +116,9 @@ export default function UsersRolesManagement() {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'Super Admin': return <Badge className="bg-primary border-none font-bold">Super Admin</Badge>;
+      case 'Cafe Owner': return <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200 font-bold">Cafe Owner</Badge>;
       case 'Admin': return <Badge variant="secondary" className="font-bold">Admin</Badge>;
-      case 'Finance': return <Badge variant="outline" className="border-green-500 text-green-600 font-bold">Finance</Badge>;
       case 'Support': return <Badge variant="outline" className="border-blue-500 text-blue-600 font-bold">Support</Badge>;
-      case 'Sales': return <Badge variant="outline" className="border-orange-500 text-orange-600 font-bold">Sales</Badge>;
       default: return <Badge variant="outline">{role}</Badge>;
     }
   };
@@ -155,10 +145,10 @@ export default function UsersRolesManagement() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "Total Users", value: "22", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-          { title: "Active Users", value: "20", icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
-          { title: "Admins", value: "6", icon: ShieldCheck, color: "text-primary", bg: "bg-primary/5" },
-          { title: "Suspended", value: "2", icon: Ban, color: "text-destructive", bg: "bg-red-50" },
+          { title: "Total Users", value: "2", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+          { title: "Active Users", value: "2", icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
+          { title: "Super Admins", value: "1", icon: ShieldCheck, color: "text-primary", bg: "bg-primary/5" },
+          { title: "Cafe Owners", value: "1", icon: Store, color: "text-indigo-600", bg: "bg-indigo-50" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-sm overflow-hidden bg-card">
             <CardContent className="p-5 flex items-center gap-4">
@@ -274,14 +264,6 @@ export default function UsersRolesManagement() {
                     </TableBody>
                  </Table>
                </div>
-               <div className="p-4 border-t flex items-center justify-between bg-muted/5">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Showing {SYSTEM_USERS.length} of 22 registered platform users</p>
-                  <div className="flex items-center gap-2">
-                     <Button variant="outline" size="sm" className="h-8" disabled>Previous</Button>
-                     <Button variant="secondary" size="sm" className="h-8 w-8 p-0">1</Button>
-                     <Button variant="outline" size="sm" className="h-8">Next</Button>
-                  </div>
-               </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -351,13 +333,6 @@ export default function UsersRolesManagement() {
                           </div>
                        </div>
                     </CardContent>
-                    <CardFooter className="bg-muted/5 border-t justify-between p-6">
-                       <p className="text-xs text-muted-foreground">Last updated by Super Admin on Oct 24, 2024</p>
-                       <div className="flex gap-2">
-                          <Button variant="ghost" size="sm">Reset Defaults</Button>
-                          <Button size="sm">Update Matrix</Button>
-                       </div>
-                    </CardFooter>
                  </Card>
               </div>
            </div>

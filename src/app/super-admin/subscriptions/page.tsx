@@ -48,12 +48,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 const SUBSCRIPTIONS = [
-  { id: "SUB-8402", cafe: "Coffee Haven", plan: "Premium", status: "active", billing: "Monthly", amount: "39.000 OMR", startDate: "Jan 12, 2024", expiryDate: "Feb 12, 2025", paymentStatus: "paid", autoRenew: true },
-  { id: "SUB-7291", cafe: "The Bean Sprout", plan: "Standard", status: "active", billing: "Yearly", amount: "190.000 OMR", startDate: "Mar 05, 2024", expiryDate: "Mar 05, 2025", paymentStatus: "paid", autoRenew: true },
-  { id: "SUB-1042", cafe: "Rustic Roast", plan: "Basic", status: "past_due", billing: "Monthly", amount: "9.000 OMR", startDate: "Oct 20, 2023", expiryDate: "Nov 20, 2024", paymentStatus: "unpaid", autoRenew: false },
-  { id: "SUB-3301", cafe: "Urban Brew", plan: "Enterprise", status: "active", billing: "Monthly", amount: "99.000 OMR", startDate: "Jun 15, 2024", expiryDate: "Jul 15, 2025", paymentStatus: "paid", autoRenew: true },
-  { id: "SUB-0052", cafe: "Zen Coffee", plan: "Standard", status: "canceled", billing: "Monthly", amount: "19.000 OMR", startDate: "Apr 02, 2024", expiryDate: "May 02, 2024", paymentStatus: "refunded", autoRenew: false },
-  { id: "SUB-9921", cafe: "Mountain Sips", plan: "Basic", status: "trial", billing: "Free", amount: "0.000 OMR", startDate: "Oct 28, 2024", expiryDate: "Nov 11, 2024", paymentStatus: "n/a", autoRenew: false },
+  { id: "SUB-CAF-001", cafe: "Brew Corner", plan: "Premium", status: "active", billing: "Monthly", amount: "39.000 OMR", startDate: "Dec 01, 2024", expiryDate: "Dec 30, 2024", paymentStatus: "paid", autoRenew: true },
+  { id: "SUB-CAF-002", cafe: "Qahwa House", plan: "Standard", status: "trial", billing: "Free Trial", amount: "0.000 OMR", startDate: "Dec 01, 2024", expiryDate: "Dec 14, 2024", paymentStatus: "unpaid", autoRenew: false },
 ];
 
 export default function SubscriptionManagement() {
@@ -106,9 +102,9 @@ export default function SubscriptionManagement() {
                </CardTitle>
             </CardHeader>
             <CardContent>
-               <div className="text-3xl font-black text-primary">16,450.000 OMR</div>
+               <div className="text-3xl font-black text-primary">39.000 OMR</div>
                <p className="text-xs text-green-600 font-bold mt-1.5 flex items-center gap-1">
-                  +4.2% <span className="text-muted-foreground font-medium text-[10px]">vs last month</span>
+                  +100% <span className="text-muted-foreground font-medium text-[10px]">vs last month</span>
                </p>
             </CardContent>
          </Card>
@@ -117,9 +113,9 @@ export default function SubscriptionManagement() {
                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Active Subscriptions</CardTitle>
             </CardHeader>
             <CardContent>
-               <div className="text-3xl font-black">1,152</div>
+               <div className="text-3xl font-black">1</div>
                <p className="text-xs text-green-600 font-bold mt-1.5 flex items-center gap-1">
-                  +18 <span className="text-muted-foreground font-medium text-[10px]">new today</span>
+                  +1 <span className="text-muted-foreground font-medium text-[10px]">this month</span>
                </p>
             </CardContent>
          </Card>
@@ -128,8 +124,8 @@ export default function SubscriptionManagement() {
                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Expired / Canceled</CardTitle>
             </CardHeader>
             <CardContent>
-               <div className="text-3xl font-black text-destructive">45</div>
-               <p className="text-xs text-muted-foreground font-medium mt-1.5">3.8% Churn rate</p>
+               <div className="text-3xl font-black text-destructive">0</div>
+               <p className="text-xs text-muted-foreground font-medium mt-1.5">0% Churn rate</p>
             </CardContent>
          </Card>
          <Card className="border-none shadow-sm bg-card hover:shadow-md transition-shadow">
@@ -137,9 +133,9 @@ export default function SubscriptionManagement() {
                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Free Trials</CardTitle>
             </CardHeader>
             <CardContent>
-               <div className="text-3xl font-black text-blue-600">84</div>
+               <div className="text-3xl font-black text-blue-600">1</div>
                <p className="text-xs text-blue-600 font-bold mt-1.5 flex items-center gap-1">
-                  12% <span className="text-muted-foreground font-medium text-[10px]">conversion rate</span>
+                  50% <span className="text-muted-foreground font-medium text-[10px]">conversion rate</span>
                </p>
             </CardContent>
          </Card>

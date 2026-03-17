@@ -58,55 +58,38 @@ import { CafeStatus, PaymentStatus } from "@/lib/db-types";
 
 const CAFES = [
   { 
-    uuid: "8402-1240", 
-    cafe_code: "ROAST-01",
-    name: "The Roast Coffee", 
-    owner: "John Doe", 
-    email: "john@roast.com", 
-    phone: "+1 234 567 890",
-    city: "New York",
+    uuid: "caf-001-uuid", 
+    cafe_code: "CAF-001",
+    name: "Brew Corner", 
+    owner: "Ahmed Al Balushi", 
+    email: "brew@cafe.com", 
+    phone: "91111111",
+    city: "Muscat",
     plan: "Premium", 
     status: "active" as CafeStatus, 
     paymentStatus: "paid" as PaymentStatus,
-    branches: 3, 
-    tables: 24,
-    orders: 1240,
-    expiryDate: "Jan 12, 2025", 
-    lastActivity: "2 mins ago"
-  },
-  { 
-    uuid: "7291-450", 
-    cafe_code: "BEAN-99",
-    name: "Bean & Brew", 
-    owner: "Sarah Smith", 
-    email: "sarah@bean.com", 
-    phone: "+44 7700 900000",
-    city: "London",
-    plan: "Basic", 
-    status: "active" as CafeStatus, 
-    paymentStatus: "paid" as PaymentStatus,
     branches: 1, 
-    tables: 8,
-    orders: 450,
-    expiryDate: "Feb 05, 2025", 
-    lastActivity: "15 mins ago"
+    tables: 1,
+    orders: 142,
+    expiryDate: "Dec 30, 2024", 
+    lastActivity: "Just now"
   },
   { 
-    uuid: "1042-890", 
-    cafe_code: "RUSTIC-7",
-    name: "Rustic Roast", 
-    owner: "Mike Brown", 
-    email: "mike@roast.co", 
-    phone: "+971 50 123 4567",
-    city: "Dubai",
-    plan: "Pro", 
-    status: "suspended" as CafeStatus, 
-    paymentStatus: "overdue" as PaymentStatus,
-    branches: 2, 
-    tables: 15,
-    orders: 890,
-    expiryDate: "Mar 01, 2024", 
-    lastActivity: "3 days ago"
+    uuid: "caf-002-uuid", 
+    cafe_code: "CAF-002",
+    name: "Qahwa House", 
+    owner: "Ahmed Al Balushi", 
+    email: "qahwa@cafe.com", 
+    phone: "92222222",
+    city: "Muscat",
+    plan: "Standard", 
+    status: "trial" as CafeStatus, 
+    paymentStatus: "unpaid" as PaymentStatus,
+    branches: 1, 
+    tables: 0,
+    orders: 0,
+    expiryDate: "Dec 14, 2024", 
+    lastActivity: "2 days ago"
   }
 ];
 
@@ -154,12 +137,12 @@ export default function CafeManagement() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {[
-          { title: "Total Cafes", value: "1,240", color: "text-blue-600", bg: "bg-blue-50" },
-          { title: "Active Cafes", value: "1,150", color: "text-green-600", bg: "bg-green-50" },
-          { title: "Trial Cafes", value: "45", color: "text-orange-600", bg: "bg-orange-50" },
-          { title: "Expired Subs", value: "12", color: "text-destructive", bg: "bg-red-50" },
-          { title: "Suspended", value: "8", color: "text-gray-600", bg: "bg-gray-100" },
-          { title: "New This Month", value: "124", color: "text-primary", bg: "bg-primary/5" },
+          { title: "Total Cafes", value: "2", color: "text-blue-600", bg: "bg-blue-50" },
+          { title: "Active Cafes", value: "1", color: "text-green-600", bg: "bg-green-50" },
+          { title: "Trial Cafes", value: "1", color: "text-orange-600", bg: "bg-orange-50" },
+          { title: "Expired Subs", value: "0", color: "text-destructive", bg: "bg-red-50" },
+          { title: "Suspended", value: "0", color: "text-gray-600", bg: "bg-gray-100" },
+          { title: "New This Month", value: "2", color: "text-primary", bg: "bg-primary/5" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-sm">
             <CardContent className="p-4 flex flex-col justify-between h-full">
