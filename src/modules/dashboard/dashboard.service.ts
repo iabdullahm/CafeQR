@@ -5,14 +5,12 @@
 export class DashboardService {
   async getStats() {
     return {
-      totalCafes: 1240,
-      activeSubs: 1150,
-      expiredSubs: 45,
-      monthlyRevenue: 52430,
-      totalOrders: 84200,
-      totalCustomers: 125000,
-      qrScansToday: 12402,
-      newRegistrations: 24
+      totalCafes: 24,
+      activeSubscriptions: 18,
+      expiredSubscriptions: 3,
+      monthlyRevenue: 540.000,
+      ordersThisMonth: 1280,
+      newRegistrations: 6
     };
   }
 
@@ -31,14 +29,15 @@ export class DashboardService {
     ];
   }
 
-  async getRevenueData() {
+  async getRevenueData(period: string = 'monthly') {
+    // Mocking revenue data based on period
     return [
-      { name: 'Jan', revenue: 32000 },
-      { name: 'Feb', revenue: 35000 },
-      { name: 'Mar', revenue: 42000 },
-      { name: 'Apr', revenue: 45000 },
-      { name: 'May', revenue: 48000 },
-      { name: 'Jun', revenue: 52430 },
+      { name: 'Jan', revenue: 320.000 },
+      { name: 'Feb', revenue: 350.000 },
+      { name: 'Mar', revenue: 420.000 },
+      { name: 'Apr', revenue: 450.000 },
+      { name: 'May', revenue: 480.000 },
+      { name: 'Jun', revenue: 540.000 },
     ];
   }
 }
