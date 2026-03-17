@@ -1,44 +1,68 @@
-import { comparePassword, generateToken } from '@/lib/auth';
-import { LoginInput } from '@/lib/validations/auth';
 
-/**
- * @fileOverview Auth Service handles core authentication business logic.
- */
+import { comparePassword, signToken } from '../../utils/jwt';
+import prisma from '../../config/prisma';
+import bcrypt from 'bcryptjs';
 
-export class AuthService {
-  async login(input: LoginInput) {
-    // In a real app, use prisma.user.findUnique({ where: { email: input.email } })
-    
-    // Support for seeded admin login
-    if (input.email === 'admin@cafeqr.com' && (input.password === '123456' || input.password === 'admin123')) {
-      const user = {
-        id: "1",
-        email: 'admin@cafeqr.com',
-        roles: ['super_admin'],
-        full_name: 'Super Admin'
-      };
+export const loginUser = async ({ email, password }: any) => {
+  const user = await prisma.user.findUnique({
+    where: { email }
+  });
 
-      const token = generateToken({
-        sub: user.id,
-        email: user.email,
-        roles: user.roles
-      });
-
-      return { user, token };
-    }
-
+  if (!user) {
     throw new Error('Invalid email or password');
   }
 
-  async getMe(userId: string) {
-    // In a real app, fetch from database using Prisma
-    return {
-      id: userId,
-      email: 'admin@cafeqr.com',
-      fullName: 'Super Admin',
-      roles: ['super_admin']
-    };
-  }
-}
+  // Use bcryptjs compare
+  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
-export const authService = new AuthService();
+  if (!isPasswordValid) {
+    throw new Error('Invalid email or password');
+  }
+
+  const userRoles = await prisma.userRole.findMany({
+    where: { userId: user.id },
+    include: {
+      role: true
+    }
+  });
+
+  const roles = userRoles.map((item: any) => item.role.name);
+
+  const token = signToken({
+    sub: String(user.id),
+    email: user.email,
+    roles
+  });
+
+  return {
+    token,
+    user: {
+      id: String(user.id),
+      full_name: user.fullName,
+      email: user.email,
+      roles
+    }
+  };
+};
+
+export const getCurrentUser = async (userId: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: BigInt(userId) }
+  });
+
+  if (!user) throw new Error('User not found');
+
+  const userRoles = await prisma.userRole.findMany({
+    where: { userId: user.id },
+    include: {
+      role: true
+    }
+  });
+
+  return {
+    id: String(user.id),
+    full_name: user.fullName,
+    email: user.email,
+    roles: userRoles.map((item: any) => item.role.name)
+  };
+};

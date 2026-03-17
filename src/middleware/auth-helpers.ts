@@ -1,9 +1,7 @@
-import { NextResponse } from 'next/server';
-import { verifyToken, TokenPayload } from '@/lib/auth';
 
-/**
- * @fileOverview Auth Middleware helpers for route protection.
- */
+import { NextResponse } from 'next/server';
+import { verifyToken, TokenPayload } from '@/utils/jwt';
+import { errorResponse } from '@/utils/api-response';
 
 /**
  * Helper to validate JWT from request headers
@@ -13,44 +11,32 @@ export function getAuthorizedUser(req: Request): TokenPayload | null {
   if (!authHeader?.startsWith('Bearer ')) return null;
 
   const token = authHeader.split(' ')[1];
-  return verifyToken(token);
+  try {
+    return verifyToken(token);
+  } catch (err) {
+    return null;
+  }
 }
 
 /**
- * Standard unauthorized response
+ * Functional wrapper for role-based authorization in Next.js Routes
  */
-export function unauthorizedResponse() {
-  return NextResponse.json({ 
-    success: false, 
-    error: 'Unauthorized: No valid token provided' 
-  }, { status: 401 });
-}
-
-/**
- * Standard forbidden response
- */
-export function forbiddenResponse() {
-  return NextResponse.json({ 
-    success: false, 
-    error: 'Forbidden: You do not have the required role to access this resource' 
-  }, { status: 403 });
-}
-
-/**
- * Functional wrapper for role-based authorization
- */
-export function withRole(req: Request, requiredRoles: string[], handler: (user: TokenPayload) => Promise<NextResponse>) {
+export async function withAuth(
+  req: Request, 
+  allowedRoles: string[] | null, 
+  handler: (user: TokenPayload) => Promise<NextResponse>
+) {
   const user = getAuthorizedUser(req);
   
   if (!user) {
-    return unauthorizedResponse();
+    return errorResponse('Unauthorized', 401);
   }
 
-  // Check if user has at least one of the required roles
-  const hasPermission = requiredRoles.some(role => user.roles.includes(role));
-
-  if (!hasPermission) {
-    return forbiddenResponse();
+  if (allowedRoles) {
+    const hasAccess = user.roles.some((role) => allowedRoles.includes(role));
+    if (!hasAccess) {
+      return errorResponse('Forbidden', 403);
+    }
   }
 
   return handler(user);

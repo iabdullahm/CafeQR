@@ -1,45 +1,57 @@
-/**
- * @fileOverview Dashboard Service handles platform-wide metrics and analytics.
- */
 
-export class DashboardService {
-  async getStats() {
-    return {
-      totalCafes: 24,
-      activeSubscriptions: 18,
-      expiredSubscriptions: 3,
-      monthlyRevenue: 540.000,
-      ordersThisMonth: 1280,
-      newRegistrations: 6
-    };
-  }
+import prisma from '../../config/prisma';
 
-  async getRecentCafes() {
-    return [
-      { name: "Coffee Haven", status: "active", plan: "Premium", joinDate: "2024-03-10" },
-      { name: "The Bean Sprout", status: "active", plan: "Basic", joinDate: "2024-03-09" },
-      { name: "Rustic Roast", status: "suspended", plan: "Pro", joinDate: "2024-03-08" }
-    ];
-  }
+export const getDashboardStats = async () => {
+  const [
+    totalCafes,
+    activeSubscriptions,
+    expiredSubscriptions,
+    ordersThisMonth
+  ] = await Promise.all([
+    prisma.cafe.count({
+      where: { deletedAt: null }
+    }),
+    prisma.subscription.count({
+      where: { status: 'active' }
+    }),
+    prisma.subscription.count({
+      where: { status: 'expired' }
+    }),
+    prisma.order.count()
+  ]);
 
-  async getExpiringSubscriptions() {
-    return [
-      { cafe: "Green Leaf Cafe", plan: "Pro", expiry: "In 2 days", amount: 49.000 },
-      { cafe: "Mocha Magic", plan: "Premium", expiry: "In 5 days", amount: 99.000 }
-    ];
-  }
+  return {
+    totalCafes,
+    activeSubscriptions,
+    expiredSubscriptions,
+    monthlyRevenue: 540.000,
+    ordersThisMonth,
+    newRegistrations: 6
+  };
+};
 
-  async getRevenueData(period: string = 'monthly') {
-    // Mocking revenue data based on period
-    return [
-      { name: 'Jan', revenue: 320.000 },
-      { name: 'Feb', revenue: 350.000 },
-      { name: 'Mar', revenue: 420.000 },
-      { name: 'Apr', revenue: 450.000 },
-      { name: 'May', revenue: 480.000 },
-      { name: 'Jun', revenue: 540.000 },
-    ];
-  }
-}
+export const getRecentCafes = async () => {
+  const cafes = await prisma.cafe.findMany({
+    where: { deletedAt: null },
+    orderBy: { createdAt: 'desc' },
+    take: 5
+  });
+  return cafes.map((c: any) => ({ ...c, id: String(c.id) }));
+};
 
-export const dashboardService = new DashboardService();
+export const getExpiringSubscriptions = async () => {
+  const subs = await prisma.subscription.findMany({
+    where: {
+      status: 'active'
+    },
+    orderBy: {
+      endDate: 'asc'
+    },
+    take: 5,
+    include: {
+      cafe: true,
+      plan: true
+    }
+  });
+  return subs.map((s: any) => ({ ...s, id: String(s.id) }));
+};
