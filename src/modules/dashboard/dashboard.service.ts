@@ -31,9 +31,9 @@ export const dashboardService = {
       totalCafes,
       activeSubscriptions,
       expiredSubscriptions,
-      monthlyRevenue: 39.000, // Seed data revenue based on Premium active
+      monthlyRevenue: 39.000, // Mock revenue based on active Premium subscription
       ordersThisMonth,
-      newRegistrations: totalCafes // Simplification for demo
+      newRegistrations: totalCafes // Demo simplification
     };
   },
 
@@ -72,8 +72,8 @@ export const dashboardService = {
     return subs.map((s: any) => ({ 
       ...s, 
       id: String(s.id),
-      cafe_name: s.cafe?.name,
-      plan_name: s.plan?.name
+      cafe_name: s.cafe?.name || 'Unknown',
+      plan_name: s.plan?.name || 'Standard'
     }));
   },
 
@@ -81,7 +81,7 @@ export const dashboardService = {
    * Fetches revenue data formatted for charting.
    */
   async getRevenueData(period: string) {
-    // Return mock data for the chart based on the period (monthly/weekly/etc)
+    // Return mock data for the chart based on the period
     return [
       { name: 'Jan', revenue: 12000 },
       { name: 'Feb', revenue: 15000 },
