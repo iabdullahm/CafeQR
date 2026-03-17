@@ -39,14 +39,17 @@ export function forbiddenResponse() {
 /**
  * Functional wrapper for role-based authorization
  */
-export function withRole(req: Request, roles: string[], handler: (user: TokenPayload) => Promise<NextResponse>) {
+export function withRole(req: Request, requiredRoles: string[], handler: (user: TokenPayload) => Promise<NextResponse>) {
   const user = getAuthorizedUser(req);
   
   if (!user) {
     return unauthorizedResponse();
   }
 
-  if (!roles.includes(user.role)) {
+  // Check if user has at least one of the required roles
+  const hasPermission = requiredRoles.some(role => user.roles.includes(role));
+
+  if (!hasPermission) {
     return forbiddenResponse();
   }
 

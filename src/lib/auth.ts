@@ -1,13 +1,15 @@
-
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { env } from './env';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'cafeqr-super-secret-key';
+/**
+ * @fileOverview Core authentication utilities.
+ */
 
 export interface TokenPayload {
-  userId: string;
+  sub: string; // User ID as 'sub' (subject) per standard JWT claims
   email: string;
-  role: string;
+  roles: string[];
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -19,12 +21,12 @@ export async function comparePassword(password: string, hash: string): Promise<b
 }
 
 export function generateToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+  return jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
 }
 
 export function verifyToken(token: string): TokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
+    return jwt.verify(token, env.jwtSecret) as TokenPayload;
   } catch (err) {
     return null;
   }
