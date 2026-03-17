@@ -7,7 +7,7 @@ async function main() {
   console.log('🌱 Starting database seeding...');
 
   // 1. Create Roles
-  const roles = [
+  const rolesData = [
     { name: 'super_admin', displayName: 'Platform Administrator' },
     { name: 'admin', displayName: 'Administrator' },
     { name: 'owner', displayName: 'Cafe Owner' },
@@ -15,8 +15,9 @@ async function main() {
     { name: 'staff', displayName: 'Service Staff' },
   ];
 
-  for (const role of roles) {
-    await prisma.role.upsert({
+  const roles: Record<string, any> = {};
+  for (const role of rolesData) {
+    roles[role.name] = await prisma.role.upsert({
       where: { name: role.name },
       update: {},
       create: {
@@ -40,23 +41,20 @@ async function main() {
     },
   });
 
-  const superAdminRole = await prisma.role.findUnique({ where: { name: 'super_admin' } });
-  if (superAdminRole) {
-    await prisma.userRole.upsert({
-      where: {
-        userId_roleId: {
-          userId: demoUser.id,
-          roleId: superAdminRole.id,
-        },
-      },
-      update: {},
-      create: {
+  await prisma.userRole.upsert({
+    where: {
+      userId_roleId: {
         userId: demoUser.id,
-        roleId: superAdminRole.id,
+        roleId: roles['super_admin'].id,
       },
-    });
-  }
-  console.log('✅ Demo user created.');
+    },
+    update: {},
+    create: {
+      userId: demoUser.id,
+      roleId: roles['super_admin'].id,
+    },
+  });
+  console.log('✅ Demo user created and assigned super_admin role.');
 
   // 3. Create Basic Plans
   const plans = [
@@ -93,8 +91,25 @@ async function main() {
   for (const plan of plans) {
     await prisma.plan.upsert({
       where: { slug: plan.slug },
-      update: {},
-      create: plan,
+      update: {
+        monthlyPrice: plan.monthlyPrice,
+        yearlyPrice: plan.yearlyPrice,
+        maxBranches: plan.maxBranches,
+        maxTables: plan.maxTables,
+        maxProducts: plan.maxProducts,
+        isPopular: plan.isPopular || false,
+      },
+      create: {
+        name: plan.name,
+        slug: plan.slug,
+        monthlyPrice: plan.monthlyPrice,
+        yearlyPrice: plan.yearlyPrice,
+        maxBranches: plan.maxBranches,
+        maxTables: plan.maxTables,
+        maxProducts: plan.maxProducts,
+        isPopular: plan.isPopular || false,
+        currency: 'USD',
+      },
     });
   }
   console.log('✅ Subscription plans created.');
