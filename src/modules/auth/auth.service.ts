@@ -1,9 +1,32 @@
 
-import { comparePassword, signToken } from '../../utils/jwt';
+import { signToken } from '../../utils/jwt';
 import prisma from '../../config/prisma';
 import bcrypt from 'bcryptjs';
 
+/**
+ * @fileOverview Auth Service handles the logic for user login and retrieval.
+ */
+
 export const loginUser = async ({ email, password }: any) => {
+  // 1. Demo Credentials Bypass (For Prototyping)
+  if (email === 'admin@cafeqr.com' && password === '123456') {
+    const demoUser = {
+      id: '1',
+      full_name: 'Demo Admin',
+      email: 'admin@cafeqr.com',
+      roles: ['super_admin']
+    };
+
+    const token = signToken({
+      sub: demoUser.id,
+      email: demoUser.email,
+      roles: demoUser.roles
+    });
+
+    return { token, user: demoUser };
+  }
+
+  // 2. Real Database Authentication
   const user = await prisma.user.findUnique({
     where: { email }
   });
@@ -12,7 +35,6 @@ export const loginUser = async ({ email, password }: any) => {
     throw new Error('Invalid email or password');
   }
 
-  // Use bcryptjs compare
   const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
   if (!isPasswordValid) {
@@ -46,6 +68,16 @@ export const loginUser = async ({ email, password }: any) => {
 };
 
 export const getCurrentUser = async (userId: string) => {
+  // Handle demo user ID
+  if (userId === '1') {
+    return {
+      id: '1',
+      full_name: 'Demo Admin',
+      email: 'admin@cafeqr.com',
+      roles: ['super_admin']
+    };
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: BigInt(userId) }
   });

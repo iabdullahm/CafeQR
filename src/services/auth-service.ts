@@ -1,24 +1,27 @@
 
-import { comparePassword, generateToken, type TokenPayload } from '@/lib/auth';
+import { generateToken, type TokenPayload } from '@/lib/auth';
 import { type LoginInput } from '@/lib/validations/auth';
 
-// Mock DB interaction - In a real app, use a DB client like Prisma or pg
+/**
+ * @fileOverview Mock Auth Service for fallback or client-side logic.
+ */
+
 export class AuthService {
   async login(input: LoginInput) {
-    // 1. Find user (Mocked)
-    if (input.email === 'admin@cafeqr.com' && input.password === 'admin123') {
+    // Sync with demo credentials provided in the UI
+    if (input.email === 'admin@cafeqr.com' && input.password === '123456') {
       const user = {
         id: '1',
         email: 'admin@cafeqr.com',
         role: 'super_admin',
-        full_name: 'Super Admin'
+        full_name: 'Demo Admin'
       };
 
       const token = generateToken({
-        userId: user.id,
+        sub: user.id,
         email: user.email,
-        role: user.role
-      });
+        roles: [user.role]
+      } as any);
 
       return { user, token };
     }
@@ -27,12 +30,11 @@ export class AuthService {
   }
 
   async getCurrentUser(payload: TokenPayload) {
-    // In real app: return await db.user.findUnique({ where: { id: payload.userId } })
     return {
-      id: payload.userId,
+      id: payload.sub,
       email: payload.email,
-      role: payload.role,
-      full_name: payload.role === 'super_admin' ? 'Super Admin' : 'Cafe User'
+      roles: payload.roles,
+      full_name: payload.roles.includes('super_admin') ? 'Super Admin' : 'Cafe User'
     };
   }
 }
