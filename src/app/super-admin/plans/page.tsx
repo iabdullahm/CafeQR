@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -46,58 +45,58 @@ import { Progress } from "@/components/ui/progress";
 const PLANS = [
   {
     id: "basic",
-    name: "Starter",
-    price: 19,
-    yearlyPrice: 190,
+    name: "Basic",
+    price: 9.000,
+    yearlyPrice: 90.000,
     billing: "per month",
     icon: Zap,
-    description: "Perfect for single location small coffee shops.",
+    description: "Entry plan for small cafes with essential QR ordering features.",
     status: "active",
-    features: ["1 Branch Included", "Up to 5 Tables", "Basic QR Ordering", "Email Support", "Digital Menu Only"],
-    limits: { branches: 1, tables: 5, products: 50 },
+    features: ["QR Ordering Included", "No Car Ordering", "No Loyalty Program", "Standard Support", "Digital Menu Only"],
+    limits: { branches: 1, tables: 10, products: 50, staff: 3 },
     color: "bg-blue-500/10 text-blue-600 border-blue-200",
     popularity: 15
   },
   {
-    id: "pro",
-    name: "Professional",
-    price: 49,
-    yearlyPrice: 490,
+    id: "standard",
+    name: "Standard",
+    price: 19.000,
+    yearlyPrice: 190.000,
     billing: "per month",
     icon: Shield,
-    description: "Advanced features for growing cafe brands.",
+    description: "Best for growing cafes with loyalty and analytics support.",
     status: "active",
-    features: ["Up to 3 Branches", "Unlimited Tables", "Custom Branding", "Priority Support", "Advanced Analytics", "Inventory Tracking"],
-    limits: { branches: 3, tables: 999, products: 200 },
+    features: ["QR & Car Ordering", "Loyalty Program", "Basic Analytics", "Priority Support", "Advanced Menu Control"],
+    limits: { branches: 1, tables: 25, products: 150, staff: 8 },
     color: "bg-primary/10 text-primary border-primary/20",
     popular: true,
     popularity: 65
   },
   {
     id: "premium",
-    name: "Business Elite",
-    price: 99,
-    yearlyPrice: 990,
+    name: "Premium",
+    price: 39.000,
+    yearlyPrice: 390.000,
     billing: "per month",
     icon: Globe,
-    description: "Full suite for large-scale multi-branch operations.",
+    description: "Advanced plan for busy cafes with more branches and branding.",
     status: "active",
-    features: ["Up to 10 Branches", "Everything in Pro", "White Label Options", "Dedicated AM", "API Access", "Multi-tenant Management"],
-    limits: { branches: 10, tables: 999, products: 1000 },
+    features: ["Up to 3 Branches", "Everything in Standard", "White Label Branding", "Advanced Analytics", "Dedicated Support"],
+    limits: { branches: 3, tables: 100, products: 500, staff: 20 },
     color: "bg-accent/10 text-accent border-accent/20",
     popularity: 20
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    price: 249,
-    yearlyPrice: 2490,
+    price: 99.000,
+    yearlyPrice: 990.000,
     billing: "per month",
     icon: Users,
-    description: "Custom solutions for franchises and global chains.",
+    description: "Custom plan for large cafe groups and enterprise operations.",
     status: "active",
-    features: ["Unlimited Branches", "Custom Contracts", "SLA Guarantees", "SSO Integration", "On-site Training"],
-    limits: { branches: 999, tables: 999, products: 9999 },
+    features: ["Unlimited Branches", "Unlimited Tables", "Custom Contracts", "SLA Guarantees", "API Access"],
+    limits: { branches: 999, tables: 999, products: 9999, staff: 999 },
     color: "bg-indigo-500/10 text-indigo-600 border-indigo-200",
     popularity: 5
   }
@@ -106,11 +105,10 @@ const PLANS = [
 export default function PlansManagement() {
   return (
     <div className="space-y-8 pb-20 animate-in fade-in duration-500">
-      {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-headline font-bold text-foreground">Plans Management</h1>
-          <p className="text-muted-foreground mt-1">Configure and manage platform billing tiers, limits, and feature sets.</p>
+          <p className="text-muted-foreground mt-1">Configure and manage platform billing tiers, limits, and feature sets (OMR).</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" className="gap-2 bg-card">
@@ -125,13 +123,12 @@ export default function PlansManagement() {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { title: "Total Plans", value: "4", icon: Layers, color: "text-blue-600", bg: "bg-blue-50" },
           { title: "Active Plans", value: "4", icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
-          { title: "Most Popular", value: "Professional", icon: Star, color: "text-primary", bg: "bg-primary/5" },
-          { title: "Monthly Rev", value: "$42,850", icon: TrendingUp, color: "text-accent", bg: "bg-accent/5" },
+          { title: "Most Popular", value: "Standard", icon: Star, color: "text-primary", bg: "bg-primary/5" },
+          { title: "Monthly Rev", value: "16,450 OMR", icon: TrendingUp, color: "text-accent", bg: "bg-accent/5" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-sm overflow-hidden bg-card">
             <CardContent className="p-5 flex items-center gap-4">
@@ -147,7 +144,6 @@ export default function PlansManagement() {
         ))}
       </div>
 
-      {/* Plans Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {PLANS.map((plan) => (
           <Card key={plan.id} className={`relative border-none shadow-sm flex flex-col group hover:shadow-xl transition-all duration-300 ${plan.popular ? 'ring-2 ring-primary ring-offset-4' : ''}`}>
@@ -195,16 +191,16 @@ export default function PlansManagement() {
               </div>
               <div className="mt-6 flex flex-col">
                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-foreground">${plan.price}</span>
-                    <span className="text-muted-foreground text-sm font-medium">{plan.billing}</span>
+                    <span className="text-4xl font-black text-foreground">{plan.price.toFixed(3)}</span>
+                    <span className="text-muted-foreground text-sm font-medium">OMR / mo</span>
                  </div>
-                 <span className="text-xs text-muted-foreground mt-1 font-medium">or ${plan.yearlyPrice}/year (save 20%)</span>
+                 <span className="text-xs text-muted-foreground mt-1 font-medium">or {plan.yearlyPrice.toFixed(3)} OMR/year</span>
               </div>
             </CardHeader>
 
             <CardContent className="flex-1 space-y-6 pt-2">
               <div className="space-y-3">
-                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Core Features</p>
+                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Included Features</p>
                  <ul className="space-y-2.5">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="text-sm flex items-start gap-2.5">
@@ -219,25 +215,29 @@ export default function PlansManagement() {
 
               <div className="pt-4 border-t border-dashed space-y-4">
                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Platform Limits</p>
-                 <div className="grid grid-cols-3 gap-2">
-                    <div className="text-center p-2 rounded-lg bg-muted/30 border border-border/50">
+                 <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Branches</p>
-                       <p className="text-sm font-black mt-1">{plan.limits.branches === 999 ? '∞' : plan.limits.branches}</p>
+                       <p className="text-sm font-black mt-1">{plan.limits.branches === 999 ? 'Unlimited' : plan.limits.branches}</p>
                     </div>
-                    <div className="text-center p-2 rounded-lg bg-muted/30 border border-border/50">
+                    <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Tables</p>
-                       <p className="text-sm font-black mt-1">{plan.limits.tables === 999 ? '∞' : plan.limits.tables}</p>
+                       <p className="text-sm font-black mt-1">{plan.limits.tables === 999 ? 'Unlimited' : plan.limits.tables}</p>
                     </div>
-                    <div className="text-center p-2 rounded-lg bg-muted/30 border border-border/50">
+                    <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Products</p>
-                       <p className="text-sm font-black mt-1">{plan.limits.products}</p>
+                       <p className="text-sm font-black mt-1">{plan.limits.products === 9999 ? 'Unlimited' : plan.limits.products}</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-muted/30 border border-border/50">
+                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Staff</p>
+                       <p className="text-sm font-black mt-1">{plan.limits.staff === 999 ? 'Unlimited' : plan.limits.staff}</p>
                     </div>
                  </div>
               </div>
 
               <div className="space-y-2">
                  <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase">
-                    <span>Market Popularity</span>
+                    <span>Market Share</span>
                     <span>{plan.popularity}%</span>
                  </div>
                  <Progress value={plan.popularity} className="h-1.5" />
@@ -255,7 +255,6 @@ export default function PlansManagement() {
           </Card>
         ))}
 
-        {/* Add New Plan Placeholder */}
         <button className="border-2 border-dashed border-muted rounded-xl flex flex-col items-center justify-center p-12 text-muted-foreground hover:bg-muted/10 hover:border-primary/50 hover:text-primary transition-all group">
            <div className="h-14 w-14 rounded-full bg-muted/20 flex items-center justify-center mb-4 group-hover:bg-primary/10 transition-colors">
               <Plus className="h-8 w-8" />

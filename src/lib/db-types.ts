@@ -60,11 +60,16 @@ export interface Plan {
   uuid: string;
   name: string;
   slug: string;
+  description?: string;
   monthly_price: number;
   yearly_price: number;
+  currency: string;
+  billing_cycle_type: 'monthly' | 'yearly' | 'custom';
   max_branches: number;
   max_tables: number;
   max_products: number;
+  max_staff_users: number;
+  trial_days: number;
   is_popular: boolean;
   status: 'active' | 'inactive';
 }
@@ -79,6 +84,7 @@ export interface Subscription {
   end_date: string;
   amount: number;
   total_amount: number;
+  currency: string;
   status: SubscriptionStatus;
   payment_status: PaymentStatus;
   auto_renew: boolean;

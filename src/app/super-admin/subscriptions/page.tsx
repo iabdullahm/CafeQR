@@ -48,12 +48,12 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 const SUBSCRIPTIONS = [
-  { id: "SUB-8402", cafe: "Coffee Haven", plan: "Premium", status: "active", billing: "Monthly", amount: "$99.00", startDate: "Jan 12, 2024", expiryDate: "Feb 12, 2025", paymentStatus: "paid", autoRenew: true },
-  { id: "SUB-7291", cafe: "The Bean Sprout", plan: "Basic", status: "active", billing: "Yearly", amount: "$199.00", startDate: "Mar 05, 2024", expiryDate: "Mar 05, 2025", paymentStatus: "paid", autoRenew: true },
-  { id: "SUB-1042", cafe: "Rustic Roast", plan: "Pro", status: "past_due", billing: "Monthly", amount: "$49.00", startDate: "Oct 20, 2023", expiryDate: "Nov 20, 2024", paymentStatus: "unpaid", autoRenew: false },
-  { id: "SUB-3301", cafe: "Urban Brew", plan: "Enterprise", status: "active", billing: "Monthly", amount: "$249.00", startDate: "Jun 15, 2024", expiryDate: "Jul 15, 2025", paymentStatus: "paid", autoRenew: true },
-  { id: "SUB-0052", cafe: "Zen Coffee", plan: "Pro", status: "canceled", billing: "Monthly", amount: "$49.00", startDate: "Apr 02, 2024", expiryDate: "May 02, 2024", paymentStatus: "refunded", autoRenew: false },
-  { id: "SUB-9921", cafe: "Mountain Sips", plan: "Basic", status: "trial", billing: "Free", amount: "$0.00", startDate: "Oct 28, 2024", expiryDate: "Nov 11, 2024", paymentStatus: "n/a", autoRenew: false },
+  { id: "SUB-8402", cafe: "Coffee Haven", plan: "Premium", status: "active", billing: "Monthly", amount: "39.000 OMR", startDate: "Jan 12, 2024", expiryDate: "Feb 12, 2025", paymentStatus: "paid", autoRenew: true },
+  { id: "SUB-7291", cafe: "The Bean Sprout", plan: "Standard", status: "active", billing: "Yearly", amount: "190.000 OMR", startDate: "Mar 05, 2024", expiryDate: "Mar 05, 2025", paymentStatus: "paid", autoRenew: true },
+  { id: "SUB-1042", cafe: "Rustic Roast", plan: "Basic", status: "past_due", billing: "Monthly", amount: "9.000 OMR", startDate: "Oct 20, 2023", expiryDate: "Nov 20, 2024", paymentStatus: "unpaid", autoRenew: false },
+  { id: "SUB-3301", cafe: "Urban Brew", plan: "Enterprise", status: "active", billing: "Monthly", amount: "99.000 OMR", startDate: "Jun 15, 2024", expiryDate: "Jul 15, 2025", paymentStatus: "paid", autoRenew: true },
+  { id: "SUB-0052", cafe: "Zen Coffee", plan: "Standard", status: "canceled", billing: "Monthly", amount: "19.000 OMR", startDate: "Apr 02, 2024", expiryDate: "May 02, 2024", paymentStatus: "refunded", autoRenew: false },
+  { id: "SUB-9921", cafe: "Mountain Sips", plan: "Basic", status: "trial", billing: "Free", amount: "0.000 OMR", startDate: "Oct 28, 2024", expiryDate: "Nov 11, 2024", paymentStatus: "n/a", autoRenew: false },
 ];
 
 export default function SubscriptionManagement() {
@@ -84,7 +84,7 @@ export default function SubscriptionManagement() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-headline font-bold text-foreground">Subscription Management</h1>
-          <p className="text-muted-foreground mt-1">Manage platform billing cycles, recurring revenue, and tenant plans.</p>
+          <p className="text-muted-foreground mt-1">Manage platform billing cycles, recurring revenue, and tenant plans (OMR).</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
            <Button variant="outline" className="gap-2 bg-card">
@@ -106,7 +106,7 @@ export default function SubscriptionManagement() {
                </CardTitle>
             </CardHeader>
             <CardContent>
-               <div className="text-3xl font-black text-primary">$42,850.00</div>
+               <div className="text-3xl font-black text-primary">16,450.000 OMR</div>
                <p className="text-xs text-green-600 font-bold mt-1.5 flex items-center gap-1">
                   +4.2% <span className="text-muted-foreground font-medium text-[10px]">vs last month</span>
                </p>
@@ -177,7 +177,7 @@ export default function SubscriptionManagement() {
                     <SelectContent>
                        <SelectItem value="all">All Plans</SelectItem>
                        <SelectItem value="basic">Basic</SelectItem>
-                       <SelectItem value="pro">Pro</SelectItem>
+                       <SelectItem value="standard">Standard</SelectItem>
                        <SelectItem value="premium">Premium</SelectItem>
                        <SelectItem value="enterprise">Enterprise</SelectItem>
                     </SelectContent>
@@ -185,20 +185,6 @@ export default function SubscriptionManagement() {
                  <Button variant="outline" size="icon" className="h-10 w-10">
                     <Filter className="h-4 w-4" />
                  </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                 <span className="text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Sort by:</span>
-                 <Select defaultValue="expiry">
-                    <SelectTrigger className="w-[160px] h-10 bg-transparent border-none font-bold text-primary focus:ring-0">
-                       <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                       <SelectItem value="expiry">Expiry Date</SelectItem>
-                       <SelectItem value="amount">Highest Amount</SelectItem>
-                       <SelectItem value="newest">Newest First</SelectItem>
-                       <SelectItem value="name">Cafe Name A-Z</SelectItem>
-                    </SelectContent>
-                 </Select>
               </div>
            </div>
         </CardHeader>
@@ -208,7 +194,7 @@ export default function SubscriptionManagement() {
                <TableHeader>
                  <TableRow className="bg-muted/30 hover:bg-muted/30">
                    <TableHead className="font-bold whitespace-nowrap px-6">Cafe & Subscription</TableHead>
-                   <TableHead className="font-bold whitespace-nowrap">Plan Details</TableHead>
+                   <TableHead className="font-bold whitespace-nowrap">Plan Tier</TableHead>
                    <TableHead className="font-bold whitespace-nowrap text-center">Amount</TableHead>
                    <TableHead className="font-bold whitespace-nowrap">Dates (Start/Expiry)</TableHead>
                    <TableHead className="font-bold whitespace-nowrap">Status</TableHead>
@@ -233,8 +219,8 @@ export default function SubscriptionManagement() {
                      </TableCell>
                      <TableCell>
                         <div className="flex flex-col">
-                           <span className="font-bold text-sm">{sub.plan} Tier</span>
-                           <span className="text-xs text-muted-foreground">{sub.billing} Billing</span>
+                           <span className="font-bold text-sm">{sub.plan}</span>
+                           <span className="text-xs text-muted-foreground">{sub.billing}</span>
                         </div>
                      </TableCell>
                      <TableCell className="text-center">
@@ -299,66 +285,8 @@ export default function SubscriptionManagement() {
                </TableBody>
              </Table>
            </div>
-           
-           <div className="p-4 border-t flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/10">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Showing 6 of 1,152 active subscriptions</p>
-              <div className="flex items-center gap-2">
-                 <Button variant="outline" size="sm" className="h-8 px-4 font-bold" disabled>Previous</Button>
-                 <div className="flex items-center gap-1">
-                    <Button variant="secondary" size="sm" className="h-8 w-8 p-0 font-bold">1</Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 font-bold">2</Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 font-bold">3</Button>
-                 </div>
-                 <Button variant="outline" size="sm" className="h-8 px-4 font-bold">Next</Button>
-              </div>
-           </div>
         </CardContent>
       </Card>
-
-      <div className="grid gap-6 md:grid-cols-2">
-         <Card className="border-none shadow-sm bg-card">
-            <CardHeader>
-               <CardTitle className="text-lg">Subscription Churn Analysis</CardTitle>
-               <CardDescription>Track subscription cancellations and reasons over time.</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[200px] flex items-end justify-between gap-4 px-2">
-               {[10, 15, 8, 12, 25, 18, 14, 20, 10, 5, 12, 8].map((v, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                     <div className="w-full bg-destructive/10 rounded-t-sm relative group" style={{ height: `${v * 4}%` }}>
-                        <div className="absolute inset-x-0 bottom-0 bg-destructive/40 rounded-t-sm transition-all group-hover:bg-destructive" style={{ height: '30%' }} />
-                     </div>
-                     <span className="text-[10px] text-muted-foreground">M{i+1}</span>
-                  </div>
-               ))}
-            </CardContent>
-         </Card>
-         <Card className="border-none shadow-sm bg-card">
-            <CardHeader>
-               <CardTitle className="text-lg">Recent Failed Payments</CardTitle>
-               <CardDescription>Accounts that require manual intervention or dunning.</CardDescription>
-            </CardHeader>
-            <CardContent>
-               <div className="space-y-4">
-                  {[
-                    { name: "Rustic Roast", id: "SUB-1042", amount: "$49.00", reason: "Card Expired" },
-                    { name: "Blue Sky Cafe", id: "SUB-2281", amount: "$99.00", reason: "Insufficient Funds" },
-                  ].map((f, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-destructive/5 border border-destructive/10">
-                       <div className="flex flex-col">
-                          <span className="font-bold text-sm">{f.name}</span>
-                          <span className="text-[10px] text-muted-foreground uppercase font-mono">{f.id}</span>
-                       </div>
-                       <div className="text-right">
-                          <p className="text-sm font-black text-destructive">{f.amount}</p>
-                          <p className="text-[10px] text-muted-foreground">{f.reason}</p>
-                       </div>
-                    </div>
-                  ))}
-               </div>
-               <Button variant="link" className="w-full mt-4 text-xs font-bold text-primary">View All Billing Alerts</Button>
-            </CardContent>
-         </Card>
-      </div>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -82,33 +81,33 @@ const ROLES_PERMISSIONS = [
   },
   { 
     role: "Support", 
-    description: "Limited access to help tenants with menu and table settings.",
+    description: "Handles customer support and support tickets.",
     userCount: 8,
-    permissions: ["view_dashboard", "manage_cafes", "view_reports"]
+    permissions: ["view_dashboard", "view_support_tickets", "manage_support_tickets"]
   },
   { 
     role: "Finance", 
     description: "Access to billing, payments, and financial reporting.",
     userCount: 3,
-    permissions: ["view_dashboard", "manage_payments", "view_reports"]
+    permissions: ["view_dashboard", "manage_payments", "manage_invoices"]
   },
   { 
     role: "Sales", 
-    description: "Lead management and view-only access to cafe statuses.",
+    description: "Handles subscriptions and customer onboarding.",
     userCount: 5,
-    permissions: ["view_dashboard", "manage_cafes"]
+    permissions: ["view_dashboard", "manage_cafes", "manage_subscriptions", "manage_plans"]
   }
 ];
 
 const PERMISSION_LIST = [
   { id: "view_dashboard", label: "View Dashboard", desc: "Access to the main overview and live metrics." },
   { id: "manage_cafes", label: "Manage Cafes", desc: "Ability to add, edit, and suspend tenant cafes." },
-  { id: "manage_subs", label: "Manage Subscriptions", desc: "View and modify cafe billing cycles." },
+  { id: "manage_subscriptions", label: "Manage Subscriptions", desc: "View and modify cafe billing cycles." },
   { id: "manage_plans", label: "Manage Plans", desc: "Configure subscription tiers and limits." },
-  { id: "manage_payments", label: "Manage Payments", desc: "Handle invoices, refunds, and financial data." },
-  { id: "manage_users", label: "Manage Users", desc: "Administrator team and role management." },
-  { id: "view_reports", label: "View Reports", desc: "Access to advanced analytics and data exports." },
-  { id: "manage_settings", label: "Manage Settings", desc: "System-wide platform configuration." },
+  { id: "manage_payments", label: "Manage Payments", desc: "Handle card payments and financial data." },
+  { id: "manage_invoices", label: "Manage Invoices", desc: "Generate and manage platform invoices." },
+  { id: "manage_support_tickets", label: "Manage Support", desc: "Respond to and resolve tenant issues." },
+  { id: "impersonate_cafe_admin", label: "Impersonate", desc: "Login as a cafe administrator for troubleshooting." },
 ];
 
 export default function UsersRolesManagement() {
@@ -136,7 +135,6 @@ export default function UsersRolesManagement() {
 
   return (
     <div className="space-y-8 pb-20 animate-in fade-in duration-500">
-      {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-headline font-bold text-foreground">Users & Roles</h1>
@@ -155,7 +153,6 @@ export default function UsersRolesManagement() {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { title: "Total Users", value: "22", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
@@ -195,18 +192,6 @@ export default function UsersRolesManagement() {
                    <Button variant="outline" size="sm" className="gap-2 h-10 px-4">
                       <Filter className="h-4 w-4" /> Filters
                    </Button>
-                   <Select defaultValue="all">
-                      <SelectTrigger className="w-[180px] h-10">
-                         <SelectValue placeholder="All Roles" />
-                      </SelectTrigger>
-                      <SelectContent>
-                         <SelectItem value="all">All Roles</SelectItem>
-                         <SelectItem value="super_admin">Super Admin</SelectItem>
-                         <SelectItem value="admin">Admin</SelectItem>
-                         <SelectItem value="finance">Finance</SelectItem>
-                         <SelectItem value="support">Support</SelectItem>
-                      </SelectContent>
-                   </Select>
                 </div>
               </div>
             </CardHeader>
@@ -304,7 +289,7 @@ export default function UsersRolesManagement() {
         <TabsContent value="roles" className="space-y-6">
            <div className="grid gap-6 lg:grid-cols-12">
               <div className="lg:col-span-4 space-y-4">
-                 <h2 className="text-lg font-bold px-1">Available Roles</h2>
+                 <h2 className="text-lg font-bold px-1">Seeded Roles</h2>
                  <div className="space-y-3">
                     {ROLES_PERMISSIONS.map((r, i) => (
                       <Card key={i} className={`cursor-pointer transition-all hover:shadow-md border-l-4 ${i === 0 ? 'border-l-primary bg-primary/5' : 'border-l-transparent'}`}>
@@ -329,7 +314,7 @@ export default function UsersRolesManagement() {
                        <div className="flex items-center justify-between">
                           <div>
                              <CardTitle>Permissions Matrix</CardTitle>
-                             <CardDescription>Managing access for <span className="text-primary font-bold">Super Admin</span> role.</CardDescription>
+                             <CardDescription>Managing seeded permissions for the <span className="text-primary font-bold">Super Admin</span> role.</CardDescription>
                           </div>
                           <Button size="sm" className="bg-primary">Save Changes</Button>
                        </div>
@@ -343,7 +328,7 @@ export default function UsersRolesManagement() {
                                 </div>
                                 <div>
                                    <p className="font-bold">Full System Override</p>
-                                   <p className="text-xs text-muted-foreground">This role has bypass-all permissions by default.</p>
+                                   <p className="text-xs text-muted-foreground">This role has bypass-all permissions by default (Seeded).</p>
                                 </div>
                              </div>
                              <Switch checked={true} />
@@ -381,11 +366,3 @@ export default function UsersRolesManagement() {
     </div>
   );
 }
-
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
