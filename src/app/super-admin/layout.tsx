@@ -1,17 +1,4 @@
 import { AdminSidebar } from "@/components/admin-sidebar";
-import { 
-  LayoutDashboard, 
-  Store, 
-  Layers, 
-  CreditCard, 
-  Wallet, 
-  BarChart3, 
-  UserCog, 
-  LifeBuoy, 
-  Bell, 
-  Settings, 
-  FileSearch 
-} from "lucide-react";
 
 export default function SuperAdminLayout({
   children,
@@ -19,17 +6,17 @@ export default function SuperAdminLayout({
   children: React.ReactNode;
 }) {
   const navItems = [
-    { title: "Dashboard", href: "/super-admin", icon: LayoutDashboard },
-    { title: "Cafes", href: "/super-admin/cafes", icon: Store },
-    { title: "Subscriptions", href: "/super-admin/subscriptions", icon: CreditCard },
-    { title: "Plans", href: "/super-admin/plans", icon: Layers },
-    { title: "Payments", href: "/super-admin/payments", icon: Wallet },
-    { title: "Reports", href: "/super-admin/reports", icon: BarChart3 },
-    { title: "Users & Roles", href: "/super-admin/users-roles", icon: UserCog },
-    { title: "Support Tickets", href: "/super-admin/support", icon: LifeBuoy },
-    { title: "Notifications", href: "/super-admin/notifications", icon: Bell },
-    { title: "System Settings", href: "/super-admin/settings", icon: Settings },
-    { title: "Audit Logs", href: "/super-admin/audit-logs", icon: FileSearch },
+    { title: "Dashboard", href: "/super-admin", icon: "LayoutDashboard" },
+    { title: "Cafes", href: "/super-admin/cafes", icon: "Store" },
+    { title: "Subscriptions", href: "/super-admin/subscriptions", icon: "CreditCard" },
+    { title: "Plans", href: "/super-admin/plans", icon: "Layers" },
+    { title: "Payments", href: "/super-admin/payments", icon: "Wallet" },
+    { title: "Reports", href: "/super-admin/reports", icon: "BarChart3" },
+    { title: "Users & Roles", href: "/super-admin/users-roles", icon: "UserCog" },
+    { title: "Support Tickets", href: "/super-admin/support", icon: "LifeBuoy" },
+    { title: "Notifications", href: "/super-admin/notifications", icon: "Bell" },
+    { title: "System Settings", href: "/super-admin/settings", icon: "Settings" },
+    { title: "Audit Logs", href: "/super-admin/audit-logs", icon: "FileSearch" },
   ];
 
   return (

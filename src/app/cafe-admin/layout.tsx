@@ -1,5 +1,4 @@
 import { AdminSidebar } from "@/components/admin-sidebar";
-import { LayoutDashboard, Store, QrCode, ClipboardList, Users, Settings, ChefHat, MapPin } from "lucide-react";
 
 export default function CafeAdminLayout({
   children,
@@ -7,13 +6,13 @@ export default function CafeAdminLayout({
   children: React.ReactNode;
 }) {
   const navItems = [
-    { title: "Dashboard", href: "/cafe-admin", icon: LayoutDashboard },
-    { title: "Orders", href: "/cafe-admin/orders", icon: ClipboardList },
-    { title: "Menu", href: "/cafe-admin/menu", icon: ChefHat },
-    { title: "Branches", href: "/cafe-admin/branches", icon: MapPin },
-    { title: "Tables", href: "/cafe-admin/tables", icon: Store },
-    { title: "QR Codes", href: "/cafe-admin/qr-codes", icon: QrCode },
-    { title: "Loyalty", href: "/cafe-admin/loyalty", icon: Users },
+    { title: "Dashboard", href: "/cafe-admin", icon: "LayoutDashboard" },
+    { title: "Orders", href: "/cafe-admin/orders", icon: "ClipboardList" },
+    { title: "Menu", href: "/cafe-admin/menu", icon: "ChefHat" },
+    { title: "Branches", href: "/cafe-admin/branches", icon: "MapPin" },
+    { title: "Tables", href: "/cafe-admin/tables", icon: "Store" },
+    { title: "QR Codes", href: "/cafe-admin/qr-codes", icon: "QrCode" },
+    { title: "Loyalty", href: "/cafe-admin/loyalty", icon: "Users" },
   ];
 
   return (
