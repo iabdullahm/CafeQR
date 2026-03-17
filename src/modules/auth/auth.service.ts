@@ -9,16 +9,17 @@ export class AuthService {
   async login(input: LoginInput) {
     // In a real app, we would use prisma.user.findUnique
     // For now, mirroring the mock login from seed data
-    if (input.email === 'admin@cafeqr.com' && input.password === 'admin123') {
+    // Supporting '123456' as per user's API spec request
+    if (input.email === 'admin@cafeqr.com' && (input.password === '123456' || input.password === 'admin123')) {
       const user = {
-        id: '1',
+        id: 1,
         email: 'admin@cafeqr.com',
         role: 'super_admin',
         full_name: 'Super Admin'
       };
 
       const token = generateToken({
-        userId: user.id,
+        userId: String(user.id),
         email: user.email,
         role: user.role
       });
@@ -32,7 +33,7 @@ export class AuthService {
   async getMe(userId: string) {
     // Mock user retrieval
     return {
-      id: userId,
+      id: parseInt(userId),
       email: 'admin@cafeqr.com',
       fullName: 'Super Admin',
       role: 'super_admin'
