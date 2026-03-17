@@ -1,3 +1,4 @@
+
 import { loginSchema } from './auth.validation';
 import { loginUser, getCurrentUser } from './auth.service';
 import { successResponse, errorResponse } from '../../utils/api-response';
@@ -8,13 +9,25 @@ import { successResponse, errorResponse } from '../../utils/api-response';
 
 export const login = async (req: Request) => {
   try {
-    const body = await req.json();
-    const validatedData = loginSchema.parse(body);
-    const data = await loginUser(validatedData);
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return errorResponse('Invalid request body', 400);
+    }
+
+    // Validate request
+    const validationResult = loginSchema.safeParse(body);
+    if (!validationResult.success) {
+      return errorResponse(validationResult.error.errors[0].message, 400);
+    }
+
+    // Process login
+    const data = await loginUser(validationResult.data);
 
     return successResponse('Login successful', data);
   } catch (error: any) {
-    return errorResponse(error.message || 'Login failed', 401);
+    return errorResponse(error.message || 'Authentication failed', 401);
   }
 };
 

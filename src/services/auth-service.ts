@@ -4,12 +4,15 @@ import { type LoginInput } from '@/lib/validations/auth';
 
 /**
  * @fileOverview Mock Auth Service for fallback or client-side logic.
+ * This service is kept in sync with the backend module for consistency.
  */
 
 export class AuthService {
   async login(input: LoginInput) {
+    const normalizedEmail = input.email.toLowerCase().trim();
+
     // Sync with demo credentials provided in the UI
-    if (input.email === 'admin@cafeqr.com' && input.password === '123456') {
+    if (normalizedEmail === 'admin@cafeqr.com' && input.password === '123456') {
       const user = {
         id: '1',
         email: 'admin@cafeqr.com',

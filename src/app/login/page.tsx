@@ -5,7 +5,7 @@ import { useState } from 'react';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 import { useRouter } from 'next/navigation';
-import { Coffee } from 'lucide-react';
+import { Coffee, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -26,7 +26,11 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      const res = await api.post('/auth/login', { email, password });
+      const res = await api.post('/auth/login', { 
+        email: email.trim(), 
+        password 
+      });
+      
       const { token, user } = res.data.data;
       setAuth(user, token);
       
@@ -35,16 +39,18 @@ export default function LoginPage() {
         description: `Logged in as ${user.full_name}`,
       });
 
-      if (user.roles.includes('super_admin')) {
+      // Simple routing based on user roles
+      if (user.roles && (user.roles.includes('super_admin') || user.roles.includes('admin'))) {
         router.push('/super-admin');
       } else {
         router.push('/cafe-admin');
       }
     } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || "Invalid credentials";
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: err.response?.data?.message || "Invalid credentials",
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
@@ -53,7 +59,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md shadow-lg border-none">
+      <Card className="w-full max-w-md shadow-lg border-none animate-in fade-in zoom-in duration-300">
         <CardHeader className="space-y-2 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Coffee className="h-6 w-6" />
@@ -72,6 +78,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
+                autoComplete="email"
                 required
               />
             </div>
@@ -84,6 +91,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
+                autoComplete="current-password"
                 required
               />
             </div>
@@ -92,10 +100,17 @@ export default function LoginPage() {
               className="w-full bg-primary font-bold h-11"
               disabled={isLoading}
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : "Sign In"}
             </Button>
-            <div className="text-center text-xs text-muted-foreground mt-4">
-              <p>Demo Admin: admin@cafeqr.com / 123456</p>
+            <div className="text-center p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground mt-4">
+              <p className="font-bold mb-1">Demo Access:</p>
+              <p>Email: admin@cafeqr.com</p>
+              <p>Password: 123456</p>
             </div>
           </form>
         </CardContent>
