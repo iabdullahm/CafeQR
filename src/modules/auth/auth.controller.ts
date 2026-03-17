@@ -1,7 +1,10 @@
-
 import { loginSchema } from './auth.validation';
 import { loginUser, getCurrentUser } from './auth.service';
 import { successResponse, errorResponse } from '../../utils/api-response';
+
+/**
+ * @fileOverview Auth Controller handles login and current user requests.
+ */
 
 export const login = async (req: Request) => {
   try {
