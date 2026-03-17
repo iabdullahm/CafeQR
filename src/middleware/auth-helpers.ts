@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { verifyToken, TokenPayload } from '@/utils/jwt';
 import { errorResponse } from '@/utils/api-response';
@@ -40,4 +39,15 @@ export async function withAuth(
   }
 
   return handler(user);
+}
+
+/**
+ * Specifically named role wrapper to match dashboard controller requirements
+ */
+export async function withRole(
+  req: Request,
+  allowedRoles: string[],
+  handler: (user: TokenPayload) => Promise<NextResponse>
+) {
+  return withAuth(req, allowedRoles, handler);
 }
