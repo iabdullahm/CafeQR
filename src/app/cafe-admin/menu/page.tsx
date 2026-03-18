@@ -7,26 +7,39 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Wand2, Edit, Trash2, SwitchCamera, Coffee, Pizza, IceCream } from "lucide-react";
+import { Plus, Search, Wand2, Edit, Trash2, Coffee, Pizza, IceCream } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { generateMenuDescription } from "@/ai/flows/generate-menu-description";
 import { useToast } from "@/hooks/use-toast";
-
-const INITIAL_PRODUCTS = [
-  { id: "1", name: "Classic Espresso", price: 4.50, category: "Coffee", active: true, description: "Pure shot of dark roasted beans." },
-  { id: "2", name: "Cappuccino", price: 5.50, category: "Coffee", active: true, description: "Balanced espresso with micro-foam." },
-  { id: "3", name: "Croissant", price: 3.50, category: "Pastry", active: true, description: "Flaky buttery perfection." },
-];
+import { useUser, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
+import { collection, query, where, doc, setDoc, deleteDoc } from "firebase/firestore";
 
 export default function MenuManagement() {
-  const [products, setProducts] = useState(INITIAL_PRODUCTS);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: "", ingredients: "", description: "" });
+  const { user } = useUser();
+  const db = useFirestore();
   const { toast } = useToast();
+  
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [newProduct, setNewProduct] = useState({ name: "", ingredients: "", description: "", price: "0", category: "Coffee" });
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const cafeId = user?.email?.includes('urban') ? 'urban-brew-cafe' : 'coastal-cup';
+
+  const productsQuery = useMemoFirebase(() => {
+    if (!db || !cafeId) return null;
+    return query(collection(db, 'cafes', cafeId, 'products'));
+  }, [db, cafeId]);
+  const { data: products, isLoading } = useCollection(productsQuery);
+
+  const categoriesQuery = useMemoFirebase(() => {
+    if (!db || !cafeId) return null;
+    return query(collection(db, 'cafes', cafeId, 'categories'));
+  }, [db, cafeId]);
+  const { data: categories } = useCollection(categoriesQuery);
 
   const handleGenerateDescription = async () => {
     if (!newProduct.name || !newProduct.ingredients) {
-      toast({ title: "Error", description: "Provide name and ingredients first." });
+      toast({ title: "Details Required", description: "Please provide a name and ingredients first.", variant: "destructive" });
       return;
     }
     setIsGenerating(true);
@@ -37,28 +50,63 @@ export default function MenuManagement() {
         tasteProfile: "delicious and fresh",
       });
       setNewProduct(prev => ({ ...prev, description: result.description }));
-    } catch (e) {
-      toast({ title: "Generation failed", variant: "destructive" });
+      toast({ title: "Description Generated!", description: "AI has crafted an appetizing text for you." });
+    } catch (e: any) {
+      console.error(e);
+      if (e.message?.includes('429') || e.status === 429) {
+        toast({ 
+          title: "AI Service Busy", 
+          description: "The AI service is currently at capacity. Please try again in a few seconds.", 
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: "Generation failed", description: "We couldn't reach the AI describer right now.", variant: "destructive" });
+      }
     } finally {
       setIsGenerating(false);
     }
   };
 
+  const handleCreateProduct = async () => {
+    if (!db || !cafeId || !newProduct.name) return;
+    
+    const productId = newProduct.name.toLowerCase().replace(/\s+/g, '-');
+    const productRef = doc(db, 'cafes', cafeId, 'products', productId);
+    
+    await setDoc(productRef, {
+      ...newProduct,
+      price: Number(newProduct.price),
+      cafeId,
+      isActive: true,
+      createdAt: new Date().toISOString()
+    });
+
+    setNewProduct({ name: "", ingredients: "", description: "", price: "0", category: "Coffee" });
+    toast({ title: "Product Created", description: `${newProduct.name} is now on your menu.` });
+  };
+
+  const filteredProducts = products?.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    p.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-headline font-bold text-primary">Menu Management</h1>
-          <p className="text-muted-foreground">Manage your categories and products.</p>
+          <p className="text-muted-foreground">Manage your cafe's digital menu items and pricing.</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-10 w-[200px] md:w-[300px]" placeholder="Search products..." />
+            <Input 
+              className="pl-10 w-[200px] md:w-[300px]" 
+              placeholder="Search products..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <Button className="bg-primary">
-            <Plus className="h-4 w-4 mr-2" /> Add Item
-          </Button>
         </div>
       </div>
 
@@ -66,50 +114,64 @@ export default function MenuManagement() {
         <div className="lg:col-span-8">
           <Tabs defaultValue="all" className="w-full">
             <TabsList className="bg-card border mb-4 p-1 h-auto flex flex-wrap">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="coffee" className="gap-2"><Coffee className="h-4 w-4" /> Coffee</TabsTrigger>
-              <TabsTrigger value="pastry" className="gap-2"><Pizza className="h-4 w-4" /> Pastry</TabsTrigger>
-              <TabsTrigger value="dessert" className="gap-2"><IceCream className="h-4 w-4" /> Dessert</TabsTrigger>
+              <TabsTrigger value="all">All Items</TabsTrigger>
+              <TabsTrigger value="Coffee" className="gap-2"><Coffee className="h-4 w-4" /> Coffee</TabsTrigger>
+              <TabsTrigger value="Food" className="gap-2"><Pizza className="h-4 w-4" /> Food</TabsTrigger>
+              <TabsTrigger value="Dessert" className="gap-2"><IceCream className="h-4 w-4" /> Dessert</TabsTrigger>
             </TabsList>
+            
             <TabsContent value="all" className="mt-0">
-               <div className="grid gap-4 sm:grid-cols-2">
-                 {products.map((p) => (
-                   <Card key={p.id} className="overflow-hidden group">
-                      <div className="aspect-[16/9] bg-muted relative overflow-hidden">
-                        <img 
-                          src={`https://picsum.photos/seed/${p.id}/400/225`} 
-                          alt={p.name}
-                          className="object-cover w-full h-full group-hover:scale-105 transition-transform"
-                        />
-                        <Badge className="absolute top-2 right-2 bg-background/80 text-foreground backdrop-blur-sm">
-                           ${p.price.toFixed(2)}
-                        </Badge>
-                      </div>
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                           <div>
-                              <h3 className="font-bold text-lg">{p.name}</h3>
-                              <p className="text-xs text-muted-foreground">{p.category}</p>
-                           </div>
-                           <div className="flex gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                           </div>
+               {isLoading ? (
+                 <div className="grid gap-4 sm:grid-cols-2">
+                   {[1,2,3,4].map(i => <div key={i} className="h-48 rounded-2xl bg-muted animate-pulse" />)}
+                 </div>
+               ) : (
+                 <div className="grid gap-4 sm:grid-cols-2">
+                   {filteredProducts?.map((p) => (
+                     <Card key={p.id} className="overflow-hidden group border-none shadow-sm hover:shadow-md transition-all">
+                        <div className="aspect-[16/9] bg-muted relative overflow-hidden">
+                          <img 
+                            src={`https://picsum.photos/seed/${p.id}/400/225`} 
+                            alt={p.name}
+                            className="object-cover w-full h-full group-hover:scale-105 transition-transform"
+                          />
+                          <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground">
+                             OMR {Number(p.price).toFixed(3)}
+                          </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{p.description}</p>
-                      </CardContent>
-                   </Card>
-                 ))}
-               </div>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                             <div>
+                                <h3 className="font-bold text-lg">{p.name}</h3>
+                                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">{p.category}</p>
+                             </div>
+                             <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteDoc(doc(db!, 'cafes', cafeId!, 'products', p.id))}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                             </div>
+                          </div>
+                          <p className="text-sm text-muted-foreground line-clamp-2 italic">{p.description}</p>
+                        </CardContent>
+                     </Card>
+                   ))}
+                   {filteredProducts?.length === 0 && (
+                     <div className="col-span-full py-20 text-center border-2 border-dashed rounded-3xl text-muted-foreground">
+                        No products found matching your search.
+                     </div>
+                   )}
+                 </div>
+               )}
             </TabsContent>
           </Tabs>
         </div>
 
         <div className="lg:col-span-4">
-          <Card className="sticky top-24">
+          <Card className="sticky top-24 border-none shadow-lg bg-card overflow-hidden">
+            <div className="h-2 bg-primary" />
             <CardHeader>
-              <CardTitle>Quick Add Product</CardTitle>
-              <CardDescription>Use AI to generate descriptions instantly.</CardDescription>
+              <CardTitle>Add New Product</CardTitle>
+              <CardDescription>Fill in the details to expand your menu.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -119,6 +181,25 @@ export default function MenuManagement() {
                   value={newProduct.name}
                   onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Price (OMR)</Label>
+                  <Input 
+                    type="number"
+                    step="0.100"
+                    value={newProduct.price}
+                    onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <Input 
+                    placeholder="e.g. Coffee"
+                    value={newProduct.category}
+                    onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Key Ingredients</Label>
@@ -130,26 +211,28 @@ export default function MenuManagement() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Description</Label>
+                  <Label>AI Description</Label>
                   <Button 
                     variant="link" 
                     size="sm" 
-                    className="h-auto p-0 text-accent font-bold flex gap-1 items-center"
+                    className="h-auto p-0 text-accent font-bold flex gap-1 items-center hover:no-underline"
                     onClick={handleGenerateDescription}
                     disabled={isGenerating}
                   >
-                    <Wand2 className="h-3 w-3" />
-                    {isGenerating ? "Generating..." : "Generate AI"}
+                    <Wand2 className={`h-3.5 w-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
+                    {isGenerating ? "Crafting..." : "Generate with AI"}
                   </Button>
                 </div>
                 <Textarea 
-                  className="min-h-[100px]" 
+                  className="min-h-[100px] bg-muted/20" 
                   placeholder="Appetizing description of your item..." 
                   value={newProduct.description}
                   onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
                 />
               </div>
-              <Button className="w-full bg-primary">Create Product</Button>
+              <Button className="w-full bg-primary h-12 text-lg font-bold rounded-xl" onClick={handleCreateProduct}>
+                Add to Menu
+              </Button>
             </CardContent>
           </Card>
         </div>
