@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -7,75 +8,67 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Fetches the data of the currently signed-in user without recursion
-    function getSelfData() {
+    function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && getUserData().role == 'SUPER_ADMIN';
+    }
+
+    function belongsToCafe(cafeId) {
+      return isSignedIn() && (getUserData().cafeId == cafeId || isSuperAdmin());
     }
 
     // --- RULES ---
 
     match /plans/{planId} {
       allow read: if true;
-      allow write: if isSignedIn() && getSelfData().role == 'SUPER_ADMIN';
+      allow write: if isSuperAdmin();
     }
 
     match /users/{userId} {
       // Allow users to read and update their own profile
-      allow get, update: if isSignedIn() && request.auth.uid == userId;
+      // IMPORTANT: Non-recursive rule for self
+      allow get, update, create: if isSignedIn() && request.auth.uid == userId;
       
-      // Allow creation of own profile (initial signup)
-      allow create: if isSignedIn() && request.auth.uid == userId;
-
       // Super Admins can manage all users
-      allow list, get, write: if isSignedIn() && getSelfData().role == 'SUPER_ADMIN';
+      allow list: if isSuperAdmin();
+      allow read, write: if isSuperAdmin();
     }
 
     match /cafes/{cafeId} {
-      // Cafes are public for menu viewing
+      // Public menu view
       allow get: if true;
       
-      // Admin list/create
-      allow list, create: if isSignedIn() && getSelfData().role == 'SUPER_ADMIN';
+      // Creation restricted to Super Admins
+      allow list, create: if isSuperAdmin();
       
-      // Cafe staff read/write within their tenant
-      allow read: if isSignedIn() && (getSelfData().cafeId == cafeId || getSelfData().role == 'SUPER_ADMIN');
-      allow update: if isSignedIn() && (
-        (getSelfData().cafeId == cafeId && (getSelfData().role == 'OWNER' || getSelfData().role == 'MANAGER')) ||
-        getSelfData().role == 'SUPER_ADMIN'
-      );
+      // Operational access for cafe staff
+      allow read: if belongsToCafe(cafeId);
+      allow update: if belongsToCafe(cafeId) && 
+        (getUserData().role in ['OWNER', 'MANAGER'] || isSuperAdmin());
 
-      // Sub-collections (branches, categories, products, orders, etc.)
+      // Simplified Sub-collections Rules (All scoped under cafeId)
       match /{allSubcollections=**} {
-        allow read: if isSignedIn() && (getSelfData().cafeId == cafeId || getSelfData().role == 'SUPER_ADMIN');
-        
-        // Operation-specific writes
-        allow write: if isSignedIn() && (
-          (getSelfData().cafeId == cafeId && (getSelfData().role == 'OWNER' || getSelfData().role == 'MANAGER')) ||
-          getSelfData().role == 'SUPER_ADMIN'
-        );
+        allow read: if belongsToCafe(cafeId);
+        allow write: if belongsToCafe(cafeId) && 
+          (getUserData().role in ['OWNER', 'MANAGER'] || isSuperAdmin());
       }
       
-      // Allow public customers to create orders
+      // Specific Public Overrides
       match /orders/{orderId} {
-        allow create: if true;
+        allow create: if true; // Customers can create orders
       }
-    }
-    
-    // --- COLLECTION GROUP RULES ---
-    // Specifically optimized for the Cafe Admin Dashboard cross-branch queries
-
-    match /{path=**}/tables/{tableId} {
-      allow list: if isSignedIn() && (
-        resource.data.cafeId == getSelfData().cafeId ||
-        getSelfData().role == 'SUPER_ADMIN'
-      );
-    }
-
-    match /{path=**}/orders/{orderId} {
-      allow list: if isSignedIn() && (
-        resource.data.cafeId == getSelfData().cafeId ||
-        getSelfData().role == 'SUPER_ADMIN'
-      );
+      match /products/{productId} {
+        allow get: if true; // Customers can see products
+      }
+      match /categories/{categoryId} {
+        allow list, get: if true; // Customers can see categories
+      }
+      match /tables/{tableId} {
+        allow get: if true; // Customers can see table status via scan
+      }
     }
   }
 }

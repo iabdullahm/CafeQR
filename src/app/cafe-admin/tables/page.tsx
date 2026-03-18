@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -15,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUser, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
-import { collection, query, doc, setDoc, deleteDoc, collectionGroup, where } from "firebase/firestore";
+import { collection, query, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 export default function TablesManagement() {
@@ -25,10 +26,10 @@ export default function TablesManagement() {
   
   const cafeId = user?.email?.includes('urban') ? 'urban-brew-cafe' : 'coastal-cup';
 
+  // Optimized Scoped Query for Tables
   const tablesQuery = useMemoFirebase(() => {
     if (!db || !cafeId) return null;
-    // Use collection group to see all tables for this cafe
-    return query(collectionGroup(db, 'tables'), where('cafeId', '==', cafeId));
+    return query(collection(db, 'cafes', cafeId, 'tables'));
   }, [db, cafeId]);
   const { data: tables, isLoading } = useCollection(tablesQuery);
 
@@ -49,7 +50,7 @@ export default function TablesManagement() {
     
     const selectedBranch = branches[0]; // Default to first branch for demo
     const tableId = `T-${number}`;
-    const tableRef = doc(db, 'cafes', cafeId, 'branches', selectedBranch.id, 'tables', tableId);
+    const tableRef = doc(db, 'cafes', cafeId, 'tables', tableId);
     
     await setDoc(tableRef, {
       number: Number(number),
@@ -135,7 +136,7 @@ export default function TablesManagement() {
                       <DropdownMenuItem className="gap-2"><QrCode className="h-4 w-4" /> View QR</DropdownMenuItem>
                       <DropdownMenuItem 
                         className="gap-2 text-destructive"
-                        onClick={() => deleteDoc(doc(db!, 'cafes', cafeId!, 'branches', table.branchId, 'tables', table.id))}
+                        onClick={() => deleteDoc(doc(db!, 'cafes', cafeId!, 'tables', table.id))}
                       >
                         <Trash2 className="h-4 w-4" /> Delete
                       </DropdownMenuItem>

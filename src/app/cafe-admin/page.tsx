@@ -14,13 +14,12 @@ import {
   Settings,
   ShoppingBag,
   Activity,
-  ArrowUpRight,
   Clock,
   Car,
   MapPin
 } from "lucide-react";
 import { useCollection, useDoc, useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, orderBy, limit, where, collectionGroup, Timestamp } from 'firebase/firestore';
+import { doc, collection, query, orderBy, where, Timestamp } from 'firebase/firestore';
 import { 
   AreaChart, 
   Area, 
@@ -80,7 +79,6 @@ export default function CafeAdminDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  // 1. Get user profile to find cafeId
   const userProfileRef = useMemoFirebase(() => {
     return (db && user) ? doc(db, 'users', user.uid) : null;
   }, [db, user]);
@@ -88,13 +86,13 @@ export default function CafeAdminDashboard() {
 
   const cafeId = userProfile?.cafeId;
 
-  // 2. Fetch today's orders
   const startOfToday = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d;
   }, []);
 
+  // Optimized Scoped Query for Orders
   const todayOrdersQuery = useMemoFirebase(() => {
     if (!db || !cafeId || profileLoading) return null;
     return query(
@@ -105,22 +103,19 @@ export default function CafeAdminDashboard() {
   }, [db, cafeId, profileLoading, startOfToday]);
   const { data: todayOrders, isLoading: ordersLoading } = useCollection(todayOrdersQuery);
 
-  // 3. Fetch branches
   const branchesQuery = useMemoFirebase(() => {
     if (!db || !cafeId || profileLoading) return null;
     return query(collection(db, 'cafes', cafeId, 'branches'));
   }, [db, cafeId, profileLoading]);
   const { data: branches } = useCollection(branchesQuery);
 
-  // 4. Fetch all tables using Collection Group
+  // Optimized Scoped Query for Tables (Non-collectionGroup)
   const tablesQuery = useMemoFirebase(() => {
-    // Crucial: Only execute the query once cafeId is a valid string
-    if (!db || !cafeId || typeof cafeId !== 'string' || profileLoading) return null;
-    return query(collectionGroup(db, 'tables'), where('cafeId', '==', cafeId));
+    if (!db || !cafeId || profileLoading) return null;
+    return query(collection(db, 'cafes', cafeId, 'tables'));
   }, [db, cafeId, profileLoading]);
   const { data: allTables } = useCollection(tablesQuery);
 
-  // 5. Aggregate metrics
   const stats = useMemo(() => {
     const revenue = todayOrders?.reduce((acc, curr) => acc + (Number(curr.totalAmount) || 0), 0) || 0;
     const guests = todayOrders?.reduce((acc, curr) => acc + (Number(curr.guestCount) || 0), 0) || 0;
@@ -163,7 +158,6 @@ export default function CafeAdminDashboard() {
     ];
   }, [todayOrders, allTables]);
 
-  // 6. Chart data
   const chartData = useMemo(() => {
     if (!todayOrders) return [];
     const buckets: Record<string, number> = {};

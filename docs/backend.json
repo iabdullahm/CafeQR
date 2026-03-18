@@ -163,11 +163,11 @@
         }
       },
       {
-        "path": "/cafes/{cafeId}/branches/{branchId}/tables/{tableId}",
+        "path": "/cafes/{cafeId}/tables/{tableId}",
         "definition": {
           "entityName": "Table",
           "schema": { "$ref": "#/backend/entities/Table" },
-          "description": "Tables within a branch. Includes denormalized cafeId."
+          "description": "Tables directly under cafe for flat querying. Includes branchId field."
         }
       },
       {
@@ -191,7 +191,7 @@
         "definition": {
           "entityName": "Order",
           "schema": { "$ref": "#/backend/entities/Order" },
-          "description": "Orders for a cafe. Includes denormalized branchId."
+          "description": "Orders for a cafe. Directly under cafe for easier querying."
         }
       }
     ]
