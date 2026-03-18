@@ -1,8 +1,6 @@
-
 'use client';
 
 import { useState } from 'react';
-import api from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 import { useRouter } from 'next/navigation';
 import { Coffee, Loader2 } from 'lucide-react';
@@ -10,11 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
   const { toast } = useToast();
+  const auth = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,31 +27,34 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      const res = await api.post('/auth/login', { 
-        email: email.trim(), 
-        password 
-      });
+      // Use Firebase Auth directly
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+      const fbUser = userCredential.user;
       
-      const { token, user } = res.data.data;
-      setAuth(user, token);
+      // Update local store for components that haven't migrated to useUser() yet
+      const userData = {
+        id: fbUser.uid,
+        full_name: fbUser.displayName || fbUser.email?.split('@')[0] || 'User',
+        email: fbUser.email || '',
+        roles: ['cafe_admin'] // Default for prototype
+      };
+      
+      const token = await fbUser.getIdToken();
+      setAuth(userData, token);
       
       toast({
         title: "Welcome back!",
-        description: `Logged in as ${user.full_name}`,
+        description: `Logged in as ${userData.full_name}`,
       });
 
-      // Simple routing based on user roles
-      if (user.roles && (user.roles.includes('super_admin') || user.roles.includes('admin'))) {
-        router.push('/super-admin');
-      } else {
-        router.push('/cafe-admin');
-      }
+      // Simple routing based on standard flow
+      router.push('/cafe-admin');
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || "Invalid credentials";
+      console.error(err);
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: errorMessage,
+        description: err.message || "Invalid credentials",
       });
     } finally {
       setIsLoading(false);

@@ -1,7 +1,7 @@
-import prisma from '../../config/prisma';
-
 /**
  * @fileOverview Dashboard Service handles business logic for platform analytics.
+ * This file is currently returning mock data to avoid Prisma initialization errors
+ * during the migration to Firestore.
  */
 
 export const dashboardService = {
@@ -9,31 +9,13 @@ export const dashboardService = {
    * Fetches high-level platform statistics.
    */
   async getStats() {
-    const [
-      totalCafes,
-      activeSubscriptions,
-      expiredSubscriptions,
-      ordersThisMonth
-    ] = await Promise.all([
-      prisma.cafe.count({
-        where: { deletedAt: null }
-      }),
-      prisma.subscription.count({
-        where: { status: 'active' }
-      }),
-      prisma.subscription.count({
-        where: { status: 'expired' }
-      }),
-      prisma.order.count()
-    ]);
-
     return {
-      totalCafes,
-      activeSubscriptions,
-      expiredSubscriptions,
-      monthlyRevenue: 39.000, // Mock revenue based on active Premium subscription
-      ordersThisMonth,
-      newRegistrations: totalCafes // Demo simplification
+      totalCafes: 5,
+      activeSubscriptions: 3,
+      expiredSubscriptions: 0,
+      monthlyRevenue: 39.000,
+      ordersThisMonth: 128,
+      newRegistrations: 2
     };
   },
 
@@ -41,47 +23,23 @@ export const dashboardService = {
    * Fetches the most recently registered cafes.
    */
   async getRecentCafes() {
-    const cafes = await prisma.cafe.findMany({
-      where: { deletedAt: null },
-      orderBy: { createdAt: 'desc' },
-      take: 5
-    });
-    return cafes.map((c: any) => ({ 
-      ...c, 
-      id: String(c.id) 
-    }));
+    return [
+      { id: '1', name: 'Brew Corner', email: 'brew@example.com', createdAt: new Date().toISOString(), status: 'active' },
+      { id: '2', name: 'Qahwa House', email: 'qahwa@example.com', createdAt: new Date().toISOString(), status: 'active' },
+    ];
   },
 
   /**
    * Fetches subscriptions that are nearing their end date.
    */
   async getExpiringSubscriptions() {
-    const subs = await prisma.subscription.findMany({
-      where: {
-        status: 'active'
-      },
-      orderBy: {
-        endDate: 'asc'
-      },
-      take: 5,
-      include: {
-        cafe: true,
-        plan: true
-      }
-    });
-    return subs.map((s: any) => ({ 
-      ...s, 
-      id: String(s.id),
-      cafe_name: s.cafe?.name || 'Unknown',
-      plan_name: s.plan?.name || 'Standard'
-    }));
+    return [];
   },
 
   /**
    * Fetches revenue data formatted for charting.
    */
   async getRevenueData(period: string) {
-    // Return mock data for the chart based on the period
     return [
       { name: 'Jan', revenue: 12000 },
       { name: 'Feb', revenue: 15000 },
