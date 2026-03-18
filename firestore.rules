@@ -8,7 +8,8 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getUserData() {
+    // Fetches the data of the currently signed-in user
+    function getRequesterData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
@@ -16,56 +17,69 @@ service cloud.firestore {
 
     match /plans/{planId} {
       allow read: if true;
-      allow write: if isSignedIn() && getUserData().role == 'SUPER_ADMIN';
+      allow write: if isSignedIn() && getRequesterData().role == 'SUPER_ADMIN';
     }
 
     match /users/{userId} {
-      allow get: if isSignedIn() && (request.auth.uid == userId || getUserData().role == 'SUPER_ADMIN');
-      allow list: if isSignedIn() && getUserData().role == 'SUPER_ADMIN';
+      // Allow user to get their own profile without recursion
+      // Super admins can get any profile
+      allow get: if isSignedIn() && (
+        request.auth.uid == userId || 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPER_ADMIN'
+      );
+      // List/Create/Update permissions
+      allow list: if isSignedIn() && getRequesterData().role == 'SUPER_ADMIN';
       allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isSignedIn() && (request.auth.uid == userId || getUserData().role == 'SUPER_ADMIN');
+      allow update: if isSignedIn() && (
+        request.auth.uid == userId || 
+        getRequesterData().role == 'SUPER_ADMIN'
+      );
     }
 
     match /cafes/{cafeId} {
       allow get: if true;
-      allow list: if isSignedIn() && getUserData().role == 'SUPER_ADMIN';
-      allow create: if isSignedIn() && getUserData().role == 'SUPER_ADMIN';
+      allow list: if isSignedIn() && getRequesterData().role == 'SUPER_ADMIN';
+      allow create: if isSignedIn() && getRequesterData().role == 'SUPER_ADMIN';
+      
+      // Scoped administrative write access
       allow update: if isSignedIn() && (
-        (getUserData().cafeId == cafeId && (getUserData().role == 'OWNER' || getUserData().role == 'MANAGER')) ||
-        getUserData().role == 'SUPER_ADMIN'
+        (getRequesterData().cafeId == cafeId && (getRequesterData().role == 'OWNER' || getRequesterData().role == 'MANAGER')) ||
+        getRequesterData().role == 'SUPER_ADMIN'
       );
 
-      // Generic rule for cafe-scoped resources
+      // Scoped operational read/write access for cafe staff
       match /{allSubcollections=**} {
-        // Operational read access for all cafe staff
         allow read: if isSignedIn() && (
-          getUserData().cafeId == cafeId || 
-          getUserData().role == 'SUPER_ADMIN'
+          getRequesterData().cafeId == cafeId || 
+          getRequesterData().role == 'SUPER_ADMIN'
         );
-        // Management write access
         allow write: if isSignedIn() && (
-          (getUserData().cafeId == cafeId && (getUserData().role == 'OWNER' || getUserData().role == 'MANAGER')) ||
-          getUserData().role == 'SUPER_ADMIN'
+          (getRequesterData().cafeId == cafeId && (getRequesterData().role == 'OWNER' || getRequesterData().role == 'MANAGER')) ||
+          getRequesterData().role == 'SUPER_ADMIN'
         );
       }
       
-      // Special case for public ordering
+      // Public ordering
       match /orders/{orderId} {
         allow create: if true;
       }
     }
     
     // Collection Group Queries for Tables
-    // Optimized for the dashboard occupancy matrix
+    // Optimized for cross-branch monitoring on the dashboard
     match /{path=**}/tables/{tableId} {
-      allow list: if isSignedIn() && 
-                  resource.data.cafeId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.cafeId;
+      allow list: if isSignedIn() && (
+        resource.data.cafeId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.cafeId ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPER_ADMIN'
+      );
     }
 
     // Collection Group Queries for Orders
     match /{path=**}/orders/{orderId} {
-      allow list: if isSignedIn() && 
-                  resource.data.cafeId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.cafeId;
+      allow list: if isSignedIn() && (
+        resource.data.cafeId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.cafeId ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPER_ADMIN'
+      );
     }
   }
 }

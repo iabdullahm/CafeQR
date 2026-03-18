@@ -114,7 +114,8 @@ export default function CafeAdminDashboard() {
 
   // 4. Fetch all tables using Collection Group
   const tablesQuery = useMemoFirebase(() => {
-    if (!db || !cafeId || profileLoading) return null;
+    // Crucial: Only execute the query once cafeId is a valid string
+    if (!db || !cafeId || typeof cafeId !== 'string' || profileLoading) return null;
     return query(collectionGroup(db, 'tables'), where('cafeId', '==', cafeId));
   }, [db, cafeId, profileLoading]);
   const { data: allTables } = useCollection(tablesQuery);
