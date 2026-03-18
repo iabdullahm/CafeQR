@@ -10,14 +10,14 @@ export default function CafeAdminLayout({
 }) {
   const navItems = [
     { title: "Dashboard", href: "/cafe-admin", icon: "LayoutDashboard" },
-    { title: "Orders", href: "/cafe-admin/orders", icon: "ClipboardList" },
-    { title: "Menu Categories", href: "/cafe-admin/menu", icon: "ChefHat" },
-    { title: "Products", href: "/cafe-admin/products", icon: "Coffee" },
+    { title: "Cafe Profile", href: "/cafe-admin/profile", icon: "User" },
     { title: "Branches", href: "/cafe-admin/branches", icon: "MapPin" },
     { title: "Tables", href: "/cafe-admin/tables", icon: "LayoutGrid" },
     { title: "QR Codes", href: "/cafe-admin/qr-codes", icon: "QrCode" },
+    { title: "Menu Categories", href: "/cafe-admin/menu", icon: "ChefHat" },
+    { title: "Products", href: "/cafe-admin/products", icon: "Coffee" },
+    { title: "Orders", href: "/cafe-admin/orders", icon: "ClipboardList" },
     { title: "Loyalty Program", href: "/cafe-admin/loyalty", icon: "Star" },
-    { title: "Cafe Profile", href: "/cafe-admin/profile", icon: "User" },
     { title: "Settings", href: "/cafe-admin/settings", icon: "Settings" },
   ];
 
@@ -30,7 +30,7 @@ export default function CafeAdminLayout({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search orders, tables, or products..." 
+                placeholder="Search dashboard..." 
                 className="pl-10 h-10 border-none bg-muted focus-visible:ring-primary/20" 
               />
             </div>
@@ -46,11 +46,11 @@ export default function CafeAdminLayout({
 
              <div className="hidden md:block text-right">
                 <p className="text-sm font-bold text-primary leading-tight">The Roast Coffee</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Admin Portal</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Cafe Owner</p>
              </div>
              
             <Button variant="ghost" className="h-10 w-10 rounded-xl border bg-muted p-0 overflow-hidden hover:border-primary/50 transition-all">
-               <img src="https://picsum.photos/seed/cafe-admin-logo/40/40" alt="Cafe Logo" className="object-cover h-full w-full" />
+               <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground font-bold text-xs">AJ</div>
             </Button>
           </div>
         </header>
