@@ -40,31 +40,41 @@ service cloud.firestore {
       allow list: if isSuperAdmin();
       allow create: if isSuperAdmin();
       allow update: if isCafeAdmin(cafeId) || isSuperAdmin();
-    }
 
-    match /cafes/{cafeId}/branches/{branchId} {
-      allow read: if true;
-      allow write: if isCafeAdmin(cafeId);
-    }
+      match /branches/{branchId} {
+        allow read: if true;
+        allow write: if isCafeAdmin(cafeId);
 
-    match /cafes/{cafeId}/branches/{branchId}/tables/{tableId} {
-      allow read: if true;
-      allow write: if isCafeAdmin(cafeId);
-    }
+        match /tables/{tableId} {
+          allow read: if true;
+          allow write: if isCafeAdmin(cafeId);
+        }
+      }
 
-    match /cafes/{cafeId}/orders/{orderId} {
-      allow read: if isCafeAdmin(cafeId);
-      allow create: if request.resource.data.cafeId == cafeId; // Public ordering
-      allow update: if isCafeAdmin(cafeId);
-    }
+      match /categories/{categoryId} {
+        allow read: if true;
+        allow write: if isCafeAdmin(cafeId);
+      }
 
-    match /cafes/{cafeId}/products/{productId} {
-      allow read: if true;
-      allow write: if isCafeAdmin(cafeId);
+      match /products/{productId} {
+        allow read: if true;
+        allow write: if isCafeAdmin(cafeId);
+      }
+
+      match /orders/{orderId} {
+        allow read: if isCafeAdmin(cafeId);
+        allow create: if true; // Public ordering
+        allow update: if isCafeAdmin(cafeId);
+      }
     }
     
     // Collection Group Queries for Tables (Requires cafeId field in documents)
     match /{path=**}/tables/{tableId} {
+      allow list: if isSignedIn() && isCafeAdmin(resource.data.cafeId);
+    }
+
+    // Collection Group Queries for Orders (Requires cafeId field in documents)
+    match /{path=**}/orders/{orderId} {
       allow list: if isSignedIn() && isCafeAdmin(resource.data.cafeId);
     }
   }

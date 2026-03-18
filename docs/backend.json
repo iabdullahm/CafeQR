@@ -64,6 +64,7 @@
         "id": { "type": "string" },
         "cafeId": { "type": "string" },
         "name": { "type": "string" },
+        "code": { "type": "string" },
         "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE", "MAINTENANCE"] }
       }
     },
@@ -81,6 +82,32 @@
         "status": { "type": "string", "enum": ["AVAILABLE", "OCCUPIED", "RESERVED", "OUT_OF_SERVICE"] }
       }
     },
+    "Category": {
+      "title": "Category",
+      "description": "A menu category.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "cafeId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "sortOrder": { "type": "number" },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] }
+      }
+    },
+    "Product": {
+      "title": "Product",
+      "description": "A menu item.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "cafeId": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE", "OUT_OF_STOCK"] }
+      }
+    },
     "Order": {
       "title": "Order",
       "description": "A customer order.",
@@ -95,19 +122,6 @@
         "totalAmount": { "type": "number" },
         "guestCount": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "Product": {
-      "title": "Product",
-      "description": "A menu item.",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "cafeId": { "type": "string" },
-        "categoryId": { "type": "string" },
-        "name": { "type": "string" },
-        "price": { "type": "number" },
-        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE", "OUT_OF_STOCK"] }
       }
     }
   },
@@ -157,11 +171,11 @@
         }
       },
       {
-        "path": "/cafes/{cafeId}/orders/{orderId}",
+        "path": "/cafes/{cafeId}/categories/{categoryId}",
         "definition": {
-          "entityName": "Order",
-          "schema": { "$ref": "#/backend/entities/Order" },
-          "description": "Orders for a cafe. Includes denormalized branchId."
+          "entityName": "Category",
+          "schema": { "$ref": "#/backend/entities/Category" },
+          "description": "Menu categories for a cafe."
         }
       },
       {
@@ -170,6 +184,14 @@
           "entityName": "Product",
           "schema": { "$ref": "#/backend/entities/Product" },
           "description": "Menu products for a cafe."
+        }
+      },
+      {
+        "path": "/cafes/{cafeId}/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": { "$ref": "#/backend/entities/Order" },
+          "description": "Orders for a cafe. Includes denormalized branchId."
         }
       }
     ]
