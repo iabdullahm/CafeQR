@@ -1,255 +1,71 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * CAFEQR SECURITY RULES DOCUMENTATION
-     *
-     * Core Philosophy:
-     * This ruleset implements a multi-tenant architecture where data is primarily isolated 
-     * by Cafe ID. It utilizes a dual-role administrative model (Super Admins and Cafe Admins) 
-     * alongside public/anonymous access for customers to view menus and place orders.
-     *
-     * Data Structure:
-     * - /users/{userId}: User profiles for authentication context.
-     * - /roles_super_admin/{userId}: Existence-based marker for platform-wide administrators.
-     * - /cafes/{cafeId}: The root for all tenant-specific data (branches, menus, orders).
-     * - /qrcodes/{codeValue}: Top-level lookup for anonymous customers to enter a cafe's context.
-     * - /plans: Global subscription definitions managed by Super Admins.
-     *
-     * Key Security Decisions:
-     * 1. Multi-Tenancy: All cafe-specific subcollections require the user to be the 
-     *    designated Cafe Admin for that specific Cafe ID.
-     * 2. Denormalization for Authorization: Critical IDs (cafeId, branchId) are enforced 
-     *    within documents to allow rules to validate access without expensive parent lookups.
-     * 3. Public Menu Access: Categories, Products, and Options are publicly readable 
-     *    to support customer browsing.
-     * 4. Anonymous Ordering: Customers can create Orders and OrderItems without 
-     *    authentication, but cannot list or delete them.
-     */
-
     // --- HELPER FUNCTIONS ---
-
-    /** @description Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the user has the Super Admin role via the dedicated role collection. */
-    function isSuperAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_super_admin/$(request.auth.uid));
-    }
-
-    /** @description Retrieves the user's profile data. */
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    /** @description Checks if the user is the administrator for a specific cafe. */
     function isCafeAdmin(cafeId) {
-      return isSignedIn() && getUserData().role == 'cafe_admin' && getUserData().cafeId == cafeId;
+      let user = getUserData();
+      return isSignedIn() && user.cafeId == cafeId && (user.role == 'OWNER' || user.role == 'MANAGER');
     }
 
-    /** @description Verifies the authenticated user's UID matches the provided ID. */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    function isSuperAdmin() {
+      return isSignedIn() && getUserData().role == 'SUPER_ADMIN';
     }
 
-    /** @description Verifies document existence for updates and deletes. */
-    function isExisting() {
-      return resource != null;
-    }
+    // --- RULES ---
 
-    // --- COLLECTION RULES ---
-
-    /**
-     * @description Rules for user profiles. Users can manage their own profile.
-     * @path /users/{userId}
-     * @allow (get, update) if user is owner.
-     * @deny (create) if auth UID does not match document ID.
-     * @principle Ownership and Relational Integrity.
-     */
-    match /users/{userId} {
-      allow get: if isOwner(userId) || isSuperAdmin();
-      allow list: if isSuperAdmin();
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExisting() && (isOwner(userId) || isSuperAdmin()) && request.resource.data.id == resource.data.id;
-      allow delete: if isExisting() && isSuperAdmin();
-    }
-
-    /**
-     * @description Marker collection for Super Admins.
-     * @path /roles_super_admin/{userId}
-     * @allow (get) if signed in.
-     * @deny (write) for anyone except existing Super Admins.
-     * @principle Existence-based Role Management.
-     */
-    match /roles_super_admin/{userId} {
-      allow get: if isSignedIn();
-      allow list, write: if isSuperAdmin();
-    }
-
-    /**
-     * @description Global subscription plans.
-     * @path /plans/{planId}
-     * @allow (read) for all users.
-     * @deny (write) for anyone except Super Admins.
-     * @principle Public Read with Admin-Only Writes.
-     */
     match /plans/{planId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSuperAdmin();
+      allow read: if true;
+      allow write: if isSuperAdmin();
     }
 
-    /**
-     * @description Cafe business entities. Root for multi-tenant data.
-     * @path /cafes/{cafeId}
-     * @allow (get) for public. (update) for associated Cafe Admin.
-     * @deny (delete) for non-Super Admins.
-     * @principle Multi-tenant Isolation.
-     */
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+      allow list: if isSuperAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+    }
+
     match /cafes/{cafeId} {
       allow get: if true;
       allow list: if isSuperAdmin();
       allow create: if isSuperAdmin();
-      allow update: if isExisting() && (isSuperAdmin() || isCafeAdmin(cafeId));
-      allow delete: if isExisting() && isSuperAdmin();
+      allow update: if isCafeAdmin(cafeId) || isSuperAdmin();
     }
 
-    /**
-     * @description Subscriptions for cafes.
-     * @path /subscriptions/{subscriptionId}
-     * @allow (get) if Cafe Admin for the specific cafe.
-     * @deny (create, delete) for Cafe Admins.
-     * @principle Denormalized ID validation.
-     */
-    match /subscriptions/{subscriptionId} {
-      allow get: if isSuperAdmin() || isCafeAdmin(resource.data.cafeId);
-      allow list: if isSuperAdmin() || (isSignedIn() && isCafeAdmin(getUserData().cafeId));
-      allow create, update, delete: if isSuperAdmin();
-    }
-
-    /**
-     * @description Branches belonging to a cafe.
-     * @path /cafes/{cafeId}/branches/{branchId}
-     * @allow (read) for public. (write) for associated Cafe Admin.
-     * @principle Admin-only writes with denormalized cafeId check.
-     */
     match /cafes/{cafeId}/branches/{branchId} {
-      allow get, list: if true;
-      allow create: if isSuperAdmin() || (isCafeAdmin(cafeId) && request.resource.data.cafeId == cafeId);
-      allow update, delete: if isExisting() && (isSuperAdmin() || isCafeAdmin(cafeId));
+      allow read: if true;
+      allow write: if isCafeAdmin(cafeId);
     }
 
-    /**
-     * @description Tables within a branch.
-     * @path /cafes/{cafeId}/branches/{branchId}/tables/{tableId}
-     * @allow (read) for public. (write) for associated Cafe Admin.
-     * @principle Path-based and denormalized authorization.
-     */
     match /cafes/{cafeId}/branches/{branchId}/tables/{tableId} {
-      allow get, list: if true;
-      allow create: if isCafeAdmin(cafeId) && request.resource.data.cafeId == cafeId;
-      allow update, delete: if isExisting() && isCafeAdmin(cafeId);
+      allow read: if true;
+      allow write: if isCafeAdmin(cafeId);
     }
 
-    /**
-     * @description Top-level QR Code lookup for anonymous customer ordering.
-     * @path /qrcodes/{qrCodeValue}
-     * @allow (get) for public lookup. (write) for Super Admin or Cafe Admin.
-     * @principle Public Lookup with Admin Management.
-     */
-    match /qrcodes/{qrCodeValue} {
-      allow get: if true;
-      allow list: if isSuperAdmin();
-      allow create: if isSuperAdmin() || (isSignedIn() && isCafeAdmin(request.resource.data.cafeId));
-      allow update, delete: if isExisting() && (isSuperAdmin() || isCafeAdmin(resource.data.cafeId));
-    }
-
-    /**
-     * @description Menu categories.
-     * @path /cafes/{cafeId}/categories/{categoryId}
-     * @allow (read) for public. (write) for Cafe Admin.
-     * @principle Public Menu Display.
-     */
-    match /cafes/{cafeId}/categories/{categoryId} {
-      allow get, list: if true;
-      allow create: if isCafeAdmin(cafeId) && request.resource.data.cafeId == cafeId;
-      allow update, delete: if isExisting() && isCafeAdmin(cafeId);
-    }
-
-    /**
-     * @description Menu products.
-     * @path /cafes/{cafeId}/categories/{categoryId}/products/{productId}
-     * @allow (read) for public. (write) for Cafe Admin.
-     * @principle Hierarchy-based admin control.
-     */
-    match /cafes/{cafeId}/categories/{categoryId}/products/{productId} {
-      allow get, list: if true;
-      allow create: if isCafeAdmin(cafeId) && request.resource.data.cafeId == cafeId;
-      allow update, delete: if isExisting() && isCafeAdmin(cafeId);
-    }
-
-    /**
-     * @description Options for specific products (e.g., Size, Toppings).
-     * @path /cafes/{cafeId}/categories/{categoryId}/products/{productId}/product_options/{optionId}
-     * @allow (read) for public. (write) for Cafe Admin.
-     * @principle Granular item management.
-     */
-    match /cafes/{cafeId}/categories/{categoryId}/products/{productId}/product_options/{optionId} {
-      allow get, list: if true;
-      allow create: if isCafeAdmin(cafeId) && request.resource.data.cafeId == cafeId;
-      allow update, delete: if isExisting() && isCafeAdmin(cafeId);
-    }
-
-    /**
-     * @description Customer loyalty profiles.
-     * @path /cafes/{cafeId}/customers/{customerId}
-     * @allow (get, write) for Cafe Admin.
-     * @principle Admin-only customer management.
-     */
-    match /cafes/{cafeId}/customers/{customerId} {
-      allow get, list: if isCafeAdmin(cafeId);
-      allow create: if isCafeAdmin(cafeId) && request.resource.data.cafeId == cafeId;
-      allow update, delete: if isExisting() && isCafeAdmin(cafeId);
-    }
-
-    /**
-     * @description Customer orders.
-     * @path /cafes/{cafeId}/orders/{orderId}
-     * @allow (create) for anonymous customers. (read, update) for Cafe Admin.
-     * @principle Anonymous creation with Admin management.
-     */
     match /cafes/{cafeId}/orders/{orderId} {
-      allow get: if isCafeAdmin(cafeId);
-      allow list: if isCafeAdmin(cafeId);
-      allow create: if request.resource.data.cafeId == cafeId;
-      allow update: if isExisting() && isCafeAdmin(cafeId);
-      allow delete: if isExisting() && (isSuperAdmin() || isCafeAdmin(cafeId));
+      allow read: if isCafeAdmin(cafeId);
+      allow create: if request.resource.data.cafeId == cafeId; // Public ordering
+      allow update: if isCafeAdmin(cafeId);
     }
 
-    /**
-     * @description Individual items within an order.
-     * @path /cafes/{cafeId}/orders/{orderId}/order_items/{orderItemId}
-     * @allow (create) for anonymous customers. (read, update) for Cafe Admin.
-     * @principle Anonymous creation with denormalized ID verification.
-     */
-    match /cafes/{cafeId}/orders/{orderId}/order_items/{orderItemId} {
-      allow get, list: if isCafeAdmin(cafeId);
-      allow create: if request.resource.data.cafeId == cafeId;
-      allow update, delete: if isExisting() && isCafeAdmin(cafeId);
+    match /cafes/{cafeId}/products/{productId} {
+      allow read: if true;
+      allow write: if isCafeAdmin(cafeId);
     }
-
-    /**
-     * @description Transactions modifying customer loyalty points.
-     * @path /cafes/{cafeId}/customers/{customerId}/loyalty_point_transactions/{transactionId}
-     * @allow (read, write) for Cafe Admin.
-     * @principle Ledger-style data managed by admins.
-     */
-    match /cafes/{cafeId}/customers/{customerId}/loyalty_point_transactions/{transactionId} {
-      allow get, list: if isCafeAdmin(cafeId);
-      allow create: if isCafeAdmin(cafeId) && request.resource.data.cafeId == cafeId;
-      allow update, delete: if isExisting() && isCafeAdmin(cafeId);
+    
+    // Collection Group Queries for Tables (Requires cafeId field in documents)
+    match /{path=**}/tables/{tableId} {
+      allow list: if isSignedIn() && isCafeAdmin(resource.data.cafeId);
     }
   }
 }

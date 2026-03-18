@@ -40,15 +40,14 @@ function formatCurrency(value: number | string) {
 }
 
 function getStatusClasses(status: string) {
-  switch (status?.toLowerCase()) {
-    case 'pending':
-    case 'new':
+  switch (status?.toUpperCase()) {
+    case 'NEW':
       return 'bg-red-50 text-red-700 border-red-200';
-    case 'preparing':
+    case 'PREPARING':
       return 'bg-amber-50 text-amber-700 border-amber-200';
-    case 'ready':
+    case 'READY':
       return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    case 'completed':
+    case 'COMPLETED':
       return 'bg-slate-100 text-slate-700 border-slate-200';
     default:
       return 'bg-slate-100 text-slate-700 border-slate-200';
@@ -81,7 +80,7 @@ export default function CafeAdminDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  // 1. Get user profile
+  // 1. Get user profile to find cafeId
   const userProfileRef = useMemoFirebase(() => {
     return (db && user) ? doc(db, 'users', user.uid) : null;
   }, [db, user]);
@@ -89,7 +88,7 @@ export default function CafeAdminDashboard() {
 
   const cafeId = userProfile?.cafeId;
 
-  // 2. Fetch today's orders for real-time KPIs
+  // 2. Fetch today's orders
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
@@ -121,8 +120,8 @@ export default function CafeAdminDashboard() {
   const stats = useMemo(() => {
     const revenue = todayOrders?.reduce((acc, curr) => acc + (Number(curr.totalAmount) || 0), 0) || 0;
     const guests = todayOrders?.reduce((acc, curr) => acc + (Number(curr.guestCount) || 0), 0) || 0;
-    const occupiedCount = allTables?.filter(t => t.status === 'occupied').length || 0;
-    const availableCount = allTables?.filter(t => t.status === 'available').length || 0;
+    const occupiedCount = allTables?.filter(t => t.status === 'OCCUPIED' || t.status === 'RESERVED').length || 0;
+    const availableCount = allTables?.filter(t => t.status === 'AVAILABLE').length || 0;
 
     return [
       {
@@ -160,7 +159,7 @@ export default function CafeAdminDashboard() {
     ];
   }, [todayOrders, allTables]);
 
-  // 6. Chart data (Sales buckets)
+  // 6. Chart data
   const chartData = useMemo(() => {
     if (!todayOrders) return [];
     const buckets: Record<string, number> = {};
@@ -177,7 +176,7 @@ export default function CafeAdminDashboard() {
     return Object.entries(buckets).map(([name, revenue]) => ({ name, revenue }));
   }, [todayOrders]);
 
-  if (isUserLoading || profileLoading) return <DashboardSkeleton />;
+  if (isUserLoading || profileLoading || ordersLoading) return <DashboardSkeleton />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -194,7 +193,6 @@ export default function CafeAdminDashboard() {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.title} className="rounded-3xl border-none shadow-sm bg-card hover:shadow-md transition-all">
@@ -215,7 +213,6 @@ export default function CafeAdminDashboard() {
       </section>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        {/* Main Analytics Chart */}
         <Card className="xl:col-span-2 rounded-3xl border-none shadow-sm bg-card overflow-hidden">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -248,7 +245,6 @@ export default function CafeAdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions & Peak Hour */}
         <div className="space-y-6">
           <Card className="rounded-3xl border-none shadow-sm bg-card">
             <div className="p-6 pb-0">
@@ -295,7 +291,6 @@ export default function CafeAdminDashboard() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        {/* Recent Orders Feed */}
         <Card className="xl:col-span-2 rounded-3xl border-none shadow-sm bg-card overflow-hidden">
           <div className="p-6 flex items-center justify-between border-b bg-muted/5">
             <div>
@@ -324,8 +319,8 @@ export default function CafeAdminDashboard() {
                       <td className="px-6 py-4 text-sm font-bold text-primary">#{order.orderNumber || order.id.substring(0, 6)}</td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          {order.orderType === 'car_order' ? <Car className="h-3 w-3" /> : <Utensils className="h-3 w-3" />}
-                          <span className="capitalize">{order.orderType?.replace('_', ' ')}</span>
+                          {order.orderType === 'CAR_SERVICE' ? <Car className="h-3 w-3" /> : <Utensils className="h-3 w-3" />}
+                          <span className="capitalize">{order.orderType?.replace('_', ' ').toLowerCase()}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-xs font-medium">
@@ -333,15 +328,15 @@ export default function CafeAdminDashboard() {
                       </td>
                       <td className="px-6 py-4">
                         <Badge variant="outline" className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase ${getStatusClasses(order.status)}`}>
-                          {order.status || 'pending'}
+                          {order.status || 'NEW'}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-sm font-black text-right">{formatCurrency(order.totalAmount || 0)}</td>
                     </tr>
                   ))}
-                  {todayOrders?.length === 0 && (
+                  {(!todayOrders || todayOrders.length === 0) && !ordersLoading && (
                     <tr>
-                      <td colSpan={5} className="px-6 py-10 text-center text-muted-foreground">No orders recorded today.</td>
+                      <td colSpan={5} className="px-6 py-10 text-center text-muted-foreground text-sm">No orders recorded today.</td>
                     </tr>
                   )}
                 </tbody>
@@ -350,37 +345,34 @@ export default function CafeAdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Branch Performance Summary */}
-        <div className="space-y-6">
-          <Card className="rounded-3xl border-none shadow-sm bg-card h-full">
-            <CardHeader>
-              <CardTitle>Branch Activity</CardTitle>
-              <CardDescription>Live performance per location</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {(branches || []).map((branch: any) => (
-                <div key={branch.id} className="p-4 rounded-2xl border bg-muted/10 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                      <MapPin className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm leading-tight">{branch.name}</p>
-                      <p className="text-[10px] text-muted-foreground uppercase">{branch.status || 'Active'}</p>
-                    </div>
+        <Card className="rounded-3xl border-none shadow-sm bg-card h-full">
+          <CardHeader>
+            <CardTitle>Branch Activity</CardTitle>
+            <CardDescription>Live performance per location</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {(branches || []).map((branch: any) => (
+              <div key={branch.id} className="p-4 rounded-2xl border bg-muted/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <MapPin className="h-5 w-5" />
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-black">{todayOrders?.filter(o => o.branchId === branch.id).length || 0} Orders</p>
-                    <p className="text-[10px] text-emerald-600 font-bold">Online</p>
+                  <div>
+                    <p className="font-bold text-sm leading-tight">{branch.name}</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">{branch.status || 'Active'}</p>
                   </div>
                 </div>
-              ))}
-              {(!branches || branches.length === 0) && (
-                <p className="text-center text-xs text-muted-foreground py-8">No branches registered.</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                <div className="text-right">
+                  <p className="text-sm font-black">{todayOrders?.filter(o => o.branchId === branch.id).length || 0} Orders</p>
+                  <p className="text-[10px] text-emerald-600 font-bold">Online</p>
+                </div>
+              </div>
+            ))}
+            {(!branches || branches.length === 0) && (
+              <p className="text-center text-xs text-muted-foreground py-8">No branches registered.</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

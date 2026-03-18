@@ -1,1128 +1,177 @@
+
 {
   "entities": {
-    "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "User",
+    "Plan": {
+      "title": "Plan",
+      "description": "Global subscription plan definitions.",
       "type": "object",
-      "description": "Represents a user account within the CafeQR platform. This includes Super Admins managing the platform and Cafe Admins managing specific cafes. Authentication is assumed to be handled by an external system.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the user, used for login purposes.",
-          "format": "email"
-        },
-        "name": {
-          "type": "string",
-          "description": "The full name of the user."
-        },
-        "role": {
-          "type": "string",
-          "description": "The role of the user within the system (e.g., 'super_admin', 'cafe_admin')."
-        },
-        "cafeId": {
-          "type": "string",
-          "description": "Reference to the Cafe this user is an administrator for. Applicable only for 'cafe_admin' roles. (Relationship: Cafe 1:N User)"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the user account was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the user account was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "email",
-        "name",
-        "role",
-        "createdAt",
-        "updatedAt"
-      ]
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "description": { "type": "string" },
+        "priceMonthly": { "type": "number" },
+        "maxBranches": { "type": "number" },
+        "maxTables": { "type": "number" },
+        "maxProducts": { "type": "number" },
+        "hasLoyalty": { "type": "boolean" },
+        "hasMultiBranch": { "type": "boolean" },
+        "hasAdvancedAnalytics": { "type": "boolean" }
+      }
     },
     "Cafe": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Cafe",
+      "description": "Root tenant entity for a cafe business.",
       "type": "object",
-      "description": "Represents a single cafe business, acting as a tenant within the multi-tenant CafeQR platform.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Cafe entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The official business name of the cafe."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description or motto of the cafe."
-        },
-        "address": {
-          "type": "string",
-          "description": "The primary physical address of the cafe's main location."
-        },
-        "phone": {
-          "type": "string",
-          "description": "The main contact phone number for the cafe."
-        },
-        "email": {
-          "type": "string",
-          "description": "The main contact email address for the cafe.",
-          "format": "email"
-        },
-        "logoUrl": {
-          "type": "string",
-          "description": "URL to the cafe's logo image.",
-          "format": "uri"
-        },
-        "status": {
-          "type": "string",
-          "description": "The current operational status of the cafe account (e.g., 'active', 'suspended', 'pending')."
-        },
-        "subscriptionId": {
-          "type": "string",
-          "description": "Reference to the active Subscription for this cafe. (Relationship: Cafe 1:1 Subscription)"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the cafe account was registered.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the cafe account details were last updated.",
-          "format": "date-time"
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "currency": { "type": "string" },
+        "timezone": { "type": "string" },
+        "taxPercent": { "type": "number" },
+        "serviceFee": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "subscription": {
+          "type": "object",
+          "properties": {
+            "planId": { "type": "string" },
+            "status": { "type": "string" },
+            "endsAt": { "type": "string", "format": "date-time" }
+          }
         }
-      },
-      "required": [
-        "id",
-        "name",
-        "status",
-        "createdAt",
-        "updatedAt"
-      ]
+      }
     },
-    "Plan": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Plan",
+    "User": {
+      "title": "User",
+      "description": "User profile and role association.",
       "type": "object",
-      "description": "Defines the various subscription plans offered by the CafeQR platform, managed by Super Admins.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Plan entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the subscription plan (e.g., 'Basic', 'Premium', 'Enterprise')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed description of the features and benefits included in the plan."
-        },
-        "price": {
-          "type": "number",
-          "description": "The monetary cost of the plan per billing cycle."
-        },
-        "billingCycle": {
-          "type": "string",
-          "description": "The frequency at which the plan is billed (e.g., 'monthly', 'annually')."
-        },
-        "features": {
-          "type": "array",
-          "description": "A list of unique feature identifiers enabled for this plan (e.g., 'loyalty_system', 'car_ordering', 'multiple_users', 'reports').",
-          "items": {
-            "type": "string"
-          }
-        },
-        "limits": {
-          "type": "array",
-          "description": "A list of objects defining numeric limits imposed by the plan (e.g., max branches, max tables, max products).",
-          "items": {
-            "type": "string"
-          }
-        },
-        "isActive": {
-          "type": "boolean",
-          "description": "Indicates whether the plan is currently active and available for cafes to subscribe to."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the plan was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the plan details were last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "price",
-        "billingCycle",
-        "features",
-        "limits",
-        "isActive",
-        "createdAt",
-        "updatedAt"
-      ]
-    },
-    "Subscription": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Subscription",
-      "type": "object",
-      "description": "Represents a specific cafe's active or past subscription to a particular Plan.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Subscription entity."
-        },
-        "cafeId": {
-          "type": "string",
-          "description": "Reference to the Cafe that holds this subscription. (Relationship: Cafe 1:1 Subscription)"
-        },
-        "planId": {
-          "type": "string",
-          "description": "Reference to the Plan that this subscription is based on. (Relationship: Plan 1:N Subscription)"
-        },
-        "startDate": {
-          "type": "string",
-          "description": "The date when this subscription period began.",
-          "format": "date"
-        },
-        "endDate": {
-          "type": "string",
-          "description": "The date when this subscription period is scheduled to end.",
-          "format": "date"
-        },
-        "status": {
-          "type": "string",
-          "description": "The current status of the subscription (e.g., 'active', 'expired', 'cancelled', 'trial')."
-        },
-        "currentUsage": {
-          "type": "array",
-          "description": "A list of objects representing current usage metrics for the cafe against its plan limits (e.g., current number of branches, tables, products).",
-          "items": {
-            "type": "string"
-          }
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the subscription record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the subscription record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "cafeId",
-        "planId",
-        "startDate",
-        "endDate",
-        "status",
-        "currentUsage",
-        "createdAt",
-        "updatedAt"
-      ]
+        "id": { "type": "string" },
+        "cafeId": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["SUPER_ADMIN", "OWNER", "MANAGER", "STAFF"] },
+        "isActive": { "type": "boolean" }
+      }
     },
     "Branch": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Branch",
+      "description": "A physical location of a cafe.",
       "type": "object",
-      "description": "Represents a physical location or outlet of a Cafe.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Branch entity."
-        },
-        "cafeId": {
-          "type": "string",
-          "description": "Reference to the Cafe this branch belongs to. (Relationship: Cafe 1:N Branch)"
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the branch (e.g., 'Downtown Branch', 'Mall Kiosk')."
-        },
-        "address": {
-          "type": "string",
-          "description": "The full physical address of the branch."
-        },
-        "phone": {
-          "type": "string",
-          "description": "The contact phone number for the branch."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL to an image representing the branch, such as its storefront.",
-          "format": "uri"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the branch record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the branch details were last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "cafeId",
-        "name",
-        "address",
-        "createdAt",
-        "updatedAt"
-      ]
+        "id": { "type": "string" },
+        "cafeId": { "type": "string" },
+        "name": { "type": "string" },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE", "MAINTENANCE"] }
+      }
     },
     "Table": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Table",
+      "description": "A dining table or ordering slot within a branch.",
       "type": "object",
-      "description": "Represents a specific dining table or ordering point within a Cafe Branch, linked to a QR code.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Table entity."
-        },
-        "branchId": {
-          "type": "string",
-          "description": "Reference to the Branch this table is located in. (Relationship: Branch 1:N Table)"
-        },
-        "tableNumber": {
-          "type": "string",
-          "description": "The unique identifier or number assigned to the table within its branch (e.g., 'T1', 'Bar Seat 3')."
-        },
-        "description": {
-          "type": "string",
-          "description": "An optional description of the table's location or characteristics (e.g., 'Window seat', 'Outdoor patio table')."
-        },
-        "status": {
-          "type": "string",
-          "description": "The current operational status of the table (e.g., 'available', 'occupied', 'needs_cleaning')."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the table record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the table record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "branchId",
-        "tableNumber",
-        "createdAt",
-        "updatedAt"
-      ]
-    },
-    "QRCode": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "QRCode",
-      "type": "object",
-      "description": "Represents a generated QR code designed to link customers to a specific Table for ordering.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the QRCode entity."
-        },
-        "tableId": {
-          "type": "string",
-          "description": "Reference to the Table this QR code is associated with. (Relationship: Table 1:1 QRCode)"
-        },
-        "codeValue": {
-          "type": "string",
-          "description": "The actual string value embedded within the QR code, used for system lookup upon scanning."
-        },
-        "qrCodeImageUrl": {
-          "type": "string",
-          "description": "URL to the generated image of the QR code, allowing for download and printing.",
-          "format": "uri"
-        },
-        "isActive": {
-          "type": "boolean",
-          "description": "Indicates whether this QR code is currently active and can be used by customers."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the QR code record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the QR code record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "tableId",
-        "codeValue",
-        "qrCodeImageUrl",
-        "isActive",
-        "createdAt",
-        "updatedAt"
-      ]
-    },
-    "Category": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Category",
-      "type": "object",
-      "description": "Used to organize menu items (Products) into logical groups for a cafe.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Category entity."
-        },
-        "cafeId": {
-          "type": "string",
-          "description": "Reference to the Cafe this category belongs to. (Relationship: Cafe 1:N Category)"
-        },
-        "name": {
-          "type": "string",
-          "description": "The display name of the category (e.g., 'Hot Beverages', 'Pastries', 'Sandwiches')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description of the types of products found in this category."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL to an image representing the category.",
-          "format": "uri"
-        },
-        "displayOrder": {
-          "type": "number",
-          "description": "A numeric value indicating the order in which this category should be displayed on the menu."
-        },
-        "isActive": {
-          "type": "boolean",
-          "description": "Indicates whether the category is currently active and visible on the customer menu."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the category was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the category was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "cafeId",
-        "name",
-        "displayOrder",
-        "isActive",
-        "createdAt",
-        "updatedAt"
-      ]
-    },
-    "Product": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Product",
-      "type": "object",
-      "description": "Represents an individual food or drink item available on a cafe's menu.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Product entity."
-        },
-        "categoryId": {
-          "type": "string",
-          "description": "Reference to the Category this product belongs to. (Relationship: Category 1:N Product)"
-        },
-        "cafeId": {
-          "type": "string",
-          "description": "Reference to the Cafe this product belongs to, ensuring multi-tenant data isolation. (Relationship: Cafe 1:N Product)"
-        },
-        "name": {
-          "type": "string",
-          "description": "The display name of the product (e.g., 'Espresso', 'Chocolate Croissant')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed description of the product, potentially AI-generated for marketing appeal."
-        },
-        "price": {
-          "type": "number",
-          "description": "The base price of the product."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL to an image of the product.",
-          "format": "uri"
-        },
-        "isAvailable": {
-          "type": "boolean",
-          "description": "Indicates whether the product is currently available for customers to order."
-        },
-        "calories": {
-          "type": "number",
-          "description": "The approximate caloric content of the product, if provided."
-        },
-        "prepTimeMinutes": {
-          "type": "number",
-          "description": "Estimated time in minutes required to prepare the product."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the product record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the product details were last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "categoryId",
-        "cafeId",
-        "name",
-        "price",
-        "isAvailable",
-        "createdAt",
-        "updatedAt"
-      ]
-    },
-    "ProductOption": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ProductOption",
-      "type": "object",
-      "description": "Defines configurable options or variations for a specific Product (e.g., 'Size', 'Milk Type', 'Add-ons').",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ProductOption entity."
-        },
-        "productId": {
-          "type": "string",
-          "description": "Reference to the Product this option applies to. (Relationship: Product 1:N ProductOption)"
-        },
-        "name": {
-          "type": "string",
-          "description": "The display name of the option group (e.g., 'Size', 'Sweetness Level')."
-        },
-        "type": {
-          "type": "string",
-          "description": "The selection type for this option (e.g., 'single_select', 'multi_select', 'quantity_modifier')."
-        },
-        "isRequired": {
-          "type": "boolean",
-          "description": "Indicates if selecting an option from this group is mandatory for the product."
-        },
-        "choices": {
-          "type": "array",
-          "description": "An array of available choices within this option group, each with its own properties.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "displayOrder": {
-          "type": "number",
-          "description": "A numeric value indicating the order in which this option group should be displayed on the menu."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the product option was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the product option was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "productId",
-        "name",
-        "type",
-        "isRequired",
-        "choices",
-        "displayOrder",
-        "createdAt",
-        "updatedAt"
-      ]
-    },
-    "Customer": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Customer",
-      "type": "object",
-      "description": "Represents a customer primarily for loyalty tracking within a specific cafe. Customers are identified by phone number.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Customer entity."
-        },
-        "cafeId": {
-          "type": "string",
-          "description": "Reference to the Cafe this customer's loyalty profile belongs to. (Relationship: Cafe 1:N Customer)"
-        },
-        "phoneNumber": {
-          "type": "string",
-          "description": "The customer's phone number, serving as a primary identifier for loyalty. Unique per cafe."
-        },
-        "name": {
-          "type": "string",
-          "description": "The customer's name (optional)."
-        },
-        "email": {
-          "type": "string",
-          "description": "The customer's email address (optional).",
-          "format": "email"
-        },
-        "totalLoyaltyPoints": {
-          "type": "number",
-          "description": "The current total loyalty points accumulated by this customer at this specific cafe."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the customer record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the customer record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "cafeId",
-        "phoneNumber",
-        "totalLoyaltyPoints",
-        "createdAt",
-        "updatedAt"
-      ]
+        "id": { "type": "string" },
+        "cafeId": { "type": "string" },
+        "branchId": { "type": "string" },
+        "number": { "type": "number" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["DINE_IN", "OUTDOOR", "CAR_SERVICE"] },
+        "status": { "type": "string", "enum": ["AVAILABLE", "OCCUPIED", "RESERVED", "OUT_OF_SERVICE"] }
+      }
     },
     "Order": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Order",
+      "description": "A customer order.",
       "type": "object",
-      "description": "Represents a customer's submitted order within a cafe, including details like items, status, and payment information.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Order entity."
-        },
-        "cafeId": {
-          "type": "string",
-          "description": "Reference to the Cafe where this order was placed. (Relationship: Cafe 1:N Order)"
-        },
-        "branchId": {
-          "type": "string",
-          "description": "Reference to the Branch where this order was placed. (Relationship: Branch 1:N Order)"
-        },
-        "tableId": {
-          "type": "string",
-          "description": "Reference to the Table if the order is for dine-in. (Relationship: Table 1:N Order)"
-        },
-        "customerId": {
-          "type": "string",
-          "description": "Reference to the Customer if associated with a loyalty profile. (Relationship: Customer 1:N Order)"
-        },
-        "orderType": {
-          "type": "string",
-          "description": "The type of order (e.g., 'dine_in', 'car_order', 'takeaway')."
-        },
-        "carNumber": {
-          "type": "string",
-          "description": "The car number provided by the customer, if the orderType is 'car_order'."
-        },
-        "status": {
-          "type": "string",
-          "description": "The current processing status of the order (e.g., 'pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled')."
-        },
-        "subtotalAmount": {
-          "type": "number",
-          "description": "The sum of all order items' base prices before any taxes, discounts, or loyalty redemptions."
-        },
-        "totalAmount": {
-          "type": "number",
-          "description": "The final total amount of the order, including all applied options, taxes, discounts, and loyalty redemptions."
-        },
-        "loyaltyPointsEarned": {
-          "type": "number",
-          "description": "The number of loyalty points earned by the customer from this order."
-        },
-        "loyaltyPointsUsed": {
-          "type": "number",
-          "description": "The number of loyalty points redeemed by the customer for this order."
-        },
-        "orderDateTime": {
-          "type": "string",
-          "description": "The date and time when the order was placed.",
-          "format": "date-time"
-        },
-        "notes": {
-          "type": "string",
-          "description": "General notes or special instructions provided by the customer for the entire order."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the order record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the order record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "cafeId",
-        "branchId",
-        "orderType",
-        "status",
-        "subtotalAmount",
-        "totalAmount",
-        "orderDateTime",
-        "createdAt",
-        "updatedAt"
-      ]
+        "id": { "type": "string" },
+        "cafeId": { "type": "string" },
+        "branchId": { "type": "string" },
+        "tableId": { "type": "string" },
+        "orderNumber": { "type": "number" },
+        "status": { "type": "string", "enum": ["NEW", "PREPARING", "READY", "COMPLETED", "CANCELLED"] },
+        "totalAmount": { "type": "number" },
+        "guestCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     },
-    "OrderItem": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "OrderItem",
+    "Product": {
+      "title": "Product",
+      "description": "A menu item.",
       "type": "object",
-      "description": "Represents a single product item included within a customer's Order, along with its specific details and selected options.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the OrderItem entity."
-        },
-        "orderId": {
-          "type": "string",
-          "description": "Reference to the Order this item belongs to. (Relationship: Order 1:N OrderItem)"
-        },
-        "productId": {
-          "type": "string",
-          "description": "Reference to the Product that was ordered. (Relationship: Product 1:N OrderItem)"
-        },
-        "productName": {
-          "type": "string",
-          "description": "The name of the product at the time the order was placed (for historical accuracy)."
-        },
-        "quantity": {
-          "type": "number",
-          "description": "The quantity of this specific product item ordered."
-        },
-        "unitPrice": {
-          "type": "number",
-          "description": "The price of a single unit of the product (including any option adjustments) at the time of order."
-        },
-        "subtotal": {
-          "type": "number",
-          "description": "The total price for this individual order item (quantity * unitPrice)."
-        },
-        "notes": {
-          "type": "string",
-          "description": "Item-specific notes or special instructions provided by the customer."
-        },
-        "selectedOptions": {
-          "type": "array",
-          "description": "An array detailing the selected options and their price adjustments for this product item.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the order item record was created.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "orderId",
-        "productId",
-        "productName",
-        "quantity",
-        "unitPrice",
-        "subtotal",
-        "createdAt"
-      ]
-    },
-    "LoyaltyPointTransaction": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "LoyaltyPointTransaction",
-      "type": "object",
-      "description": "Records individual transactions that modify a customer's loyalty point balance.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the LoyaltyPointTransaction entity."
-        },
-        "customerId": {
-          "type": "string",
-          "description": "Reference to the Customer whose loyalty points are affected. (Relationship: Customer 1:N LoyaltyPointTransaction)"
-        },
-        "cafeId": {
-          "type": "string",
-          "description": "Reference to the Cafe where the loyalty transaction occurred. (Relationship: Cafe 1:N LoyaltyPointTransaction)"
-        },
-        "orderId": {
-          "type": "string",
-          "description": "Reference to the Order that generated or used these loyalty points, if applicable. (Relationship: Order 1:N LoyaltyPointTransaction)"
-        },
-        "pointsChange": {
-          "type": "number",
-          "description": "The numeric change in loyalty points. Positive for points earned, negative for points spent or redeemed."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description of the loyalty transaction (e.g., 'Earned from purchase', 'Points redeemed for discount', 'Manual adjustment')."
-        },
-        "transactionDate": {
-          "type": "string",
-          "description": "The date and time when the loyalty point transaction occurred.",
-          "format": "date-time"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the loyalty transaction record was created.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "customerId",
-        "cafeId",
-        "pointsChange",
-        "description",
-        "transactionDate",
-        "createdAt"
-      ]
+        "id": { "type": "string" },
+        "cafeId": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE", "OUT_OF_STOCK"] }
+      }
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "google"]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}",
+        "path": "/plans/{planId}",
         "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profiles, including their role and associated cafe ID (if a Cafe Admin). The document ID matches `request.auth.uid` for direct authorization. This serves as the primary source for user authentication context for security rules."
+          "entityName": "Plan",
+          "schema": { "$ref": "#/backend/entities/Plan" },
+          "description": "Global subscription plans."
         }
       },
       {
-        "path": "/roles_super_admin/{userId}",
+        "path": "/users/{userId}",
         "definition": {
           "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "A dedicated top-level collection for Super Admin roles. The existence of a document at `/roles_super_admin/{request.auth.uid}` indicates Super Admin privileges. This follows the 'Existence over Content' pattern for global roles.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user, matching their `request.auth.uid`."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/User" },
+          "description": "User profiles. matches auth.uid."
         }
       },
       {
         "path": "/cafes/{cafeId}",
         "definition": {
           "entityName": "Cafe",
-          "schema": {
-            "$ref": "#/backend/entities/Cafe"
-          },
-          "description": "Represents a single cafe business and acts as the root for all cafe-specific tenant data. Access is controlled by Super Admins or the associated Cafe Admin.",
-          "params": [
-            {
-              "name": "cafeId",
-              "description": "The unique identifier for the Cafe."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/plans/{planId}",
-        "definition": {
-          "entityName": "Plan",
-          "schema": {
-            "$ref": "#/backend/entities/Plan"
-          },
-          "description": "Defines subscription plans offered by the platform. This is a global resource, managed exclusively by Super Admins.",
-          "params": [
-            {
-              "name": "planId",
-              "description": "The unique identifier for the Plan."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/subscriptions/{subscriptionId}",
-        "definition": {
-          "entityName": "Subscription",
-          "schema": {
-            "$ref": "#/backend/entities/Subscription"
-          },
-          "description": "Records active or past subscriptions for cafes. Managed by Super Admins, with read-only access for the associated Cafe Admin. Includes denormalized 'cafeId' for authorization independence.",
-          "params": [
-            {
-              "name": "subscriptionId",
-              "description": "The unique identifier for the Subscription."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Cafe" },
+          "description": "Cafe tenant root."
         }
       },
       {
         "path": "/cafes/{cafeId}/branches/{branchId}",
         "definition": {
           "entityName": "Branch",
-          "schema": {
-            "$ref": "#/backend/entities/Branch"
-          },
-          "description": "Represents a physical location or outlet of a Cafe. Managed by the associated Cafe Admin. Includes denormalized 'cafeId' for authorization independence.",
-          "params": [
-            {
-              "name": "cafeId",
-              "description": "The unique identifier of the parent Cafe."
-            },
-            {
-              "name": "branchId",
-              "description": "The unique identifier for the Branch."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Branch" },
+          "description": "Cafe branches."
         }
       },
       {
         "path": "/cafes/{cafeId}/branches/{branchId}/tables/{tableId}",
         "definition": {
           "entityName": "Table",
-          "schema": {
-            "$ref": "#/backend/entities/Table"
-          },
-          "description": "Represents a dining table or ordering point within a Cafe Branch. Managed by the associated Cafe Admin. Includes denormalized 'cafeId' for authorization independence.",
-          "params": [
-            {
-              "name": "cafeId",
-              "description": "The unique identifier of the grandparent Cafe."
-            },
-            {
-              "name": "branchId",
-              "description": "The unique identifier of the parent Branch."
-            },
-            {
-              "name": "tableId",
-              "description": "The unique identifier for the Table."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/qrcodes/{qrCodeValue}",
-        "definition": {
-          "entityName": "QRCode",
-          "schema": {
-            "$ref": "#/backend/entities/QRCode"
-          },
-          "description": "Represents a generated QR code used to link customers to a specific Table for ordering. This is a top-level collection, with the document ID being the 'codeValue' itself, for efficient public lookup. Includes denormalized 'cafeId', 'branchId', and 'tableId' for authorization independence, especially for anonymous customer orders.",
-          "params": [
-            {
-              "name": "qrCodeValue",
-              "description": "The actual string value embedded within the QR code, used as the document ID for direct lookup."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/cafes/{cafeId}/categories/{categoryId}",
-        "definition": {
-          "entityName": "Category",
-          "schema": {
-            "$ref": "#/backend/entities/Category"
-          },
-          "description": "Organizes menu items for a Cafe. Managed by the associated Cafe Admin and publicly readable. Includes denormalized 'cafeId' for authorization independence.",
-          "params": [
-            {
-              "name": "cafeId",
-              "description": "The unique identifier of the parent Cafe."
-            },
-            {
-              "name": "categoryId",
-              "description": "The unique identifier for the Category."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/cafes/{cafeId}/categories/{categoryId}/products/{productId}",
-        "definition": {
-          "entityName": "Product",
-          "schema": {
-            "$ref": "#/backend/entities/Product"
-          },
-          "description": "Represents an individual menu item. Managed by the associated Cafe Admin and publicly readable. Includes denormalized 'cafeId' and 'categoryId' for authorization independence.",
-          "params": [
-            {
-              "name": "cafeId",
-              "description": "The unique identifier of the grandparent Cafe."
-            },
-            {
-              "name": "categoryId",
-              "description": "The unique identifier of the parent Category."
-            },
-            {
-              "name": "productId",
-              "description": "The unique identifier for the Product."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/cafes/{cafeId}/categories/{categoryId}/products/{productId}/product_options/{optionId}",
-        "definition": {
-          "entityName": "ProductOption",
-          "schema": {
-            "$ref": "#/backend/entities/ProductOption"
-          },
-          "description": "Defines configurable options for a Product. Managed by the associated Cafe Admin and publicly readable. Includes denormalized 'cafeId' and 'categoryId' for authorization independence.",
-          "params": [
-            {
-              "name": "cafeId",
-              "description": "The unique identifier of the great-grandparent Cafe."
-            },
-            {
-              "name": "categoryId",
-              "description": "The unique identifier of the grandparent Category."
-            },
-            {
-              "name": "productId",
-              "description": "The unique identifier of the parent Product."
-            },
-            {
-              "name": "optionId",
-              "description": "The unique identifier for the ProductOption."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/cafes/{cafeId}/customers/{customerId}",
-        "definition": {
-          "entityName": "Customer",
-          "schema": {
-            "$ref": "#/backend/entities/Customer"
-          },
-          "description": "Stores customer loyalty profiles for a specific Cafe. Managed by the associated Cafe Admin. Includes denormalized 'cafeId' for authorization independence.",
-          "params": [
-            {
-              "name": "cafeId",
-              "description": "The unique identifier of the parent Cafe."
-            },
-            {
-              "name": "customerId",
-              "description": "The unique identifier for the Customer."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Table" },
+          "description": "Tables within a branch. Includes denormalized cafeId."
         }
       },
       {
         "path": "/cafes/{cafeId}/orders/{orderId}",
         "definition": {
           "entityName": "Order",
-          "schema": {
-            "$ref": "#/backend/entities/Order"
-          },
-          "description": "Represents a customer's submitted order. Writeable by anonymous customers (during order placement) and managed by the associated Cafe Admin. Includes denormalized 'cafeId', 'branchId', 'tableId', and 'customerId' for authorization independence.",
-          "params": [
-            {
-              "name": "cafeId",
-              "description": "The unique identifier of the parent Cafe."
-            },
-            {
-              "name": "orderId",
-              "description": "The unique identifier for the Order."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Order" },
+          "description": "Orders for a cafe. Includes denormalized branchId."
         }
       },
       {
-        "path": "/cafes/{cafeId}/orders/{orderId}/order_items/{orderItemId}",
+        "path": "/cafes/{cafeId}/products/{productId}",
         "definition": {
-          "entityName": "OrderItem",
-          "schema": {
-            "$ref": "#/backend/entities/OrderItem"
-          },
-          "description": "Represents a single product item within an Order. Writeable by anonymous customers (during order creation) and managed by the associated Cafe Admin. Includes denormalized 'cafeId' and 'branchId' for authorization independence.",
-          "params": [
-            {
-              "name": "cafeId",
-              "description": "The unique identifier of the grandparent Cafe."
-            },
-            {
-              "name": "orderId",
-              "description": "The unique identifier of the parent Order."
-            },
-            {
-              "name": "orderItemId",
-              "description": "The unique identifier for the OrderItem."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/cafes/{cafeId}/customers/{customerId}/loyalty_point_transactions/{transactionId}",
-        "definition": {
-          "entityName": "LoyaltyPointTransaction",
-          "schema": {
-            "$ref": "#/backend/entities/LoyaltyPointTransaction"
-          },
-          "description": "Records individual loyalty point changes for a Customer. Managed by the associated Cafe Admin. Includes denormalized 'cafeId' and 'customerId' for authorization independence.",
-          "params": [
-            {
-              "name": "cafeId",
-              "description": "The unique identifier of the grandparent Cafe."
-            },
-            {
-              "name": "customerId",
-              "description": "The unique identifier of the parent Customer."
-            },
-            {
-              "name": "transactionId",
-              "description": "The unique identifier for the LoyaltyPointTransaction."
-            }
-          ]
+          "entityName": "Product",
+          "schema": { "$ref": "#/backend/entities/Product" },
+          "description": "Menu products for a cafe."
         }
       }
-    ],
-    "reasoning": "The Firestore structure for CafeQR is designed with multi-tenancy and robust access control as primary concerns, adhering strictly to Authorization Independence, Structural Segregation, and consistent Access Modeling. Each cafe operates as a distinct tenant, with its data isolated under a dedicated '/cafes/{cafeId}' root.\n\n**Authorization Independence (CRITICAL Denormalization):**\nTo eliminate the need for `get()` calls in security rules, crucial ancestor IDs are denormalized into subcollection documents. Specifically:\n\n*   **`Table` documents** (nested under `branches`) will include `cafeId` to allow rules to verify cafe admin access without fetching the parent `Branch` document.\n*   **`QRCode` documents** (placed at the top-level collection `/qrcodes/{qrCodeValue}` for public lookup) will include `cafeId`, `branchId`, and `tableId`. This is critical for anonymous users to place orders, as it allows security rules to validate the `cafeId`, `branchId`, and `tableId` context directly from the QR code document without any `get()` operations on parent collections.\n*   **`ProductOption` documents** (nested under `products`) will include `cafeId` and `categoryId` to ensure that cafe administrators can manage them, and customers can view them, without rules needing to fetch parent `Product` or `Category` documents.\n*   **`OrderItem` documents** (nested under `orders`) will include `cafeId` and `branchId` to validate that modifications or reads are performed by the correct cafe admin or customer, bypassing parent `Order` document fetches.\n\nThis denormalization ensures that security rules are simple, atomic, and performant, as all necessary authorization context is present within the `resource.data` of the document being accessed.\n\n**Structural Segregation and QAPs (Queryable Access Patterns):**\n\n*   **Multi-tenancy:** All cafe-specific data is rooted under `/cafes/{cafeId}/...`, providing inherent data isolation. This naturally supports QAPs for cafe admins, allowing them to query their own branches, tables, menus, orders, and customers without leaking data from other cafes.\n*   **Global Data:** `Users`, `Plans`, `Subscriptions`, and `SuperAdminRoles` are top-level collections. `Plans` and `SuperAdminRoles` are accessible only by Super Admins, while `Subscriptions` are accessible by Super Admins and read-only by relevant Cafe Admins.\n*   **Public QR Code Access:** The `QRCode` entity is strategically placed as a top-level collection (`/qrcodes/{qrCodeValue}`). By using the `codeValue` as the document ID and including denormalized `cafeId`, `branchId`, and `tableId`, this enables anonymous customer users to perform a single, unauthenticated `get()` operation on `/qrcodes/{qrCodeValue}`. This `get()` retrieves the full context needed to direct the customer to the correct menu and allow them to place an order, satisfying the QAP for customer ordering without requiring complex multi-path lookups or `get()` calls in rules to establish the ordering context.\n*   **Menu Visibility:** `Category`, `Product`, and `ProductOption` documents are nested under `/cafes/{cafeId}/...` and contain `isActive` or `isAvailable` flags. Rules can permit public read access to documents where these flags are true, enabling customers to easily query and view the active menu for a given cafe without exposing draft or inactive items. This fulfills QAPs for public menu display.\n\n**DBAC and Predictability:**\n\n*   **Roles:** User roles are managed via a `/users/{userId}` collection (containing `role` and `cafeId`) and a dedicated `/roles_super_admin/{userId}` collection (for existence checks). This allows for clear, explicit role-based authorization using `request.auth.uid` and direct data lookups within the `request.auth` context or easily accessible role documents.\n*   **Consistent Naming:** Wildcards are descriptive (e.g., `{cafeId}`, `{branchId}`), and fields like `ownerId` (or `cafeId` in this context) are consistently used for authorization, enhancing debuggability and predictability of the rule set."
+    ]
   }
 }
