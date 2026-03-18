@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Wand2, Edit, Trash2, Coffee, Pizza, IceCream } from "lucide-react";
+import { Plus, Search, Wand2, Trash2, Coffee, Pizza, IceCream } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { generateMenuDescription } from "@/ai/flows/generate-menu-description";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
-import { collection, query, where, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { callAiWithRetry, withAiCache } from "@/lib/ai-utils";
 
 export default function MenuManagement() {
   const { user } = useUser();
@@ -22,6 +23,9 @@ export default function MenuManagement() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: "", ingredients: "", description: "", price: "0", category: "Coffee" });
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Rate limiting ref
+  const lastCallTimestamp = useRef(0);
 
   const cafeId = user?.email?.includes('urban') ? 'urban-brew-cafe' : 'coastal-cup';
 
@@ -31,32 +35,45 @@ export default function MenuManagement() {
   }, [db, cafeId]);
   const { data: products, isLoading } = useCollection(productsQuery);
 
-  const categoriesQuery = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
-    return query(collection(db, 'cafes', cafeId, 'categories'));
-  }, [db, cafeId]);
-  const { data: categories } = useCollection(categoriesQuery);
-
   const handleGenerateDescription = async () => {
     if (!newProduct.name || !newProduct.ingredients) {
       toast({ title: "Details Required", description: "Please provide a name and ingredients first.", variant: "destructive" });
       return;
     }
+
+    // 1. Client-side Rate Limiting (Cooldown)
+    const now = Date.now();
+    if (now - lastCallTimestamp.current < 3000) {
+      toast({ title: "Please wait", description: "Wait a few seconds before generating another description.", variant: "secondary" });
+      return;
+    }
+    lastCallTimestamp.current = now;
+
     setIsGenerating(true);
+    
+    // Create a cache key based on inputs
+    const cacheKey = `desc-${newProduct.name}-${newProduct.ingredients}`.toLowerCase().replace(/\s+/g, '-');
+
     try {
-      const result = await generateMenuDescription({
-        itemName: newProduct.name,
-        ingredients: newProduct.ingredients,
-        tasteProfile: "delicious and fresh",
-      });
+      // 2. Use Cache + Retry Logic
+      const result = await withAiCache(cacheKey, () => 
+        callAiWithRetry(() => generateMenuDescription({
+          itemName: newProduct.name,
+          ingredients: newProduct.ingredients,
+          tasteProfile: "delicious and fresh",
+        }))
+      );
+
       setNewProduct(prev => ({ ...prev, description: result.description }));
       toast({ title: "Description Generated!", description: "AI has crafted an appetizing text for you." });
     } catch (e: any) {
       console.error(e);
-      if (e.message?.includes('429') || e.status === 429) {
+      const isRateLimit = e.message?.includes('429') || e.status === 429 || e.message?.includes('exhausted');
+      
+      if (isRateLimit) {
         toast({ 
           title: "AI Service Busy", 
-          description: "The AI service is currently at capacity. Please try again in a few seconds.", 
+          description: "We tried several times, but the AI is currently at capacity. Please try again in a minute.", 
           variant: "destructive" 
         });
       } else {
