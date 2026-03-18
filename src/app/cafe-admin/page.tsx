@@ -15,8 +15,8 @@ import {
   ShoppingBag,
   Activity,
 } from "lucide-react";
-import { useCollection, useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, where } from 'firebase/firestore';
+import { useCollection, useDoc, useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, collection, query, orderBy, limit, where } from 'firebase/firestore';
 
 function formatCurrency(value: number | string) {
   return new Intl.NumberFormat('en-OM', {
@@ -61,13 +61,22 @@ export default function CafeAdminDashboard() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
 
-  // Fetch recent orders from Firestore
+  // 1. Get user profile to retrieve the associated cafeId
+  const userProfileRef = useMemoFirebase(() => {
+    return (db && user) ? doc(db, 'users', user.uid) : null;
+  }, [db, user]);
+  
+  const { data: userProfile, isLoading: profileLoading } = useDoc(userProfileRef);
+
+  // 2. Fetch recent orders from Firestore using the cafeId from profile
   const ordersQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    // In a real app, we'd filter by cafeId from user profile
-    // return query(collection(db, 'cafes', cafeId, 'orders'), orderBy('createdAt', 'desc'), limit(5));
-    return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5));
-  }, [db]);
+    if (!db || !userProfile?.cafeId) return null;
+    return query(
+      collection(db, 'cafes', userProfile.cafeId, 'orders'), 
+      orderBy('createdAt', 'desc'), 
+      limit(5)
+    );
+  }, [db, userProfile?.cafeId]);
 
   const { data: recentOrders, isLoading: ordersLoading } = useCollection(ordersQuery);
 
@@ -108,7 +117,7 @@ export default function CafeAdminDashboard() {
     ];
   }, [recentOrders]);
 
-  if (isUserLoading) return <DashboardSkeleton />;
+  if (isUserLoading || profileLoading) return <DashboardSkeleton />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -143,7 +152,7 @@ export default function CafeAdminDashboard() {
           <div className="p-6 flex items-center justify-between border-b bg-muted/5">
             <div>
               <h3 className="text-lg font-black">Recent Orders</h3>
-              <p className="text-sm text-muted-foreground">Live order feed from Firestore</p>
+              <p className="text-sm text-muted-foreground">Live order feed for your cafe</p>
             </div>
             <Button size="sm" className="rounded-xl font-bold bg-primary" onClick={() => window.location.href = "/cafe-admin/orders"}>
               View All Orders
@@ -173,9 +182,14 @@ export default function CafeAdminDashboard() {
                       <td className="px-6 py-4 text-sm font-black">{formatCurrency(order.totalAmount || 0)}</td>
                     </tr>
                   ))}
-                  {recentOrders?.length === 0 && (
+                  {!ordersLoading && recentOrders?.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-6 py-10 text-center text-muted-foreground">No recent orders found.</td>
+                    </tr>
+                  )}
+                  {ordersLoading && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-10 text-center text-muted-foreground">Loading orders...</td>
                     </tr>
                   )}
                 </tbody>
