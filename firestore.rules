@@ -68,14 +68,19 @@ service cloud.firestore {
       }
     }
     
-    // Collection Group Queries for Tables (Requires cafeId field in documents)
+    // Collection Group Queries for Tables
+    // Optimized for performance and query validation
     match /{path=**}/tables/{tableId} {
-      allow list: if isSignedIn() && isCafeAdmin(resource.data.cafeId);
+      allow list: if isSignedIn() && 
+                  resource.data.cafeId == getUserData().cafeId && 
+                  (getUserData().role == 'OWNER' || getUserData().role == 'MANAGER' || getUserData().role == 'STAFF');
     }
 
-    // Collection Group Queries for Orders (Requires cafeId field in documents)
+    // Collection Group Queries for Orders
     match /{path=**}/orders/{orderId} {
-      allow list: if isSignedIn() && isCafeAdmin(resource.data.cafeId);
+      allow list: if isSignedIn() && 
+                  resource.data.cafeId == getUserData().cafeId && 
+                  (getUserData().role == 'OWNER' || getUserData().role == 'MANAGER' || getUserData().role == 'STAFF');
     }
   }
 }
