@@ -1,3 +1,6 @@
+
+"use client";
+
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { AuthGuard } from "@/components/auth-guard";
 
@@ -21,7 +24,7 @@ export default function SuperAdminLayout({
   ];
 
   return (
-    <AuthGuard allowedRoles={["super_admin", "admin"]}>
+    <AuthGuard allowedRoles={["SUPER_ADMIN"]}>
       <div className="flex min-h-screen bg-muted/30">
         <AdminSidebar items={navItems} portalName="CafeQR Super" />
         <div className="flex-1 flex flex-col">

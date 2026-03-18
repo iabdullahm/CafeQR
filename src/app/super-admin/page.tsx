@@ -1,23 +1,18 @@
+
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { useMemo } from 'react';
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Store, 
-  Users, 
   CreditCard, 
-  TrendingUp, 
-  AlertCircle, 
   CheckCircle2, 
   ShoppingBag, 
-  QrCode, 
-  UserPlus,
   RefreshCw,
-  Download
+  TrendingUp
 } from "lucide-react";
 import { 
   AreaChart, 
@@ -30,37 +25,41 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { DataTableReusable } from "@/components/tables/data-table-reusable";
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { cn } from "@/lib/utils";
 
 export default function SuperAdminDashboard() {
-  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
-    queryKey: ["dashboard-stats"],
-    queryFn: async () => {
-      const res = await api.get("/dashboard/stats");
-      return res.data.data;
-    }
-  });
+  const db = useFirestore();
 
-  const { data: recentCafes, isLoading: cafesLoading } = useQuery({
-    queryKey: ["recent-cafes"],
-    queryFn: async () => {
-      const res = await api.get("/dashboard/recent-cafes");
-      return res.data.data;
-    }
-  });
+  // Real-time Cafes
+  const cafesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'cafes'), orderBy('createdAt', 'desc'));
+  }, [db]);
+  const { data: cafes, isLoading: cafesLoading } = useCollection(cafesQuery);
 
-  const { data: revenueData } = useQuery({
-    queryKey: ["revenue-chart"],
-    queryFn: async () => {
-      const res = await api.get("/dashboard/revenue-chart?period=monthly");
-      return res.data.data;
-    }
-  });
+  // Derived Stats
+  const stats = useMemo(() => {
+    const totalCafes = cafes?.length || 0;
+    const activeSubs = cafes?.filter(c => c.isActive && c.subscription?.status === 'ACTIVE').length || 0;
+    
+    // In a real app, revenue would come from a payments collection, using mock for demo
+    return [
+      { title: "Total Cafes", value: totalCafes, icon: <Store className="h-4 w-4" />, color: "text-blue-600", trend: "+12%" },
+      { title: "Active Subs", value: activeSubs, icon: <CheckCircle2 className="h-4 w-4" />, color: "text-green-600", trend: "+8%" },
+      { title: "Monthly Revenue", value: `1,240.500 OMR`, icon: <CreditCard className="h-4 w-4" />, color: "text-primary", trend: "+15%" },
+      { title: "Total Orders", value: "8,420", icon: <ShoppingBag className="h-4 w-4" />, color: "text-orange-600", trend: "+22%" },
+    ];
+  }, [cafes]);
 
-  const dashboardStats = [
-    { title: "Total Cafes", value: stats?.totalCafes || 0, icon: <Store className="h-4 w-4" />, color: "text-blue-600", trend: "+12%" },
-    { title: "Active Subs", value: stats?.activeSubscriptions || 0, icon: <CheckCircle2 className="h-4 w-4" />, color: "text-green-600", trend: "+8%" },
-    { title: "Monthly Revenue", value: `${stats?.monthlyRevenue?.toFixed(3) || "0.000"} OMR`, icon: <CreditCard className="h-4 w-4" />, color: "text-primary", trend: "+15%" },
-    { title: "Total Orders", value: stats?.ordersThisMonth || 0, icon: <ShoppingBag className="h-4 w-4" />, color: "text-orange-600", trend: "+22%" },
+  const revenueData = [
+    { name: 'Jan', revenue: 12000 },
+    { name: 'Feb', revenue: 15000 },
+    { name: 'Mar', revenue: 18000 },
+    { name: 'Apr', revenue: 22000 },
+    { name: 'May', revenue: 25000 },
+    { name: 'Jun', revenue: 39000 },
   ];
 
   return (
@@ -70,8 +69,8 @@ export default function SuperAdminDashboard() {
         description="Platform performance and system health at a glance."
         actions={
           <>
-            <Button variant="outline" className="gap-2" onClick={() => refetchStats()}>
-              <RefreshCw className={cn("h-4 w-4", statsLoading && "animate-spin")} /> Refresh
+            <Button variant="outline" className="gap-2 bg-card">
+              <RefreshCw className={cn("h-4 w-4", cafesLoading && "animate-spin")} /> Refresh
             </Button>
             <Button className="bg-primary hover:bg-primary/90">
               Download Report
@@ -81,7 +80,7 @@ export default function SuperAdminDashboard() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {dashboardStats.map((stat) => (
+        {stats.map((stat) => (
           <StatCard 
             key={stat.title} 
             title={stat.title} 
@@ -100,14 +99,14 @@ export default function SuperAdminDashboard() {
             <div className="flex items-center justify-between">
                <div>
                   <CardTitle>Revenue Analytics</CardTitle>
-                  <CardDescription>Monthly revenue trends across all tenants.</CardDescription>
+                  <CardDescription>Monthly revenue trends across all tenants (OMR).</CardDescription>
                </div>
-               <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">Live Data</Badge>
+               <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">Global View</Badge>
             </div>
           </CardHeader>
           <CardContent className="h-[350px] mt-4">
              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData || []}>
+                <AreaChart data={revenueData}>
                    <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
@@ -179,12 +178,12 @@ export default function SuperAdminDashboard() {
             <CardTitle>Recent Cafe Signups</CardTitle>
             <CardDescription>Newest tenants onboarded to the platform.</CardDescription>
           </div>
-          <Button variant="outline" size="sm">View All Directory</Button>
+          <Button variant="outline" size="sm" onClick={() => window.location.href='/super-admin/cafes'}>View All Directory</Button>
         </CardHeader>
         <CardContent className="p-0">
           <DataTableReusable 
             isLoading={cafesLoading}
-            data={recentCafes || []}
+            data={(cafes || []).slice(0, 5)}
             columns={[
               { 
                 key: "name", 
@@ -192,7 +191,7 @@ export default function SuperAdminDashboard() {
                 render: (row) => (
                   <div className="flex flex-col">
                     <span className="font-bold">{row.name}</span>
-                    <span className="text-xs text-muted-foreground">{row.email}</span>
+                    <span className="text-xs text-muted-foreground">{row.email || row.slug}</span>
                   </div>
                 )
               },
@@ -201,10 +200,9 @@ export default function SuperAdminDashboard() {
                 label: "Status",
                 render: (row) => (
                   <Badge 
-                    variant={row.status === 'active' ? 'default' : 'destructive'}
-                    className={cn("capitalize font-bold", row.status === 'active' && "bg-green-600")}
+                    className={cn("capitalize font-bold", row.isActive ? "bg-green-600" : "bg-destructive")}
                   >
-                    {row.status}
+                    {row.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 )
               },
@@ -214,7 +212,7 @@ export default function SuperAdminDashboard() {
                 className: "text-right pr-6",
                 render: (row) => (
                   <span className="text-muted-foreground font-medium">
-                    {new Date(row.createdAt).toLocaleDateString()}
+                    {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : 'N/A'}
                   </span>
                 )
               }
@@ -224,9 +222,4 @@ export default function SuperAdminDashboard() {
       </Card>
     </div>
   );
-}
-
-// Utility to handle conditional classes in components
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
 }

@@ -1,8 +1,7 @@
+
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import api from "@/lib/api";
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { DataTableReusable } from "@/components/tables/data-table-reusable";
 import { Input } from "@/components/ui/input";
@@ -18,8 +17,7 @@ import {
   MoreHorizontal,
   User,
   Mail,
-  MapPin,
-  Clock
+  MapPin
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -37,24 +35,28 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import Link from "next/link";
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { cn } from "@/lib/utils";
 
 export default function CafeManagement() {
+  const db = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const { data: cafesData, isLoading, refetch } = useQuery({
-    queryKey: ["cafes", searchTerm, statusFilter],
-    queryFn: async () => {
-      const res = await api.get('/cafes', {
-        params: {
-          search: searchTerm,
-          status: statusFilter === 'all' ? undefined : statusFilter,
-          page: 1,
-          limit: 10
-        }
-      });
-      return res.data.data;
-    }
+  const cafesRef = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'cafes'), orderBy('createdAt', 'desc'));
+  }, [db]);
+  const { data: cafes, isLoading } = useCollection(cafesRef);
+
+  const filteredCafes = cafes?.filter(cafe => {
+    const matchesSearch = cafe.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         cafe.slug.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || 
+                         (statusFilter === 'active' && cafe.isActive) || 
+                         (statusFilter === 'inactive' && !cafe.isActive);
+    return matchesSearch && matchesStatus;
   });
 
   const columns = [
@@ -68,48 +70,39 @@ export default function CafeManagement() {
           </div>
           <div className="flex flex-col">
             <span className="font-bold">{row.name}</span>
-            <span className="text-[10px] text-muted-foreground uppercase font-mono">{row.cafe_code}</span>
+            <span className="text-[10px] text-muted-foreground uppercase font-mono">{row.slug}</span>
           </div>
         </div>
       )
     },
     {
-      key: "owner",
-      label: "Owner & Contact",
+      key: "contact",
+      label: "Contact",
       render: (row: any) => (
         <div className="flex flex-col text-sm">
-          <span className="font-medium flex items-center gap-1.5"><User className="h-3 w-3" /> {row.owner_name}</span>
-          <span className="text-muted-foreground text-xs flex items-center gap-1.5 mt-0.5"><Mail className="h-3 w-3" /> {row.email}</span>
+          <span className="text-muted-foreground text-xs flex items-center gap-1.5 mt-0.5"><Mail className="h-3 w-3" /> {row.email || 'N/A'}</span>
+          <span className="text-muted-foreground text-xs flex items-center gap-1.5 mt-0.5"><MapPin className="h-3 w-3" /> {row.city || 'N/A'}</span>
         </div>
       )
     },
     {
-      key: "city",
-      label: "City",
-      render: (row: any) => (
-        <span className="text-sm font-medium flex items-center gap-1.5">
-          <MapPin className="h-3.5 w-3.5 text-muted-foreground" /> {row.city}
-        </span>
-      )
-    },
-    {
-      key: "plan",
+      key: "subscription",
       label: "Plan",
       render: (row: any) => (
-        <Badge variant="outline" className="border-primary/30 text-primary">{row.plan_name}</Badge>
+        <Badge variant="outline" className="border-primary/30 text-primary">
+          {row.subscription?.planId?.toUpperCase() || 'NO PLAN'}
+        </Badge>
       )
     },
     {
       key: "status",
       label: "Status",
       render: (row: any) => {
-        const variants: Record<string, string> = {
-          active: "bg-green-600 font-bold",
-          suspended: "bg-destructive font-bold",
-          trial: "border-blue-500 text-blue-500 font-bold",
-          expired: "bg-secondary font-bold"
-        };
-        return <Badge className={variants[row.status] || ""}>{row.status}</Badge>;
+        return (
+          <Badge className={row.isActive ? "bg-green-600 font-bold" : "bg-destructive font-bold"}>
+            {row.isActive ? 'ACTIVE' : 'INACTIVE'}
+          </Badge>
+        );
       }
     },
     {
@@ -134,9 +127,9 @@ export default function CafeManagement() {
               <DropdownMenuItem asChild>
                 <Link href={`/super-admin/cafes/${row.id}`}>View Details</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>Login as Admin</DropdownMenuItem>
+              <DropdownMenuItem>Manage Subscription</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive font-bold">Suspend Account</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive font-bold">Deactivate Cafe</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -151,8 +144,8 @@ export default function CafeManagement() {
         description="Directly manage all registered tenants and platform access."
         actions={
           <>
-            <Button variant="outline" className="gap-2 bg-card" onClick={() => refetch()}>
-              <RefreshCw className={isLoading ? "animate-spin" : ""} /> Refresh
+            <Button variant="outline" className="gap-2 bg-card">
+              <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh
             </Button>
             <Button variant="outline" className="gap-2 bg-card">
               <Download className="h-4 w-4" /> Export
@@ -168,7 +161,7 @@ export default function CafeManagement() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder="Search by name, owner, email, city..." 
+            placeholder="Search by name, slug, city..." 
             className="pl-10 h-11"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -182,8 +175,7 @@ export default function CafeManagement() {
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="suspended">Suspended</SelectItem>
-              <SelectItem value="trial">Trial</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" className="h-11 gap-2 bg-card">
@@ -194,7 +186,7 @@ export default function CafeManagement() {
 
       <DataTableReusable 
         columns={columns} 
-        data={cafesData?.items || []} 
+        data={filteredCafes || []} 
         isLoading={isLoading}
       />
     </div>
