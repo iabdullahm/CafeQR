@@ -89,29 +89,31 @@ export default function CafeAdminDashboard() {
   const cafeId = userProfile?.cafeId;
 
   // 2. Fetch today's orders
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  const startOfToday = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   const todayOrdersQuery = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
+    if (!db || !cafeId || profileLoading) return null;
     return query(
       collection(db, 'cafes', cafeId, 'orders'),
       where('createdAt', '>=', Timestamp.fromDate(startOfToday)),
       orderBy('createdAt', 'desc')
     );
-  }, [db, cafeId]);
+  }, [db, cafeId, profileLoading, startOfToday]);
   const { data: todayOrders, isLoading: ordersLoading } = useCollection(todayOrdersQuery);
 
   // 3. Fetch branches
   const branchesQuery = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
+    if (!db || !cafeId || profileLoading) return null;
     return query(collection(db, 'cafes', cafeId, 'branches'));
-  }, [db, cafeId]);
+  }, [db, cafeId, profileLoading]);
   const { data: branches } = useCollection(branchesQuery);
 
-  // 4. Fetch all tables using Collection Group (Requires cafeId field index)
+  // 4. Fetch all tables using Collection Group
   const tablesQuery = useMemoFirebase(() => {
-    // Only run if user profile is loaded and cafeId is confirmed
     if (!db || !cafeId || profileLoading) return null;
     return query(collectionGroup(db, 'tables'), where('cafeId', '==', cafeId));
   }, [db, cafeId, profileLoading]);
