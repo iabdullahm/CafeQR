@@ -1,60 +1,78 @@
+
 'use client';
 
-import { useState } from 'react';
-import { useAuthStore } from '@/store/auth-store';
-import { useRouter } from 'next/navigation';
-import { Coffee, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Coffee, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const auth = useAuth();
+  const { user } = useUser();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // If user is already logged in, redirect them to the admin dashboard
+  useEffect(() => {
+    if (user) {
+      router.push('/cafe-admin');
+    }
+  }, [user, router]);
+
+  // Handle errors passed via query params (e.g. from AuthGuard)
+  useEffect(() => {
+    const errorType = searchParams.get('error');
+    if (errorType === 'inactive') {
+      setErrorMessage('Your account is currently inactive. Please contact support.');
+    } else if (errorType === 'unauthorized') {
+      setErrorMessage('You do not have permission to access this area.');
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
+    
     if (!email || !password) return;
 
     setIsLoading(true);
     try {
-      // Use Firebase Auth directly
-      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
-      const fbUser = userCredential.user;
-      
-      // Update local store for components that haven't migrated to useUser() yet
-      const userData = {
-        id: fbUser.uid,
-        full_name: fbUser.displayName || fbUser.email?.split('@')[0] || 'User',
-        email: fbUser.email || '',
-        roles: ['cafe_admin'] // Default for prototype
-      };
-      
-      const token = await fbUser.getIdToken();
-      setAuth(userData, token);
+      // Execute Firebase Authentication
+      await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
       
       toast({
         title: "Welcome back!",
-        description: `Logged in as ${userData.full_name}`,
+        description: "Successfully authenticated.",
       });
 
-      // Simple routing based on standard flow
-      router.push('/cafe-admin');
+      // Redirection is handled by the useEffect watching 'user' or the AuthGuard
     } catch (err: any) {
-      console.error(err);
+      console.error('Login error:', err);
+      let message = "Invalid email or password.";
+      
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        message = "Invalid email or password.";
+      } else if (err.code === 'auth/too-many-requests') {
+        message = "Too many failed attempts. Please try again later.";
+      }
+
+      setErrorMessage(message);
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: err.message || "Invalid credentials",
+        description: message,
       });
     } finally {
       setIsLoading(false);
@@ -65,29 +83,38 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md shadow-lg border-none animate-in fade-in zoom-in duration-300">
         <CardHeader className="space-y-2 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Coffee className="h-6 w-6" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner">
+            <Coffee className="h-8 w-8" />
           </div>
-          <CardTitle className="text-2xl font-headline font-bold">Welcome to CafeQR</CardTitle>
+          <CardTitle className="text-2xl font-headline font-bold text-primary">CafeQR Login</CardTitle>
           <CardDescription>Enter your credentials to access your dashboard</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {errorMessage && (
+            <Alert variant="destructive" className="animate-in slide-in-from-top-2 duration-300">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none" htmlFor="email">Email Address</label>
+              <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider" htmlFor="email">Email Address</label>
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@cafeqr.com"
+                placeholder="admin@urbanbrew.om"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
+                className="h-12 border-muted focus-visible:ring-primary/20"
                 autoComplete="email"
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none" htmlFor="password">Password</label>
+              <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider" htmlFor="password">Password</label>
               <Input
                 id="password"
                 type="password"
@@ -95,28 +122,32 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
+                className="h-12 border-muted focus-visible:ring-primary/20"
                 autoComplete="current-password"
                 required
               />
             </div>
             <Button
               type="submit"
-              className="w-full bg-primary font-bold h-11"
+              className="w-full bg-primary hover:bg-primary/90 font-black h-12 text-lg rounded-xl shadow-lg shadow-primary/20"
               disabled={isLoading}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Authenticating...
                 </>
               ) : "Sign In"}
             </Button>
-            <div className="text-center p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground mt-4">
-              <p className="font-bold mb-1">Demo Access:</p>
-              <p>Email: admin@cafeqr.com</p>
-              <p>Password: 123456</p>
-            </div>
           </form>
+
+          <div className="text-center p-4 bg-muted/50 rounded-2xl text-xs text-muted-foreground mt-6 border border-dashed border-muted-foreground/20">
+            <p className="font-bold mb-2 uppercase tracking-widest text-primary/70">Prototype Access</p>
+            <div className="flex flex-col gap-1 italic">
+              <p>Owner: abdullah@urbanbrew.om / Admin@123</p>
+              <p>Manager: sara@urbanbrew.om / Admin@123</p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
