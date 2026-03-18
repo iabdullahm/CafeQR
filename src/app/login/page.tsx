@@ -9,14 +9,24 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useUser } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useAuth, useUser, useFirestore } from '@/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+
+// Define the demo accounts for auto-provisioning in the prototype
+const DEMO_ACCOUNTS = [
+  { email: 'admin@cafeqr.com', password: '123456', role: 'SUPER_ADMIN', fullName: 'Platform Admin', cafeId: null },
+  { email: 'abdullah@urbanbrew.om', password: 'Admin@123', role: 'OWNER', fullName: 'Abdullah Al Jahwari', cafeId: 'urban-brew-cafe' },
+  { email: 'sara@urbanbrew.om', password: 'Admin@123', role: 'MANAGER', fullName: 'Sara Al Balushi', cafeId: 'urban-brew-cafe' },
+  { email: 'faisal@coastalcup.om', password: 'Admin@123', role: 'OWNER', fullName: 'Faisal Al Hinai', cafeId: 'coastal-cup' },
+];
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const auth = useAuth();
+  const db = useFirestore();
   const { user } = useUser();
 
   const [email, setEmail] = useState('');
@@ -24,14 +34,14 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // If user is already logged in, redirect them to the admin dashboard
   useEffect(() => {
     if (user) {
+      // Direct redirect based on likely role if profile isn't fully loaded yet
+      // AuthGuard will handle the final granular checks
       router.push('/cafe-admin');
     }
   }, [user, router]);
 
-  // Handle errors passed via query params (e.g. from AuthGuard)
   useEffect(() => {
     const errorType = searchParams.get('error');
     if (errorType === 'inactive') {
@@ -47,23 +57,67 @@ export default function LoginPage() {
     
     if (!email || !password) return;
 
+    const normalizedEmail = email.trim().toLowerCase();
     setIsLoading(true);
+
     try {
-      // Execute Firebase Authentication
-      await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+      // 1. Attempt standard sign in
+      try {
+        await signInWithEmailAndPassword(auth, normalizedEmail, password);
+      } catch (signInErr: any) {
+        // 2. If it's a demo account and doesn't exist, provision it (Prototype logic)
+        const demo = DEMO_ACCOUNTS.find(d => d.email === normalizedEmail && d.password === password);
+        
+        if (demo && (signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/user-not-found')) {
+          const cred = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+          
+          // Create the Firestore profile
+          await setDoc(doc(db, 'users', cred.user.uid), {
+            fullName: demo.fullName,
+            email: normalizedEmail,
+            role: demo.role,
+            cafeId: demo.cafeId,
+            isActive: true,
+            createdAt: new Date().toISOString()
+          });
+
+          // If they are an owner, we should ensure the cafe stub exists too
+          if (demo.cafeId && demo.role === 'OWNER') {
+            const cafeRef = doc(db, 'cafes', demo.cafeId);
+            const cafeSnap = await getDoc(cafeRef);
+            if (!cafeSnap.exists()) {
+              await setDoc(cafeRef, {
+                name: normalizedEmail.includes('urban') ? 'Urban Brew Cafe' : 'Coastal Cup',
+                slug: demo.cafeId,
+                isActive: true,
+                currency: 'OMR',
+                timezone: 'Asia/Muscat'
+              });
+            }
+          }
+
+          toast({
+            title: "Demo account provisioned!",
+            description: "Welcome to the CafeQR prototype.",
+          });
+          return;
+        }
+        
+        // Re-throw if not a demo provisioning scenario
+        throw signInErr;
+      }
       
       toast({
         title: "Welcome back!",
         description: "Successfully authenticated.",
       });
 
-      // Redirection is handled by the useEffect watching 'user' or the AuthGuard
     } catch (err: any) {
       console.error('Login error:', err);
       let message = "Invalid email or password.";
       
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        message = "Invalid email or password.";
+      if (err.code === 'auth/email-already-in-use') {
+        message = "This email is already registered but the password was incorrect.";
       } else if (err.code === 'auth/too-many-requests') {
         message = "Too many failed attempts. Please try again later.";
       }
@@ -104,7 +158,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@urbanbrew.om"
+                placeholder="abdullah@urbanbrew.om"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
@@ -141,9 +195,10 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="text-center p-4 bg-muted/50 rounded-2xl text-xs text-muted-foreground mt-6 border border-dashed border-muted-foreground/20">
+          <div className="text-center p-4 bg-muted/50 rounded-2xl text-[10px] text-muted-foreground mt-6 border border-dashed border-muted-foreground/20">
             <p className="font-bold mb-2 uppercase tracking-widest text-primary/70">Prototype Access</p>
-            <div className="flex flex-col gap-1 italic">
+            <div className="grid grid-cols-1 gap-1 italic">
+              <p>Super Admin: admin@cafeqr.com / 123456</p>
               <p>Owner: abdullah@urbanbrew.om / Admin@123</p>
               <p>Manager: sara@urbanbrew.om / Admin@123</p>
             </div>
