@@ -36,11 +36,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      // Direct redirect based on likely role if profile isn't fully loaded yet
-      // AuthGuard will handle the final granular checks
-      router.push('/cafe-admin');
+      // Redirect handled by AuthGuard or triggered here for speed
+      // We check if it's the admin or a cafe user
+      const isPlatformAdmin = email.includes('admin@cafeqr.com');
+      router.push(isPlatformAdmin ? '/super-admin' : '/cafe-admin');
     }
-  }, [user, router]);
+  }, [user, router, email]);
 
   useEffect(() => {
     const errorType = searchParams.get('error');
@@ -68,11 +69,12 @@ export default function LoginPage() {
         // 2. If it's a demo account and doesn't exist, provision it (Prototype logic)
         const demo = DEMO_ACCOUNTS.find(d => d.email === normalizedEmail && d.password === password);
         
-        if (demo && (signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/user-not-found')) {
+        if (demo && (signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-email')) {
           const cred = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
           
           // Create the Firestore profile
           await setDoc(doc(db, 'users', cred.user.uid), {
+            uid: cred.user.uid,
             fullName: demo.fullName,
             email: normalizedEmail,
             role: demo.role,
@@ -82,16 +84,18 @@ export default function LoginPage() {
           });
 
           // If they are an owner, we should ensure the cafe stub exists too
-          if (demo.cafeId && demo.role === 'OWNER') {
+          if (demo.cafeId && (demo.role === 'OWNER' || demo.role === 'MANAGER')) {
             const cafeRef = doc(db, 'cafes', demo.cafeId);
             const cafeSnap = await getDoc(cafeRef);
             if (!cafeSnap.exists()) {
               await setDoc(cafeRef, {
+                id: demo.cafeId,
                 name: normalizedEmail.includes('urban') ? 'Urban Brew Cafe' : 'Coastal Cup',
                 slug: demo.cafeId,
                 isActive: true,
                 currency: 'OMR',
-                timezone: 'Asia/Muscat'
+                timezone: 'Asia/Muscat',
+                createdAt: new Date().toISOString()
               });
             }
           }
@@ -120,6 +124,8 @@ export default function LoginPage() {
         message = "This email is already registered but the password was incorrect.";
       } else if (err.code === 'auth/too-many-requests') {
         message = "Too many failed attempts. Please try again later.";
+      } else if (err.code === 'auth/invalid-credential') {
+        message = "Invalid credentials. Please check your email and password.";
       }
 
       setErrorMessage(message);
