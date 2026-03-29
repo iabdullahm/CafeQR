@@ -21,7 +21,7 @@ export async function comparePassword(password: string, hash: string): Promise<b
 }
 
 export function generateToken(payload: TokenPayload): string {
-  return jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
+  return jwt.sign(payload, env.jwtSecret as string, { expiresIn: env.jwtExpiresIn as any });
 }
 
 export function verifyToken(token: string): TokenPayload | null {

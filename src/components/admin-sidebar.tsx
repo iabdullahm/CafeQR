@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -22,6 +24,7 @@ import {
   Bell,
   FileSearch,
   ChefHat,
+  LogOut,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, any> = {
@@ -54,13 +57,28 @@ interface SidebarItem {
 interface AdminSidebarProps {
   items: SidebarItem[];
   portalName: string;
+  isArabic?: boolean;
 }
 
-export function AdminSidebar({ items, portalName }: AdminSidebarProps) {
+export function AdminSidebar({ items, portalName, isArabic = false }: AdminSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const auth = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      if (auth) {
+        await signOut(auth);
+      }
+      localStorage.removeItem("token");
+      router.push("/login");
+    } catch (error) {
+      console.error("Error logging out", error);
+    }
+  };
 
   return (
-    <div className="hidden lg:flex flex-col w-64 bg-card border-r h-screen sticky top-0">
+    <div className="hidden lg:flex flex-col w-64 bg-card border-e h-screen sticky top-0">
       <div className="p-6 flex items-center gap-2 border-b">
         <Coffee className="h-6 w-6 text-primary" />
         <span className="font-headline font-bold text-lg text-primary">{portalName}</span>
@@ -87,10 +105,13 @@ export function AdminSidebar({ items, portalName }: AdminSidebarProps) {
           })}
         </nav>
       </div>
-      <div className="p-4 border-t">
-        <div className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground cursor-pointer">
-          <Settings className="h-5 w-5" />
-          <span className="font-medium">Settings</span>
+      <div className="p-4 border-t space-y-1">
+        <div 
+          className="flex items-center gap-3 px-3 py-2 text-destructive hover:bg-destructive/10 rounded-md cursor-pointer transition-colors mt-2"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-5 w-5" />
+          <span className="font-medium">{isArabic ? "تسجيل الخروج" : "Logout"}</span>
         </div>
       </div>
     </div>

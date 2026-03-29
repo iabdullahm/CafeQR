@@ -38,11 +38,18 @@ import Link from "next/link";
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { cn } from "@/lib/utils";
+import { AddCafeModal } from "@/components/cafes/add-cafe-modal";
+import { AdminManagementModal } from "@/components/cafes/admin-management-modal";
+import { SubscriptionManagementModal } from "@/components/cafes/subscription-management-modal";
 
 export default function CafeManagement() {
   const db = useFirestore();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  
+  const [adminModalOpen, setAdminModalOpen] = useState(false);
+  const [subModalOpen, setSubModalOpen] = useState(false);
+  const [selectedCafe, setSelectedCafe] = useState<any>(null);
 
   const cafesRef = useMemoFirebase(() => {
     if (!db) return null;
@@ -81,26 +88,44 @@ export default function CafeManagement() {
       render: (row: any) => (
         <div className="flex flex-col text-sm">
           <span className="text-muted-foreground text-xs flex items-center gap-1.5 mt-0.5"><Mail className="h-3 w-3" /> {row.email || 'N/A'}</span>
-          <span className="text-muted-foreground text-xs flex items-center gap-1.5 mt-0.5"><MapPin className="h-3 w-3" /> {row.city || 'N/A'}</span>
+          <span className="text-muted-foreground text-xs flex items-center gap-1.5 mt-0.5"><MapPin className="h-3 w-3" /> {row.location || row.city || 'N/A'}</span>
+        </div>
+      )
+    },
+    {
+      key: "admin",
+      label: "Admin User",
+      render: (row: any) => (
+        <div className="flex flex-col text-sm">
+          <span className="font-medium flex items-center gap-1.5 mt-0.5 whitespace-nowrap"><User className="h-3.5 w-3.5 text-primary" /> {row.owner_name || 'Unassigned'}</span>
+          <span className="text-muted-foreground text-[10px] mt-0.5 truncate max-w-[120px]">{row.owner_email || 'No email setup'}</span>
         </div>
       )
     },
     {
       key: "subscription",
       label: "Plan",
-      render: (row: any) => (
-        <Badge variant="outline" className="border-primary/30 text-primary">
-          {row.subscription?.planId?.toUpperCase() || 'NO PLAN'}
-        </Badge>
-      )
+      render: (row: any) => {
+        const plan = row.subscription?.planId || row.plan || 'Free';
+        const subStatus = row.subscription?.status || 'active';
+        return (
+          <div className="flex flex-col items-start gap-1">
+            <Badge variant="outline" className="border-primary/30 text-primary uppercase text-[10px] font-bold">
+              {plan}
+            </Badge>
+            {subStatus === 'paused' && <Badge variant="secondary" className="bg-orange-100 text-orange-600 text-[9px] h-4">PAUSED</Badge>}
+            {subStatus === 'canceled' && <Badge variant="destructive" className="text-[9px] h-4">CANCELED</Badge>}
+          </div>
+        )
+      }
     },
     {
       key: "status",
       label: "Status",
       render: (row: any) => {
         return (
-          <Badge className={row.isActive ? "bg-green-600 font-bold" : "bg-destructive font-bold"}>
-            {row.isActive ? 'ACTIVE' : 'INACTIVE'}
+          <Badge className={(row.status === 'active' || row.isActive) ? "bg-green-600 font-bold" : "bg-destructive font-bold"}>
+            {(row.status === 'active' || row.isActive) ? 'ACTIVE' : 'SUSPENDED'}
           </Badge>
         );
       }
@@ -125,9 +150,18 @@ export default function CafeManagement() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem asChild>
-                <Link href={`/super-admin/cafes/${row.id}`}>View Details</Link>
+                <Link href={`/super-admin/cafes/${row.id}`}>View Cafe Hub</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>Manage Subscription</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { setSelectedCafe(row); setAdminModalOpen(true); }}>
+                Manage Admin Access
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { setSelectedCafe(row); setSubModalOpen(true); }}>
+                Manage Subscription
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => { setSelectedCafe(row); setAdminModalOpen(true); }}>
+                Reset Password
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive font-bold">Deactivate Cafe</DropdownMenuItem>
             </DropdownMenuContent>
@@ -150,9 +184,7 @@ export default function CafeManagement() {
             <Button variant="outline" className="gap-2 bg-card">
               <Download className="h-4 w-4" /> Export
             </Button>
-            <Button className="bg-primary hover:bg-primary/90 gap-2">
-              <Plus className="h-4 w-4" /> Add New Cafe
-            </Button>
+            <AddCafeModal />
           </>
         }
       />
@@ -188,6 +220,18 @@ export default function CafeManagement() {
         columns={columns} 
         data={filteredCafes || []} 
         isLoading={isLoading}
+      />
+
+      {/* Render the unified modals securely in DOM */}
+      <AdminManagementModal 
+         cafe={selectedCafe} 
+         open={adminModalOpen} 
+         onOpenChange={setAdminModalOpen} 
+      />
+      <SubscriptionManagementModal 
+         cafe={selectedCafe} 
+         open={subModalOpen} 
+         onOpenChange={setSubModalOpen} 
       />
     </div>
   );

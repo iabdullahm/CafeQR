@@ -1,0 +1,40 @@
+   ▲ Next.js 15.5.9
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 66s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/36) ...
+Automatic initialization failed. Falling back to firebase config object. Error [FirebaseError]: Firebase: Need to provide options, when not being deployed to hosting via source. (app/no-options).
+    at W (C:\Projects\CafeQR\project\.next\server\chunks\9735.js:1:135934)
+    at l (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:10657)
+    at <unknown> (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:224)
+    at h (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:211) {
+  code: 'app/no-options',
+  customData: {}
+}
+Automatic initialization failed. Falling back to firebase config object. Error [FirebaseError]: Firebase: Need to provide options, when not being deployed to hosting via source. (app/no-options).
+    at W (C:\Projects\CafeQR\project\.next\server\chunks\9735.js:1:135934)
+    at l (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:10657)
+    at <unknown> (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:224)
+    at h (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:211) {
+  code: 'app/no-options',
+  customData: {}
+}
+   Generating static pages (9/36) 
+ ⨯ useSearchParams() should be wrapped in a suspense boundary at page "/login". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at g (C:\Projects\CafeQR\project\.next\server\chunks\9735.js:17:73675)
+    at m (C:\Projects\CafeQR\project\.next\server\chunks\9735.js:34:34724)
+    at x (C:\Projects\CafeQR\project\.next\server\app\login\page.js:1:4068)
+    at n3 (C:\Projects\CafeQR\project\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:2:82831)
+    at n6 (C:\Projects\CafeQR\project\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:2:84601)
+    at n5 (C:\Projects\CafeQR\project\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:2:104801)
+    at n7 (C:\Projects\CafeQR\project\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:2:102219)
+    at n8 (C:\Projects\CafeQR\project\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:2:83183)
+    at n6 (C:\Projects\CafeQR\project\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:2:84647)
+    at n6 (C:\Projects\CafeQR\project\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:2:101560)
+Error occurred prerendering page "/login". Read more: https://nextjs.org/docs/messages/prerender-error
+Export encountered an error on /login/page: /login, exiting the build.
+ ⨯ Next.js build worker exited with code: 1 and signal: null

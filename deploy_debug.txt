@@ -1,0 +1,692 @@
+[2026-03-29T06:20:58.803Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[2026-03-29T06:20:58.804Z] > authorizing via signed-in user (abdullah.j@creativetechno.net)
+[2026-03-29T06:20:58.804Z] [iam] checking project cafeqr-new for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[2026-03-29T06:20:58.806Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:20:58.806Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:20:58.807Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/cafeqr-new:testIamPermissions [none]
+[2026-03-29T06:20:58.807Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/cafeqr-new:testIamPermissions  x-goog-user-project=cafeqr-new
+[2026-03-29T06:20:58.807Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/cafeqr-new:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[2026-03-29T06:21:00.316Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/cafeqr-new:testIamPermissions 200
+[2026-03-29T06:21:00.317Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/cafeqr-new:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[2026-03-29T06:21:00.318Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:21:00.318Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:21:00.319Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/cafeqr-new [none]
+[2026-03-29T06:21:00.864Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/cafeqr-new 200
+[2026-03-29T06:21:00.865Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/cafeqr-new {"projectId":"cafeqr-new","projectNumber":"137191246479","displayName":"CafeQR-NEW","name":"projects/cafeqr-new","resources":{"hostingSite":"cafeqr-new"},"state":"ACTIVE","etag":"1_08ad48a8-af40-4d91-add0-c6ae1bf08845"}
+[2026-03-29T06:21:09.083Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:21:09.083Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:21:09.084Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/cafeqr-new/sites pageToken=&pageSize=10
+[2026-03-29T06:21:10.768Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/cafeqr-new/sites 200
+[2026-03-29T06:21:10.768Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/cafeqr-new/sites {"sites":[{"name":"projects/cafeqr-new/sites/cafeqr-new","defaultUrl":"https://cafeqr-new.web.app","appId":"1:137191246479:web:346a7f3ff524e6c8067efa","type":"DEFAULT_SITE"}]}
+[2026-03-29T06:21:10.768Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:21:10.769Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:21:10.769Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:137191246479:web:346a7f3ff524e6c8067efa/config [none]
+[2026-03-29T06:21:11.587Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:137191246479:web:346a7f3ff524e6c8067efa/config 200
+[2026-03-29T06:21:11.587Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:137191246479:web:346a7f3ff524e6c8067efa/config {"projectId":"cafeqr-new","appId":"1:137191246479:web:346a7f3ff524e6c8067efa","storageBucket":"cafeqr-new.firebasestorage.app","apiKey":"AIzaSyCjIofdZYK5Ixvp7vYq_QP5znK54C8SHzg","authDomain":"cafeqr-new.firebaseapp.com","messagingSenderId":"137191246479","measurementId":"G-Y8BTDKVQM6","projectNumber":"137191246479","version":"2"}
+
+   Thank you for trying our early preview of Next.js support on Firebase Hosting.
+   During the preview, support is best-effort and breaking changes can be expected. Proceed with caution.
+   The integration is known to work with Next.js version 12 - 15.0. You may encounter errors.
+
+   Documentation: https://firebase.google.com/docs/hosting/frameworks/nextjs
+   File a bug: https://github.com/firebase/firebase-tools/issues/new?template=bug_report.md
+   Submit a feature request: https://github.com/firebase/firebase-tools/issues/new?template=feature_request.md
+
+   We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
+
+
+WARNING: Your package.json contains a custom build that is being ignored. Only the Next.js default build script (e.g, "next build") is respected. If you have a more advanced build process you should build a custom integration https://firebase.google.com/docs/hosting/express
+
+[2026-03-29T06:21:35.480Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:21:35.481Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:21:35.481Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/cafeqr-new/sites/cafeqr-new [none]
+[2026-03-29T06:21:36.882Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/cafeqr-new/sites/cafeqr-new 200
+[2026-03-29T06:21:36.882Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/cafeqr-new/sites/cafeqr-new {"name":"projects/cafeqr-new/sites/cafeqr-new","defaultUrl":"https://cafeqr-new.web.app","appId":"1:137191246479:web:346a7f3ff524e6c8067efa","type":"DEFAULT_SITE"}
+   ▲ Next.js 15.5.9
+
+   - Environments: .env
+
+
+   Creating an optimized production build ...
+
+
+
+
+Source path: C:\Projects\CafeQR\project\src\app\globals.css
+
+Setting up new context...
+
+Finding changed files: 158.197ms
+
+Reading changed files: 469.079ms
+
+Sorting candidates: 13.495ms
+
+Generate rules: 406.838ms
+
+Build stylesheet: 7.317ms
+
+Potential classes:  7356
+
+Active contexts:  1
+
+JIT TOTAL: 1.351s
+
+
+
+ ✓ Compiled successfully in 13.8s
+
+   Skipping validation of types
+
+   Skipping linting
+
+   Collecting page data ...
+
+   Generating static pages (0/36) ...
+
+   Generating static pages (9/36) 
+
+   Generating static pages (18/36) 
+
+   Generating static pages (27/36) 
+
+ ✓ Generating static pages (36/36)
+
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+
+
+Route (app)                                   Size  First Load JS
+┌ ○ /                                        166 B         105 kB
+├ ○ /_not-found                               1 kB         102 kB
+├ ƒ /api/auth/login                          156 B         102 kB
+├ ƒ /api/auth/logout                         156 B         102 kB
+├ ƒ /api/auth/me                             156 B         102 kB
+├ ƒ /api/cafes                               156 B         102 kB
+├ ƒ /api/cafes/[id]                          156 B         102 kB
+├ ƒ /api/cafes/[id]/status                   156 B         102 kB
+├ ƒ /api/dashboard/expiring-subscriptions    156 B         102 kB
+├ ƒ /api/dashboard/recent-cafes              156 B         102 kB
+├ ƒ /api/dashboard/revenue-chart             156 B         102 kB
+├ ƒ /api/dashboard/stats                     156 B         102 kB
+├ ƒ /c/[cafeId]/[branchId]/[tableId]       4.24 kB         126 kB
+├ ○ /cafe-admin                            5.89 kB         337 kB
+├ ○ /cafe-admin/branches                   4.97 kB         258 kB
+├ ○ /cafe-admin/loyalty                    10.9 kB         264 kB
+├ ○ /cafe-admin/menu                       18.4 kB         271 kB
+├ ○ /cafe-admin/orders                     4.98 kB         258 kB
+├ ○ /cafe-admin/profile                    7.67 kB         234 kB
+├ ○ /cafe-admin/qr-codes                   5.51 kB         231 kB
+├ ○ /cafe-admin/settings                   10.2 kB         263 kB
+├ ○ /cafe-admin/staff                      7.65 kB         291 kB
+├ ○ /cafe-admin/support                    7.31 kB         154 kB
+├ ○ /cafe-admin/tables                     6.81 kB         276 kB
+├ ○ /login                                 5.33 kB         245 kB
+├ ○ /super-admin                           5.01 kB         336 kB
+├ ○ /super-admin/audit-logs                5.51 kB         152 kB
+├ ○ /super-admin/cafes                     36.4 kB         323 kB
+├ ƒ /super-admin/cafes/[id]                25.6 kB         289 kB
+├ ○ /super-admin/notifications             12.4 kB         156 kB
+├ ○ /super-admin/payments                  7.79 kB         161 kB
+├ ○ /super-admin/plans                     7.16 kB         144 kB
+├ ○ /super-admin/reports                   20.7 kB         258 kB
+├ ○ /super-admin/settings                  11.4 kB         158 kB
+├ ○ /super-admin/subscriptions             6.67 kB         153 kB
+├ ○ /super-admin/support                   10.3 kB         163 kB
+└ ○ /super-admin/users-roles               10.2 kB         147 kB
++ First Load JS shared by all               101 kB
+  ├ chunks/1255-de0c1abd22c7cccd.js        45.2 kB
+  ├ chunks/4bd1b696-182b6b13bdad92e3.js    54.2 kB
+  └ other shared chunks (total)            2.06 kB
+
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+Building a Cloud Function to run this application. This is needed due to:
+ • non-static component /api/auth/logout/route
+ • non-static component /api/cafes/[id]/status/route
+ • non-static component /api/cafes/[id]/route
+ • non-static component /api/dashboard/expiring-subscriptions/route
+ • non-static component /api/auth/me/route
+[2026-03-29T06:22:36.328Z]  • non-static component /api/auth/login/route
+[2026-03-29T06:22:36.328Z]  • non-static component /api/cafes/route
+[2026-03-29T06:22:36.328Z]  • non-static component /api/dashboard/revenue-chart/route
+[2026-03-29T06:22:36.328Z]  • non-static component /api/dashboard/recent-cafes/route
+[2026-03-29T06:22:36.328Z]  • non-static component /api/dashboard/stats/route
+[2026-03-29T06:22:36.328Z]  • non-static component /c/[cafeId]/[branchId]/[tableId]/page
+[2026-03-29T06:22:36.328Z]  • non-static component /super-admin/cafes/[id]/page
+[2026-03-29T06:22:36.329Z]  • route with server action /cafe-admin/menu
+
+[2026-03-29T06:22:40.563Z] skipping /cafe-admin/menu due to server action
+Warning: Global esbuild version (0.27.2) does not match the required version (^0.19.2).
+[2026-03-29T06:22:54.299Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:22:54.299Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:22:54.300Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/cafeqr-new/sites/cafeqr-new [none]
+[2026-03-29T06:22:55.798Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/cafeqr-new/sites/cafeqr-new 200
+[2026-03-29T06:22:55.798Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/cafeqr-new/sites/cafeqr-new {"name":"projects/cafeqr-new/sites/cafeqr-new","defaultUrl":"https://cafeqr-new.web.app","appId":"1:137191246479:web:346a7f3ff524e6c8067efa","type":"DEFAULT_SITE"}
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @genkit-ai/firebase@1.28.0
+npm warn Found: firebase-admin@11.11.1
+npm warn node_modules/firebase-admin
+npm warn   firebase-admin@"^11.11.1" from the root project
+npm warn   2 more (firebase-frameworks, firebase-functions)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer firebase-admin@">=12.2" from @genkit-ai/firebase@1.28.0
+npm warn node_modules/@genkit-ai/firebase
+npm warn   optional @genkit-ai/firebase@"^1.16.1" from @genkit-ai/core@1.28.0
+npm warn   node_modules/@genkit-ai/core
+npm warn
+npm warn Conflicting peer dependency: firebase-admin@13.7.0
+npm warn node_modules/firebase-admin
+npm warn   peer firebase-admin@">=12.2" from @genkit-ai/firebase@1.28.0
+npm warn   node_modules/@genkit-ai/firebase
+npm warn     optional @genkit-ai/firebase@"^1.16.1" from @genkit-ai/core@1.28.0
+npm warn     node_modules/@genkit-ai/core
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'firebase-frameworks@0.11.8',
+npm warn EBADENGINE   required: { node: '^16.0.0 || ^18.0.0 || ^20.0.0 || ^22.0.0' },
+npm warn EBADENGINE   current: { node: 'v24.8.0', npm: '11.6.0' }
+npm warn EBADENGINE }
+
+up to date in 38s
+
+118 packages are looking for funding
+  run `npm fund` for details
+[2026-03-29T06:23:34.802Z] [web frameworks] effective firebase.json:  {
+  "hosting": [
+    {
+      "source": ".",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "cleanUrls": true,
+      "site": "cafeqr-new",
+      "rewrites": [
+        {
+          "source": "**",
+          "function": {
+            "functionId": "ssrcafeqrnew",
+            "region": "us-central1",
+            "pinTag": true
+          }
+        }
+      ],
+      "redirects": [],
+      "headers": [
+        {
+          "source": "/_not-found",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/_not-found/layout,_N_T_/_not-found/page,_N_T_/_not-found"
+            }
+          ]
+        },
+        {
+          "source": "/login",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/login/layout,_N_T_/login/page,_N_T_/login"
+            }
+          ]
+        },
+        {
+          "source": "/cafe-admin/branches",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/cafe-admin/layout,_N_T_/cafe-admin/branches/layout,_N_T_/cafe-admin/branches/page,_N_T_/cafe-admin/branches"
+            }
+          ]
+        },
+        {
+          "source": "/favicon.ico",
+          "headers": [
+            {
+              "key": "cache-control",
+              "value": "public, max-age=0, must-revalidate"
+            },
+            {
+              "key": "content-type",
+              "value": "image/x-icon"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/favicon.ico/layout,_N_T_/favicon.ico/route,_N_T_/favicon.ico"
+            }
+          ]
+        },
+        {
+          "source": "/cafe-admin",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/cafe-admin/layout,_N_T_/cafe-admin/page,_N_T_/cafe-admin"
+            }
+          ]
+        },
+        {
+          "source": "/cafe-admin/loyalty",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/cafe-admin/layout,_N_T_/cafe-admin/loyalty/layout,_N_T_/cafe-admin/loyalty/page,_N_T_/cafe-admin/loyalty"
+            }
+          ]
+        },
+        {
+          "source": "/cafe-admin/orders",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/cafe-admin/layout,_N_T_/cafe-admin/orders/layout,_N_T_/cafe-admin/orders/page,_N_T_/cafe-admin/orders"
+            }
+          ]
+        },
+        {
+          "source": "/cafe-admin/menu",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/cafe-admin/layout,_N_T_/cafe-admin/menu/layout,_N_T_/cafe-admin/menu/page,_N_T_/cafe-admin/menu"
+            }
+          ]
+        },
+        {
+          "source": "/cafe-admin/profile",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/cafe-admin/layout,_N_T_/cafe-admin/profile/layout,_N_T_/cafe-admin/profile/page,_N_T_/cafe-admin/profile"
+            }
+          ]
+        },
+        {
+          "source": "/cafe-admin/qr-codes",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/cafe-admin/layout,_N_T_/cafe-admin/qr-codes/layout,_N_T_/cafe-admin/qr-codes/page,_N_T_/cafe-admin/qr-codes"
+            }
+          ]
+        },
+        {
+          "source": "/cafe-admin/staff",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/cafe-admin/layout,_N_T_/cafe-admin/staff/layout,_N_T_/cafe-admin/staff/page,_N_T_/cafe-admin/staff"
+            }
+          ]
+        },
+        {
+          "source": "/cafe-admin/support",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/cafe-admin/layout,_N_T_/cafe-admin/support/layout,_N_T_/cafe-admin/support/page,_N_T_/cafe-admin/support"
+            }
+          ]
+        },
+        {
+          "source": "/cafe-admin/settings",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/cafe-admin/layout,_N_T_/cafe-admin/settings/layout,_N_T_/cafe-admin/settings/page,_N_T_/cafe-admin/settings"
+            }
+          ]
+        },
+        {
+          "source": "/cafe-admin/tables",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/cafe-admin/layout,_N_T_/cafe-admin/tables/layout,_N_T_/cafe-admin/tables/page,_N_T_/cafe-admin/tables"
+            }
+          ]
+        },
+        {
+          "source": "/super-admin/cafes",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/super-admin/layout,_N_T_/super-admin/cafes/layout,_N_T_/super-admin/cafes/page,_N_T_/super-admin/cafes"
+            }
+          ]
+        },
+        {
+          "source": "/super-admin",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/super-admin/layout,_N_T_/super-admin/page,_N_T_/super-admin"
+            }
+          ]
+        },
+        {
+          "source": "/super-admin/notifications",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/super-admin/layout,_N_T_/super-admin/notifications/layout,_N_T_/super-admin/notifications/page,_N_T_/super-admin/notifications"
+            }
+          ]
+        },
+        {
+          "source": "/super-admin/payments",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/super-admin/layout,_N_T_/super-admin/payments/layout,_N_T_/super-admin/payments/page,_N_T_/super-admin/payments"
+            }
+          ]
+        },
+        {
+          "source": "/super-admin/settings",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/super-admin/layout,_N_T_/super-admin/settings/layout,_N_T_/super-admin/settings/page,_N_T_/super-admin/settings"
+            }
+          ]
+        },
+        {
+          "source": "/super-admin/reports",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/super-admin/layout,_N_T_/super-admin/reports/layout,_N_T_/super-admin/reports/page,_N_T_/super-admin/reports"
+            }
+          ]
+        },
+        {
+          "source": "/super-admin/users-roles",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/super-admin/layout,_N_T_/super-admin/users-roles/layout,_N_T_/super-admin/users-roles/page,_N_T_/super-admin/users-roles"
+            }
+          ]
+        },
+        {
+          "source": "/super-admin/plans",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/super-admin/layout,_N_T_/super-admin/plans/layout,_N_T_/super-admin/plans/page,_N_T_/super-admin/plans"
+            }
+          ]
+        },
+        {
+          "source": "/super-admin/subscriptions",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/super-admin/layout,_N_T_/super-admin/subscriptions/layout,_N_T_/super-admin/subscriptions/page,_N_T_/super-admin/subscriptions"
+            }
+          ]
+        },
+        {
+          "source": "/super-admin/audit-logs",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/super-admin/layout,_N_T_/super-admin/audit-logs/layout,_N_T_/super-admin/audit-logs/page,_N_T_/super-admin/audit-logs"
+            }
+          ]
+        },
+        {
+          "source": "/super-admin/support",
+          "headers": [
+            {
+              "key": "x-nextjs-stale-time",
+              "value": "300"
+            },
+            {
+              "key": "x-nextjs-prerender",
+              "value": "1"
+            },
+            {
+              "key": "x-next-cache-tags",
+              "value": "_N_T_/layout,_N_T_/super-admin/layout,_N_T_/super-admin/support/layout,_N_T_/super-admin/support/page,_N_T_/super-admin/support"
+            }
+          ]
+        },
+        {
+          "source": "**/*.[jt]s",
+          "headers": [
+            {
+              "key": "Set-Cookie",
+              "value": "__FIREBASE_DEFAULTS__=eyJjb25maWciOnsicHJvamVjdElkIjoiY2FmZXFyLW5ldyIsImFwcElkIjoiMToxMzcxOTEyNDY0Nzk6d2ViOjM0NmE3ZjNmZjUyNGU2YzgwNjdlZmEiLCJzdG9yYWdlQnVja2V0IjoiY2FmZXFyLW5ldy5maXJlYmFzZXN0b3JhZ2UuYXBwIiwiYXBpS2V5IjoiQUl6YVN5Q2pJb2ZkWllLNUl4dnA3dllxX1FQNXpuSzU0QzhTSHpnIiwiYXV0aERvbWFpbiI6ImNhZmVxci1uZXcuZmlyZWJhc2VhcHAuY29tIiwibWVzc2FnaW5nU2VuZGVySWQiOiIxMzcxOTEyNDY0NzkiLCJtZWFzdXJlbWVudElkIjoiRy1ZOEJUREtWUU02IiwicHJvamVjdE51bWJlciI6IjEzNzE5MTI0NjQ3OSIsInZlcnNpb24iOiIyIn0sIl9hdXRoVG9rZW5TeW5jVVJMIjoiL19fc2Vzc2lvbiJ9; SameSite=Strict; Expires=2028-02-21T17:03:34.802Z; Path=/;"
+            }
+          ]
+        }
+      ],
+      "trailingSlash": false,
+      "public": ".firebase\\cafeqr-new\\hosting",
+      "webFramework": "next_ssr"
+    }
+  ],
+  "functions": [
+    {
+      "source": ".firebase\\cafeqr-new\\functions",
+      "codebase": "firebase-frameworks-cafeqr-new"
+    }
+  ]
+}
+[2026-03-29T06:23:34.803Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[2026-03-29T06:23:34.804Z] > authorizing via signed-in user (abdullah.j@creativetechno.net)
+[2026-03-29T06:23:34.804Z] [iam] checking project cafeqr-new for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[2026-03-29T06:23:34.804Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:23:34.804Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:23:34.804Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/cafeqr-new:testIamPermissions [none]
+[2026-03-29T06:23:34.804Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/cafeqr-new:testIamPermissions  x-goog-user-project=cafeqr-new
+[2026-03-29T06:23:34.804Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/cafeqr-new:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[2026-03-29T06:23:36.111Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/cafeqr-new:testIamPermissions 200
+[2026-03-29T06:23:36.112Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/cafeqr-new:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[2026-03-29T06:23:36.113Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:23:36.113Z] Checked if tokens are valid: true, expires at: 1774768527400
+[2026-03-29T06:23:36.113Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/cafeqr-new/locations/-/functions [none]
+[2026-03-29T06:23:36.481Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/cafeqr-new/locations/-/functions 403
+[2026-03-29T06:23:36.482Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/cafeqr-new/locations/-/functions {"error":{"code":403,"message":"Cloud Functions API has not been used in project cafeqr-new before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudfunctions.googleapis.com/overview?project=cafeqr-new then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"service":"cloudfunctions.googleapis.com","serviceTitle":"Cloud Functions API","activationUrl":"https://console.developers.google.com/apis/api/cloudfunctions.googleapis.com/overview?project=cafeqr-new","containerInfo":"cafeqr-new","consumer":"projects/cafeqr-new"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Cloud Functions API has not been used in project cafeqr-new before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudfunctions.googleapis.com/overview?project=cafeqr-new then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/cloudfunctions.googleapis.com/overview?project=cafeqr-new"}]}]}}
+[2026-03-29T06:23:36.484Z] [functions] failed to list functions for cafeqr-new
+[2026-03-29T06:23:36.484Z] [functions] Request to https://cloudfunctions.googleapis.com/v1/projects/cafeqr-new/locations/-/functions had HTTP Error: 403, Cloud Functions API has not been used in project cafeqr-new before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudfunctions.googleapis.com/overview?project=cafeqr-new then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
+[2026-03-29T06:23:36.726Z] FirebaseError: Request to https://cloudfunctions.googleapis.com/v1/projects/cafeqr-new/locations/-/functions had HTTP Error: 403, Cloud Functions API has not been used in project cafeqr-new before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudfunctions.googleapis.com/overview?project=cafeqr-new then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
+    at responseToError (C:\Users\abdullah.j\AppData\Roaming\npm\node_modules\firebase-tools\lib\responseToError.js:53:12)
+    at RetryOperation._fn (C:\Users\abdullah.j\AppData\Roaming\npm\node_modules\firebase-tools\lib\apiv2.js:333:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+Error: Failed to list functions for cafeqr-new

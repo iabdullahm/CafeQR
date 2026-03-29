@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUser, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
+import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
 import { collection, query, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,7 +23,11 @@ export default function BranchesManagement() {
   const db = useFirestore();
   const { toast } = useToast();
   
-  const cafeId = user?.email?.includes('urban') ? 'urban-brew-cafe' : 'coastal-cup';
+  const userProfileRef = useMemoFirebase(() => {
+    return (db && user) ? doc(db, 'users', user.uid) : null;
+  }, [db, user]);
+  const { data: userProfile } = useDoc(userProfileRef);
+  const cafeId = userProfile?.cafeId;
 
   const branchesQuery = useMemoFirebase(() => {
     if (!db || !cafeId) return null;

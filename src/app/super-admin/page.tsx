@@ -42,25 +42,47 @@ export default function SuperAdminDashboard() {
   // Derived Stats
   const stats = useMemo(() => {
     const totalCafes = cafes?.length || 0;
-    const activeSubs = cafes?.filter(c => c.isActive && c.subscription?.status === 'ACTIVE').length || 0;
+    const activeSubs = cafes?.filter(c => c.isActive && c.subscription?.status !== 'canceled').length || 0;
     
-    // In a real app, revenue would come from a payments collection, using mock for demo
+    // Compute Platform MRR from subscriptions
+    const mrr = cafes?.reduce((acc, c) => {
+       if (!c.isActive || c.subscription?.status === 'canceled') return acc;
+       const plan = (c.subscription?.planId || c.plan || 'free').toLowerCase();
+       if (plan === 'premium') return acc + 49;
+       if (plan === 'enterprise') return acc + 199;
+       return acc;
+    }, 0) || 0;
+    
     return [
-      { title: "Total Cafes", value: totalCafes, icon: <Store className="h-4 w-4" />, color: "text-blue-600", trend: "+12%" },
-      { title: "Active Subs", value: activeSubs, icon: <CheckCircle2 className="h-4 w-4" />, color: "text-green-600", trend: "+8%" },
-      { title: "Monthly Revenue", value: `1,240.500 OMR`, icon: <CreditCard className="h-4 w-4" />, color: "text-primary", trend: "+15%" },
-      { title: "Total Orders", value: "8,420", icon: <ShoppingBag className="h-4 w-4" />, color: "text-orange-600", trend: "+22%" },
+      { title: "Total Cafes", value: totalCafes, icon: <Store className="h-4 w-4" />, color: "text-blue-600", trend: "Live" },
+      { title: "Active Subs", value: activeSubs, icon: <CheckCircle2 className="h-4 w-4" />, color: "text-green-600", trend: "Live" },
+      { title: "Platform MRR", value: `$${mrr.toLocaleString()}`, icon: <CreditCard className="h-4 w-4" />, color: "text-primary", trend: "Live" },
+      { title: "Conversion", value: `${totalCafes > 0 ? ((activeSubs / totalCafes) * 100).toFixed(1) : 0}%`, icon: <TrendingUp className="h-4 w-4" />, color: "text-orange-600", trend: "Paid Users" },
     ];
   }, [cafes]);
 
-  const revenueData = [
-    { name: 'Jan', revenue: 12000 },
-    { name: 'Feb', revenue: 15000 },
-    { name: 'Mar', revenue: 18000 },
-    { name: 'Apr', revenue: 22000 },
-    { name: 'May', revenue: 25000 },
-    { name: 'Jun', revenue: 39000 },
-  ];
+  const signupData = useMemo(() => {
+    if (!cafes) return [];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentMonth = new Date().getMonth();
+    
+    // Get last 6 months
+    const last6Months: Array<{ name: string, count: number, year: number, month: number }> = [];
+    for (let i = 5; i >= 0; i--) {
+      let d = new Date();
+      d.setMonth(currentMonth - i);
+      last6Months.push({ name: months[d.getMonth()], count: 0, year: d.getFullYear(), month: d.getMonth() });
+    }
+
+    cafes.forEach(c => {
+      if (!c.createdAt) return;
+      const d = new Date(c.createdAt);
+      const match = last6Months.find(m => m.month === d.getMonth() && m.year === d.getFullYear());
+      if (match) match.count += 1;
+    });
+
+    return last6Months;
+  }, [cafes]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -69,11 +91,8 @@ export default function SuperAdminDashboard() {
         description="Platform performance and system health at a glance."
         actions={
           <>
-            <Button variant="outline" className="gap-2 bg-card">
-              <RefreshCw className={cn("h-4 w-4", cafesLoading && "animate-spin")} /> Refresh
-            </Button>
-            <Button className="bg-primary hover:bg-primary/90">
-              Download Report
+            <Button variant="outline" className="gap-2 bg-card cursor-default">
+              <RefreshCw className={cn("h-4 w-4", cafesLoading && "animate-spin")} /> Live Focus
             </Button>
           </>
         }
@@ -88,7 +107,7 @@ export default function SuperAdminDashboard() {
             icon={stat.icon} 
             iconColor={stat.color}
             trend={{ value: stat.trend, isUp: true }}
-            description="vs last month"
+            description="real-time"
           />
         ))}
       </div>
@@ -98,26 +117,26 @@ export default function SuperAdminDashboard() {
           <CardHeader>
             <div className="flex items-center justify-between">
                <div>
-                  <CardTitle>Revenue Analytics</CardTitle>
-                  <CardDescription>Monthly revenue trends across all tenants (OMR).</CardDescription>
+                  <CardTitle>Signup Analytics</CardTitle>
+                  <CardDescription>Tenant growth trends over the last 6 months.</CardDescription>
                </div>
                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">Global View</Badge>
             </div>
           </CardHeader>
           <CardContent className="h-[350px] mt-4">
              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
+                <AreaChart data={signupData}>
                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                       </linearGradient>
                    </defs>
                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} />
-                   <YAxis axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} tickFormatter={(v) => `${(v/1000).toFixed(1)}k`} />
+                   <YAxis axisLine={false} tickLine={false} tick={{fill: 'hsl(var(--muted-foreground))', fontSize: 12}} allowDecimals={false} />
                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                   <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={3} />
+                   <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorCount)" strokeWidth={3} />
                 </AreaChart>
              </ResponsiveContainer>
           </CardContent>
@@ -126,28 +145,23 @@ export default function SuperAdminDashboard() {
         <div className="lg:col-span-4 space-y-6">
           <Card className="border-none shadow-sm bg-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Platform Growth</CardTitle>
-              <CardDescription>Target: 1,500 Cafes by Q4</CardDescription>
+              <CardTitle className="text-lg">Subscription Distribution</CardTitle>
+              <CardDescription>Live active plans</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6 py-4">
-                 <div className="space-y-2">
-                    <div className="flex justify-between text-sm font-bold">
-                       <span>Market Reach</span>
-                       <span>82.6%</span>
-                    </div>
-                    <div className="h-3 w-full bg-muted rounded-full">
-                       <div className="h-full bg-primary rounded-full transition-all" style={{ width: '82.6%' }} />
-                    </div>
-                 </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 rounded-xl bg-muted/50 border">
-                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Retention</p>
-                       <p className="text-lg font-black mt-1">98.2%</p>
+                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Pro / Enterprise</p>
+                       <p className="text-lg font-black mt-1">
+                          {cafes?.filter(c => ['premium', 'enterprise'].includes((c.subscription?.planId || c.plan || '').toLowerCase())).length || 0}
+                       </p>
                     </div>
                     <div className="p-3 rounded-xl bg-muted/50 border">
-                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Scans/Hr</p>
-                       <p className="text-lg font-black mt-1">1.2k</p>
+                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Free / Trial</p>
+                       <p className="text-lg font-black mt-1">
+                          {cafes?.filter(c => ['free', 'trial'].includes((c.subscription?.planId || c.plan || 'free').toLowerCase())).length || 0}
+                       </p>
                     </div>
                  </div>
               </div>
@@ -166,7 +180,7 @@ export default function SuperAdminDashboard() {
                    <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
                    <span className="font-bold">All services operational</span>
                 </div>
-                <p className="text-xs opacity-70 mt-2">Uptime: 99.99% (Last 30 days)</p>
+                <p className="text-xs opacity-70 mt-2">Database Connected: {db ? 'Yes' : 'No'}</p>
              </CardContent>
           </Card>
         </div>

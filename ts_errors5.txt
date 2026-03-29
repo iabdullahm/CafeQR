@@ -1,0 +1,5 @@
+
+> nextn@0.1.0 typecheck
+> tsc --noEmit
+
+src/app/api/cafes/[id]/status/route.ts(4,10): error TS2304: Cannot find name 'cafeController'.

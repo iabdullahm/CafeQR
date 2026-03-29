@@ -43,7 +43,8 @@ import {
   Filter,
   Eye,
   Key,
-  Ban
+  Ban,
+  Store
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -58,16 +59,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-const SYSTEM_USERS = [
-  { id: "USR-001", name: "Super Admin", email: "admin@cafeqr.com", role: "Super Admin", status: "active", lastLogin: "Just now", created: "Dec 01, 2024", phone: "90000000" },
-  { id: "USR-002", name: "Ahmed Al Balushi", email: "owner@demo-cafe.com", role: "Cafe Owner", status: "active", lastLogin: "1 hour ago", created: "Dec 01, 2024", phone: "91111111" },
-];
+const SYSTEM_USERS: any[] = [];
 
 const ROLES_PERMISSIONS = [
   { 
     role: "Super Admin", 
     description: "Full system access including platform settings and root security.",
-    userCount: 1,
+    userCount: 0,
     permissions: ["all"]
   },
   { 
@@ -79,7 +77,7 @@ const ROLES_PERMISSIONS = [
   { 
     role: "Cafe Owner", 
     description: "Full access to their owned cafe and branches.",
-    userCount: 1,
+    userCount: 0,
     permissions: ["view_dashboard", "manage_branches", "manage_menu"]
   },
   { 
@@ -145,10 +143,10 @@ export default function UsersRolesManagement() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "Total Users", value: "2", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-          { title: "Active Users", value: "2", icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
-          { title: "Super Admins", value: "1", icon: ShieldCheck, color: "text-primary", bg: "bg-primary/5" },
-          { title: "Cafe Owners", value: "1", icon: Store, color: "text-indigo-600", bg: "bg-indigo-50" },
+          { title: "Total Users", value: "0", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+          { title: "Active Users", value: "0", icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
+          { title: "Super Admins", value: "0", icon: ShieldCheck, color: "text-primary", bg: "bg-primary/5" },
+          { title: "Cafe Owners", value: "0", icon: Store, color: "text-indigo-600", bg: "bg-indigo-50" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-sm overflow-hidden bg-card">
             <CardContent className="p-5 flex items-center gap-4">
@@ -199,68 +197,80 @@ export default function UsersRolesManagement() {
                        </TableRow>
                     </TableHeader>
                     <TableBody>
-                       {SYSTEM_USERS.map((user) => (
-                         <TableRow key={user.id} className="hover:bg-muted/10 transition-colors">
-                            <TableCell className="px-6 py-4">
-                               <div className="flex items-center gap-3">
-                                  <div className="h-10 w-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold overflow-hidden">
-                                     {user.name.split(' ').map(n => n[0]).join('')}
-                                  </div>
-                                  <div className="flex flex-col">
-                                     <span className="font-bold text-foreground leading-tight">{user.name}</span>
-                                     <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-tighter mt-0.5">{user.id}</span>
-                                  </div>
-                               </div>
-                            </TableCell>
-                            <TableCell>
-                               <div className="flex flex-col text-sm">
-                                  <span className="text-muted-foreground flex items-center gap-1.5"><Mail className="h-3 w-3" /> {user.email}</span>
-                                  <span className="text-muted-foreground text-[11px] flex items-center gap-1.5 mt-1"><Phone className="h-3 w-3" /> {user.phone}</span>
-                               </div>
-                            </TableCell>
-                            <TableCell>
-                               {getRoleBadge(user.role)}
-                            </TableCell>
-                            <TableCell>
-                               {getStatusBadge(user.status)}
-                            </TableCell>
-                            <TableCell>
-                               <div className="flex flex-col text-sm">
-                                  <span className="text-muted-foreground flex items-center gap-1.5"><Clock className="h-3 w-3" /> Last login: {user.lastLogin}</span>
-                                  <span className="text-muted-foreground text-[11px] flex items-center gap-1.5 mt-1"><Calendar className="h-3 w-3" /> Created: {user.created}</span>
-                               </div>
-                            </TableCell>
-                            <TableCell className="text-right pr-6">
-                               <div className="flex items-center justify-end gap-1">
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                                     <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <DropdownMenu>
-                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                                           <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                     </DropdownMenuTrigger>
-                                     <DropdownMenuContent align="end" className="w-56">
-                                        <DropdownMenuLabel>User Management</DropdownMenuLabel>
-                                        <DropdownMenuItem className="gap-2"><Eye className="h-4 w-4" /> View Full Profile</DropdownMenuItem>
-                                        <DropdownMenuItem className="gap-2"><UserCog className="h-4 w-4" /> Re-assign Role</DropdownMenuItem>
-                                        <DropdownMenuItem className="gap-2"><Lock className="h-4 w-4" /> Audit Login History</DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem className="gap-2"><Key className="h-4 w-4" /> Send Password Reset</DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        {user.status === 'active' ? (
-                                          <DropdownMenuItem className="text-destructive gap-2 font-bold"><Ban className="h-4 w-4" /> Suspend Account</DropdownMenuItem>
-                                        ) : (
-                                          <DropdownMenuItem className="text-green-600 gap-2 font-bold"><CheckCircle2 className="h-4 w-4" /> Activate Account</DropdownMenuItem>
-                                        )}
-                                        <DropdownMenuItem className="text-destructive gap-2"><Trash2 className="h-4 w-4" /> Delete Permanently</DropdownMenuItem>
-                                     </DropdownMenuContent>
-                                  </DropdownMenu>
+                       {SYSTEM_USERS.length === 0 ? (
+                         <TableRow>
+                            <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
+                               <div className="flex flex-col items-center justify-center gap-2">
+                                  <Users className="h-8 w-8 text-muted-foreground/50" />
+                                  <p className="font-medium text-sm">No system users found</p>
+                                  <p className="text-xs">There are currently no users registered in the portal.</p>
                                </div>
                             </TableCell>
                          </TableRow>
-                       ))}
+                       ) : (
+                         SYSTEM_USERS.map((user) => (
+                           <TableRow key={user.id} className="hover:bg-muted/10 transition-colors">
+                              <TableCell className="px-6 py-4">
+                                 <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold overflow-hidden">
+                                       {user.name.split(' ').map((n: string) => n[0]).join('')}
+                                    </div>
+                                    <div className="flex flex-col">
+                                       <span className="font-bold text-foreground leading-tight">{user.name}</span>
+                                       <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-tighter mt-0.5">{user.id}</span>
+                                    </div>
+                                 </div>
+                              </TableCell>
+                              <TableCell>
+                                 <div className="flex flex-col text-sm">
+                                    <span className="text-muted-foreground flex items-center gap-1.5"><Mail className="h-3 w-3" /> {user.email}</span>
+                                    <span className="text-muted-foreground text-[11px] flex items-center gap-1.5 mt-1"><Phone className="h-3 w-3" /> {user.phone}</span>
+                                 </div>
+                              </TableCell>
+                              <TableCell>
+                                 {getRoleBadge(user.role)}
+                              </TableCell>
+                              <TableCell>
+                                 {getStatusBadge(user.status)}
+                              </TableCell>
+                              <TableCell>
+                                 <div className="flex flex-col text-sm">
+                                    <span className="text-muted-foreground flex items-center gap-1.5"><Clock className="h-3 w-3" /> Last login: {user.lastLogin}</span>
+                                    <span className="text-muted-foreground text-[11px] flex items-center gap-1.5 mt-1"><Calendar className="h-3 w-3" /> Created: {user.created}</span>
+                                 </div>
+                              </TableCell>
+                              <TableCell className="text-right pr-6">
+                                 <div className="flex items-center justify-end gap-1">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                                       <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <DropdownMenu>
+                                       <DropdownMenuTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                                             <MoreHorizontal className="h-4 w-4" />
+                                          </Button>
+                                       </DropdownMenuTrigger>
+                                       <DropdownMenuContent align="end" className="w-56">
+                                          <DropdownMenuLabel>User Management</DropdownMenuLabel>
+                                          <DropdownMenuItem className="gap-2"><Eye className="h-4 w-4" /> View Full Profile</DropdownMenuItem>
+                                          <DropdownMenuItem className="gap-2"><UserCog className="h-4 w-4" /> Re-assign Role</DropdownMenuItem>
+                                          <DropdownMenuItem className="gap-2"><Lock className="h-4 w-4" /> Audit Login History</DropdownMenuItem>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem className="gap-2"><Key className="h-4 w-4" /> Send Password Reset</DropdownMenuItem>
+                                          <DropdownMenuSeparator />
+                                          {user.status === 'active' ? (
+                                            <DropdownMenuItem className="text-destructive gap-2 font-bold"><Ban className="h-4 w-4" /> Suspend Account</DropdownMenuItem>
+                                          ) : (
+                                            <DropdownMenuItem className="text-green-600 gap-2 font-bold"><CheckCircle2 className="h-4 w-4" /> Activate Account</DropdownMenuItem>
+                                          )}
+                                          <DropdownMenuItem className="text-destructive gap-2"><Trash2 className="h-4 w-4" /> Delete Permanently</DropdownMenuItem>
+                                       </DropdownMenuContent>
+                                    </DropdownMenu>
+                                 </div>
+                              </TableCell>
+                           </TableRow>
+                         ))
+                       )}
                     </TableBody>
                  </Table>
                </div>

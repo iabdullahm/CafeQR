@@ -174,6 +174,32 @@ export default function CafeAdminDashboard() {
     return Object.entries(buckets).map(([name, revenue]) => ({ name, revenue }));
   }, [todayOrders]);
 
+  const peakHour = useMemo(() => {
+    if (!todayOrders || todayOrders.length === 0) return 'No Traffic Yet';
+    const buckets: Record<number, number> = {};
+    todayOrders.forEach(order => {
+      const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+      const hour = date.getHours();
+      buckets[hour] = (buckets[hour] || 0) + 1;
+    });
+    
+    let maxHour = -1;
+    let maxOrders = -1;
+    Object.entries(buckets).forEach(([hourStr, count]) => {
+       const h = parseInt(hourStr);
+       if (count > maxOrders) {
+          maxOrders = count;
+          maxHour = h;
+       }
+    });
+    if (maxHour === -1) return 'No Traffic Yet';
+    const formatH = maxHour % 12 || 12;
+    const formatNextH = (maxHour + 1) % 12 || 12;
+    const ampm = maxHour >= 12 ? 'PM' : 'AM';
+    const nextAmpm = (maxHour + 1) >= 12 && (maxHour + 1) < 24 ? 'PM' : 'AM';
+    return `${formatH}:00 ${ampm} - ${formatNextH}:00 ${nextAmpm}`;
+  }, [todayOrders]);
+
   if (isUserLoading || profileLoading || ordersLoading) return <DashboardSkeleton />;
 
   return (
@@ -273,7 +299,7 @@ export default function CafeAdminDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-bold uppercase tracking-wider opacity-80">Today’s Peak Hour</p>
-                  <p className="mt-2 text-2xl font-black">7:00 PM - 8:00 PM</p>
+                  <p className="mt-2 text-2xl font-black">{peakHour}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
                   <Activity className="h-6 w-6" />

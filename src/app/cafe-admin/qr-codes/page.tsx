@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,15 +8,68 @@ import { SectionHeader } from "@/components/dashboard/section-header";
 import { QrCode, Download, Printer, RefreshCw, Eye, Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { DataTableReusable } from "@/components/tables/data-table-reusable";
-
-const QR_DATA = [
-  { id: "1", name: "Table T-01", type: "table", branch: "Main Downtown", scans: 1450, lastScanned: "2m ago", status: "active" },
-  { id: "2", name: "Car Order Car-01", type: "car", branch: "Main Downtown", scans: 840, lastScanned: "15m ago", status: "active" },
-  { id: "3", name: "General Menu QR", type: "general", branch: "Manhattan North", scans: 2504, lastScanned: "Just now", status: "active" },
-  { id: "4", name: "Outdoor O-01", type: "table", branch: "Main Downtown", scans: 320, lastScanned: "1h ago", status: "inactive" },
-];
+import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection } from "@/firebase";
+import { collection, query, doc } from "firebase/firestore";
 
 export default function QRManagement() {
+  const { user } = useUser();
+  const db = useFirestore();
+  
+  const userProfileRef = useMemoFirebase(() => {
+    return (db && user) ? doc(db, 'users', user.uid) : null;
+  }, [db, user]);
+  const { data: userProfile } = useDoc(userProfileRef);
+  const cafeId = userProfile?.cafeId;
+
+  const tablesQuery = useMemoFirebase(() => {
+    if (!db || !cafeId) return null;
+    return query(collection(db, 'cafes', cafeId, 'tables'));
+  }, [db, cafeId]);
+  const { data: tables, isLoading } = useCollection(tablesQuery);
+
+  const qrData = useMemo(() => {
+    if (!tables) return [];
+    
+    // Create a general QR for the cafe
+    const generalQr = {
+      id: "general",
+      name: "General Menu QR",
+      type: "general",
+      branch: "All Branches",
+      scans: 0,
+      lastScanned: "Never",
+      status: "active",
+      link: cafeId ? `${window.location.origin}/cafe/${cafeId}` : "#"
+    };
+
+    const tableQrs = tables.map((t: any) => ({
+      id: t.id,
+      name: t.name,
+      type: t.type?.toLowerCase() || "table",
+      branch: t.branchName || "Main Branch",
+      scans: 0, 
+      lastScanned: "Never",
+      status: t.isActive ? "active" : "inactive",
+      link: cafeId ? `${window.location.origin}/cafe/${cafeId}?table=${t.id}` : "#"
+    }));
+
+    return [generalQr, ...tableQrs];
+  }, [tables, cafeId]);
+
+  const handlePrint = (link: string) => {
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(`<html><body style="text-align:center;margin-top:20%;"><img src="${qrUrl}" width="300" height="300" onload="window.print();window.close();"/></body></html>`);
+      newWindow.document.close();
+    }
+  };
+
+  const handleDownload = (link: string) => {
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
+    window.open(qrUrl, '_blank');
+  };
+
   const columns = [
     {
       key: "name",
@@ -36,7 +90,7 @@ export default function QRManagement() {
       key: "type",
       label: "Type",
       render: (row: any) => (
-        <Badge variant="secondary" className="capitalize text-[10px]">{row.type}</Badge>
+        <Badge variant="secondary" className="capitalize text-[10px]">{row.type.replace('_', ' ')}</Badge>
       )
     },
     {
@@ -64,10 +118,12 @@ export default function QRManagement() {
       className: "text-right",
       render: (row: any) => (
         <div className="flex items-center justify-end gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8"><Download className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8"><Printer className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8"><RefreshCw className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(row.link)} title="Preview / Download">
+             <Eye className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handlePrint(row.link)} title="Print QR">
+             <Printer className="h-4 w-4" />
+          </Button>
         </div>
       )
     }
@@ -104,7 +160,7 @@ export default function QRManagement() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-             <DataTableReusable columns={columns} data={QR_DATA} />
+             <DataTableReusable columns={columns} data={qrData} isLoading={isLoading} />
           </CardContent>
         </Card>
 

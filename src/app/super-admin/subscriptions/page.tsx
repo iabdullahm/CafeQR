@@ -47,10 +47,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-const SUBSCRIPTIONS = [
-  { id: "SUB-CAF-001", cafe: "Brew Corner", plan: "Premium", status: "active", billing: "Monthly", amount: "39.000 OMR", startDate: "Dec 01, 2024", expiryDate: "Dec 30, 2024", paymentStatus: "paid", autoRenew: true },
-  { id: "SUB-CAF-002", cafe: "Qahwa House", plan: "Standard", status: "trial", billing: "Free Trial", amount: "0.000 OMR", startDate: "Dec 01, 2024", expiryDate: "Dec 14, 2024", paymentStatus: "unpaid", autoRenew: false },
-];
+const SUBSCRIPTIONS: any[] = [];
 
 export default function SubscriptionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -102,9 +99,9 @@ export default function SubscriptionManagement() {
                </CardTitle>
             </CardHeader>
             <CardContent>
-               <div className="text-3xl font-black text-primary">39.000 OMR</div>
-               <p className="text-xs text-green-600 font-bold mt-1.5 flex items-center gap-1">
-                  +100% <span className="text-muted-foreground font-medium text-[10px]">vs last month</span>
+               <div className="text-3xl font-black text-primary">0.000 OMR</div>
+               <p className="text-xs text-muted-foreground font-bold mt-1.5 flex items-center gap-1">
+                  0% <span className="text-muted-foreground font-medium text-[10px]">vs last month</span>
                </p>
             </CardContent>
          </Card>
@@ -113,9 +110,9 @@ export default function SubscriptionManagement() {
                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Active Subscriptions</CardTitle>
             </CardHeader>
             <CardContent>
-               <div className="text-3xl font-black">1</div>
-               <p className="text-xs text-green-600 font-bold mt-1.5 flex items-center gap-1">
-                  +1 <span className="text-muted-foreground font-medium text-[10px]">this month</span>
+               <div className="text-3xl font-black">0</div>
+               <p className="text-xs text-muted-foreground font-bold mt-1.5 flex items-center gap-1">
+                  0 <span className="text-muted-foreground font-medium text-[10px]">this month</span>
                </p>
             </CardContent>
          </Card>
@@ -133,9 +130,9 @@ export default function SubscriptionManagement() {
                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Free Trials</CardTitle>
             </CardHeader>
             <CardContent>
-               <div className="text-3xl font-black text-blue-600">1</div>
-               <p className="text-xs text-blue-600 font-bold mt-1.5 flex items-center gap-1">
-                  50% <span className="text-muted-foreground font-medium text-[10px]">conversion rate</span>
+               <div className="text-3xl font-black text-blue-600">0</div>
+               <p className="text-xs text-muted-foreground font-bold mt-1.5 flex items-center gap-1">
+                  0% <span className="text-muted-foreground font-medium text-[10px]">conversion rate</span>
                </p>
             </CardContent>
          </Card>

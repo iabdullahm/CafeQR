@@ -1,0 +1,79 @@
+   ▲ Next.js 15.5.9
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 12.2s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/36) ...
+Automatic initialization failed. Falling back to firebase config object. Error [FirebaseError]: Firebase: Need to provide options, when not being deployed to hosting via source. (app/no-options).
+    at W (C:\Projects\CafeQR\project\.next\server\chunks\9735.js:1:135934)
+    at l (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:10657)
+    at <unknown> (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:224)
+    at h (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:211) {
+  code: 'app/no-options',
+  customData: {}
+}
+Automatic initialization failed. Falling back to firebase config object. Error [FirebaseError]: Firebase: Need to provide options, when not being deployed to hosting via source. (app/no-options).
+    at W (C:\Projects\CafeQR\project\.next\server\chunks\9735.js:1:135934)
+    at l (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:10657)
+    at <unknown> (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:224)
+    at h (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:211) {
+  code: 'app/no-options',
+  customData: {}
+}
+   Generating static pages (9/36) 
+   Generating static pages (18/36) 
+   Generating static pages (27/36) 
+ ✓ Generating static pages (36/36)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                   Size  First Load JS
+┌ ○ /                                        166 B         105 kB
+├ ○ /_not-found                               1 kB         102 kB
+├ ƒ /api/auth/login                          156 B         102 kB
+├ ƒ /api/auth/logout                         156 B         102 kB
+├ ƒ /api/auth/me                             156 B         102 kB
+├ ƒ /api/cafes                               156 B         102 kB
+├ ƒ /api/cafes/[id]                          156 B         102 kB
+├ ƒ /api/cafes/[id]/status                   156 B         102 kB
+├ ƒ /api/dashboard/expiring-subscriptions    156 B         102 kB
+├ ƒ /api/dashboard/recent-cafes              156 B         102 kB
+├ ƒ /api/dashboard/revenue-chart             156 B         102 kB
+├ ƒ /api/dashboard/stats                     156 B         102 kB
+├ ƒ /c/[cafeId]/[branchId]/[tableId]       4.24 kB         126 kB
+├ ○ /cafe-admin                            5.89 kB         337 kB
+├ ○ /cafe-admin/branches                   4.97 kB         258 kB
+├ ○ /cafe-admin/loyalty                    10.9 kB         264 kB
+├ ○ /cafe-admin/menu                       18.4 kB         271 kB
+├ ○ /cafe-admin/orders                     4.98 kB         258 kB
+├ ○ /cafe-admin/profile                    7.67 kB         234 kB
+├ ○ /cafe-admin/qr-codes                   5.51 kB         231 kB
+├ ○ /cafe-admin/settings                   10.2 kB         263 kB
+├ ○ /cafe-admin/staff                      7.65 kB         291 kB
+├ ○ /cafe-admin/support                    7.31 kB         154 kB
+├ ○ /cafe-admin/tables                     6.81 kB         276 kB
+├ ○ /login                                 5.33 kB         245 kB
+├ ○ /super-admin                           5.01 kB         336 kB
+├ ○ /super-admin/audit-logs                5.51 kB         152 kB
+├ ○ /super-admin/cafes                     36.4 kB         323 kB
+├ ƒ /super-admin/cafes/[id]                25.6 kB         289 kB
+├ ○ /super-admin/notifications             12.4 kB         156 kB
+├ ○ /super-admin/payments                  7.79 kB         161 kB
+├ ○ /super-admin/plans                     7.16 kB         144 kB
+├ ○ /super-admin/reports                   20.7 kB         258 kB
+├ ○ /super-admin/settings                  11.4 kB         158 kB
+├ ○ /super-admin/subscriptions             6.67 kB         153 kB
+├ ○ /super-admin/support                   10.3 kB         163 kB
+└ ○ /super-admin/users-roles               10.2 kB         147 kB
++ First Load JS shared by all               101 kB
+  ├ chunks/1255-de0c1abd22c7cccd.js        45.2 kB
+  ├ chunks/4bd1b696-182b6b13bdad92e3.js    54.2 kB
+  └ other shared chunks (total)            2.06 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

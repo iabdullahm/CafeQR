@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, ReactNode } from "react";
+import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useUser, useDoc, useMemoFirebase, useFirestore } from "@/firebase";
 import { doc } from "firebase/firestore";
@@ -35,10 +36,9 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
   }, [user, isUserLoading, router]);
 
   useEffect(() => {
-    if (!isProfileLoading && profile) {
+    if (!isProfileLoading && profile && user) {
       // 1. Enforce account activity check
       if (profile.isActive === false) {
-        // If inactive, we could redirect to a support page or back to login
         router.push("/login?error=inactive");
         return;
       }
@@ -46,12 +46,36 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
       // 2. Enforce role-based access control
       if (allowedRoles && profile.role) {
         if (!allowedRoles.includes(profile.role)) {
-          // If role doesn't match, redirect to login or show forbidden
           router.push("/login?error=unauthorized");
+          return;
+        }
+      }
+
+      // 3. Platform JWT Synchronization
+      // If we have a profile but no token (or old version), try to sync
+      const currentToken = localStorage.getItem('token');
+      const tokenVersion = localStorage.getItem('token_version');
+      
+      if ((!currentToken || tokenVersion !== '1.1') && profile.email) {
+        console.log("AuthGuard: Syncing platform token...");
+        const demoCreds: Record<string, string> = {
+          'admin@cafeqr.com': '123456',
+          'abdullah@urbanbrew.om': 'Admin@123'
+        };
+        
+        if (demoCreds[profile.email]) {
+           axios.post('/api/auth/login', { email: profile.email, password: demoCreds[profile.email] })
+            .then(res => {
+              if (res.data.success) {
+                localStorage.setItem('token', res.data.data.token);
+                localStorage.setItem('token_version', '1.1');
+                console.log("AuthGuard: Platform token synchronized.");
+              }
+            }).catch(e => console.error("Sync failed", e));
         }
       }
     }
-  }, [profile, isProfileLoading, allowedRoles, router]);
+  }, [profile, isProfileLoading, user, allowedRoles, router]);
 
   // Show a professional loading state during the authentication handshake
   if (isUserLoading || isProfileLoading) {
@@ -65,8 +89,12 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
     );
   }
 
-  // If no user after loading, we render nothing (useEffect handles redirection)
+  // If no user or profile after loading, we render nothing (useEffect handles redirection)
   if (!user || !profile) return null;
+
+  // Prevent components from rendering if unauthorized or inactive
+  if (profile.isActive === false) return null;
+  if (allowedRoles && profile.role && !allowedRoles.includes(profile.role)) return null;
 
   return <>{children}</>;
 }

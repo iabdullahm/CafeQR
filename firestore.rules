@@ -36,13 +36,13 @@ service cloud.firestore {
       allow list: if isSuperAdmin();
       allow read, write: if isSuperAdmin();
     }
-
     match /cafes/{cafeId} {
-      // Public menu view
+      // Public menu view and login queries
       allow get: if true;
+      allow list: if true;
       
       // Creation restricted to Super Admins
-      allow list, create: if isSuperAdmin();
+      allow create: if isSuperAdmin();
       
       // Operational access for cafe staff
       allow read: if belongsToCafe(cafeId);

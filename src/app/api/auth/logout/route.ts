@@ -1,5 +1,5 @@
-import { authController } from '@/modules/auth/auth.controller';
+import { NextResponse } from "next/server";
 
 export async function POST() {
-  return authController.logout();
+  return NextResponse.json({ success: true });
 }

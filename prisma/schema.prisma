@@ -67,35 +67,35 @@ enum OrderSource {
 // --- Models ---
 
 model User {
-  id               BigInt      @id @default(autoincrement())
-  uuid             String      @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  fullName         String      @map("full_name")
-  email            String      @unique
-  phone            String?
-  passwordHash     String      @map("password_hash")
-  avatar           String?
-  status           UserStatus  @default(active)
-  lastLoginAt      DateTime?   @map("last_login_at")
-  emailVerifiedAt  DateTime?   @map("email_verified_at")
-  createdAt        DateTime    @default(now()) @map("created_at")
-  updatedAt        DateTime    @updatedAt @map("updated_at")
-  deletedAt        DateTime?   @map("deleted_at")
+  id              BigInt     @id @default(autoincrement())
+  uuid            String     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName        String     @map("full_name")
+  email           String     @unique
+  phone           String?
+  passwordHash    String     @map("password_hash")
+  avatar          String?
+  status          UserStatus @default(active)
+  lastLoginAt     DateTime?  @map("last_login_at")
+  emailVerifiedAt DateTime?  @map("email_verified_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  deletedAt       DateTime?  @map("deleted_at")
 
-  roles            UserRole[]
-  ownedCafes       Cafe[]      @relation("CafeOwner")
-  cafeUsers        CafeUser[]
+  roles      UserRole[]
+  ownedCafes Cafe[]     @relation("CafeOwner")
+  cafeUsers  CafeUser[]
 
-  @@map("users")
   @@index([status])
+  @@map("users")
 }
 
 model Role {
-  id          BigInt           @id @default(autoincrement())
-  name        String           @unique
-  displayName String           @map("display_name")
+  id          BigInt   @id @default(autoincrement())
+  name        String   @unique
+  displayName String   @map("display_name")
   description String?
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   users       UserRole[]
   permissions RolePermission[]
@@ -104,14 +104,14 @@ model Role {
 }
 
 model Permission {
-  id          BigInt           @id @default(autoincrement())
-  name        String           @unique
-  displayName String           @map("display_name")
+  id          BigInt   @id @default(autoincrement())
+  name        String   @unique
+  displayName String   @map("display_name")
   module      String
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  roles       RolePermission[]
+  roles RolePermission[]
 
   @@map("permissions")
 }
@@ -120,8 +120,8 @@ model UserRole {
   userId BigInt @map("user_id")
   roleId BigInt @map("role_id")
 
-  user   User   @relation(fields: [userId], references: [id])
-  role   Role   @relation(fields: [roleId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
 
   @@id([userId, roleId])
   @@map("user_roles")
@@ -139,68 +139,70 @@ model RolePermission {
 }
 
 model Cafe {
-  id               BigInt      @id @default(autoincrement())
-  uuid             String      @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cafeCode         String      @unique @map("cafe_code")
+  id               BigInt     @id @default(autoincrement())
+  uuid             String     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeCode         String     @unique @map("cafe_code")
   name             String
-  slug             String      @unique
+  slug             String     @unique
   logo             String?
-  coverImage       String?     @map("cover_image")
+  coverImage       String?    @map("cover_image")
   description      String?
-  ownerUserId      BigInt?     @map("owner_user_id")
+  ownerUserId      BigInt?    @map("owner_user_id")
   phone            String?
   email            String?
   country          String?
   city             String?
   address          String?
-  latitude         Decimal?    @db.Decimal(10, 8)
-  longitude        Decimal?    @db.Decimal(11, 8)
-  timezone         String      @default("UTC")
-  currency         String      @default("USD")
-  status           CafeStatus  @default(active)
-  onboardingStatus String      @default("pending") @map("onboarding_status")
-  joinedAt         DateTime?   @map("joined_at")
-  createdAt        DateTime    @default(now()) @map("created_at")
-  updatedAt        DateTime    @updatedAt @map("updated_at")
-  deletedAt        DateTime?   @map("deleted_at")
+  latitude         Decimal?   @db.Decimal(10, 8)
+  longitude        Decimal?   @db.Decimal(11, 8)
+  timezone         String     @default("UTC")
+  currency         String     @default("USD")
+  status           CafeStatus @default(active)
+  onboardingStatus String     @default("pending") @map("onboarding_status")
+  joinedAt         DateTime?  @map("joined_at")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+  deletedAt        DateTime?  @map("deleted_at")
 
-  owner            User?       @relation("CafeOwner", fields: [ownerUserId], references: [id])
-  branches         CafeBranch[]
-  cafeUsers        CafeUser[]
-  subscriptions    Subscription[]
-  tables           CafeTable[]
-  categories       MenuCategory[]
-  items            MenuItem[]
-  customers        Customer[]
-  orders           Order[]
+  owner           User?            @relation("CafeOwner", fields: [ownerUserId], references: [id])
+  branches        CafeBranch[]
+  cafeUsers       CafeUser[]
+  subscriptions   Subscription[]
+  tables          CafeTable[]
+  categories      MenuCategory[]
+  items           MenuItem[]
+  customers       Customer[]
+  orders          Order[]
+  loyaltyAccounts LoyaltyAccount[]
+  loyaltyProgram  LoyaltyProgram?
 
-  @@map("cafes")
   @@index([status, city])
+  @@map("cafes")
 }
 
 model CafeBranch {
-  id           BigInt      @id @default(autoincrement())
-  uuid         String      @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cafeId       BigInt      @map("cafe_id")
-  branchCode   String      @map("branch_code")
+  id           BigInt   @id @default(autoincrement())
+  uuid         String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId       BigInt   @map("cafe_id")
+  branchCode   String   @map("branch_code")
   name         String
   phone        String?
   email        String?
   city         String?
   address      String?
-  latitude     Decimal?    @db.Decimal(10, 8)
-  longitude    Decimal?    @db.Decimal(11, 8)
-  status       String      @default("active")
-  isMainBranch Boolean     @default(false) @map("is_main_branch")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
+  latitude     Decimal? @db.Decimal(10, 8)
+  longitude    Decimal? @db.Decimal(11, 8)
+  status       String   @default("active")
+  isMainBranch Boolean  @default(false) @map("is_main_branch")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  cafe         Cafe        @relation(fields: [cafeId], references: [id])
-  cafeUsers    CafeUser[]
-  tables       CafeTable[]
-  categories   MenuCategory[]
-  items        MenuItem[]
-  orders       Order[]
+  cafe       Cafe           @relation(fields: [cafeId], references: [id])
+  cafeUsers  CafeUser[]
+  tables     CafeTable[]
+  categories MenuCategory[]
+  items      MenuItem[]
+  orders     Order[]
 
   @@map("cafe_branches")
 }
@@ -215,9 +217,9 @@ model CafeUser {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  cafe      Cafe     @relation(fields: [cafeId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-  branch    CafeBranch? @relation(fields: [branchId], references: [id])
+  cafe   Cafe        @relation(fields: [cafeId], references: [id])
+  user   User        @relation(fields: [userId], references: [id])
+  branch CafeBranch? @relation(fields: [branchId], references: [id])
 
   @@map("cafe_users")
 }
@@ -242,8 +244,8 @@ model Plan {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  features         PlanFeature[]
-  subscriptions    Subscription[]
+  features      PlanFeature[]
+  subscriptions Subscription[]
 
   @@map("plans")
 }
@@ -254,7 +256,7 @@ model PlanFeature {
   featureKey   String @map("feature_key")
   featureValue String @map("feature_value")
 
-  plan         Plan   @relation(fields: [planId], references: [id])
+  plan Plan @relation(fields: [planId], references: [id])
 
   @@map("plan_features")
 }
@@ -282,8 +284,8 @@ model Subscription {
   createdAt        DateTime           @default(now()) @map("created_at")
   updatedAt        DateTime           @updatedAt @map("updated_at")
 
-  cafe             Cafe               @relation(fields: [cafeId], references: [id])
-  plan             Plan               @relation(fields: [planId], references: [id])
+  cafe Cafe @relation(fields: [cafeId], references: [id])
+  plan Plan @relation(fields: [planId], references: [id])
 
   @@map("subscriptions")
 }
@@ -301,33 +303,33 @@ model CafeTable {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  cafe        Cafe     @relation(fields: [cafeId], references: [id])
-  branch      CafeBranch @relation(fields: [branchId], references: [id])
-  qrCode      QRCode?  @relation("TableQR", fields: [qrCodeId], references: [id])
-  orders      Order[]
+  cafe   Cafe       @relation(fields: [cafeId], references: [id])
+  branch CafeBranch @relation(fields: [branchId], references: [id])
+  qrCode QRCode?    @relation("TableQR", fields: [qrCodeId], references: [id])
+  orders Order[]
 
   @@map("cafe_tables")
 }
 
 model QRCode {
-  id            BigInt   @id @default(autoincrement())
-  uuid          String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  cafeId        BigInt   @map("cafe_id")
-  branchId      BigInt   @map("branch_id")
-  tableId       BigInt?  @map("table_id")
-  qrType        String   @map("qr_type")
-  code          String   @unique
-  token         String   @unique
+  id            BigInt    @id @default(autoincrement())
+  uuid          String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cafeId        BigInt    @map("cafe_id")
+  branchId      BigInt    @map("branch_id")
+  tableId       BigInt?   @map("table_id")
+  qrType        String    @map("qr_type")
+  code          String    @unique
+  token         String    @unique
   url           String
-  imagePath     String?  @map("image_path")
-  scanCount     Int      @default(0) @map("scan_count")
+  imagePath     String?   @map("image_path")
+  scanCount     Int       @default(0) @map("scan_count")
   lastScannedAt DateTime? @map("last_scanned_at")
-  status        String   @default("active")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  status        String    @default("active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  tables        CafeTable[] @relation("TableQR")
-  scanLogs      QRScanLog[]
+  tables   CafeTable[] @relation("TableQR")
+  scanLogs QRScanLog[]
 
   @@map("qr_codes")
 }
@@ -344,7 +346,7 @@ model QRScanLog {
   os         String?
   scannedAt  DateTime @default(now()) @map("scanned_at")
 
-  qrCode     QRCode   @relation(fields: [qrCodeId], references: [id])
+  qrCode QRCode @relation(fields: [qrCodeId], references: [id])
 
   @@map("qr_scan_logs")
 }
@@ -362,9 +364,9 @@ model MenuCategory {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  cafe        Cafe     @relation(fields: [cafeId], references: [id])
-  branch      CafeBranch? @relation(fields: [branchId], references: [id])
-  items       MenuItem[]
+  cafe   Cafe        @relation(fields: [cafeId], references: [id])
+  branch CafeBranch? @relation(fields: [branchId], references: [id])
+  items  MenuItem[]
 
   @@map("menu_categories")
 }
@@ -390,11 +392,11 @@ model MenuItem {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  cafe            Cafe     @relation(fields: [cafeId], references: [id])
-  branch          CafeBranch? @relation(fields: [branchId], references: [id])
-  category        MenuCategory @relation(fields: [categoryId], references: [id])
-  options         MenuItemOption[]
-  orderItems      OrderItem[]
+  cafe       Cafe             @relation(fields: [cafeId], references: [id])
+  branch     CafeBranch?      @relation(fields: [branchId], references: [id])
+  category   MenuCategory     @relation(fields: [categoryId], references: [id])
+  options    MenuItemOption[]
+  orderItems OrderItem[]
 
   @@map("menu_items")
 }
@@ -410,8 +412,8 @@ model MenuItemOption {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-  values     MenuItemOptionValue[]
+  menuItem MenuItem              @relation(fields: [menuItemId], references: [id])
+  values   MenuItemOptionValue[]
 
   @@map("menu_item_options")
 }
@@ -426,7 +428,7 @@ model MenuItemOptionValue {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  option     MenuItemOption @relation(fields: [optionId], references: [id])
+  option MenuItemOption @relation(fields: [optionId], references: [id])
 
   @@map("menu_item_option_values")
 }
@@ -443,8 +445,9 @@ model Customer {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  cafe           Cafe     @relation(fields: [cafeId], references: [id])
+  cafe           Cafe            @relation(fields: [cafeId], references: [id])
   orders         Order[]
+  loyaltyAccount LoyaltyAccount? @relation("CustomerLoyalty")
 
   @@map("customers")
 }
@@ -472,14 +475,14 @@ model Order {
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")
 
-  cafe           Cafe        @relation(fields: [cafeId], references: [id])
-  branch         CafeBranch? @relation(fields: [branchId], references: [id])
-  table          CafeTable?  @relation(fields: [tableId], references: [id])
-  customer       Customer?   @relation(fields: [customerId], references: [id])
-  items          OrderItem[]
+  cafe     Cafe        @relation(fields: [cafeId], references: [id])
+  branch   CafeBranch? @relation(fields: [branchId], references: [id])
+  table    CafeTable?  @relation(fields: [tableId], references: [id])
+  customer Customer?   @relation(fields: [customerId], references: [id])
+  items    OrderItem[]
 
-  @@map("orders")
   @@index([cafeId, status, placedAt])
+  @@map("orders")
 }
 
 model OrderItem {
@@ -493,54 +496,70 @@ model OrderItem {
   notes      String?
   createdAt  DateTime @default(now()) @map("created_at")
 
-  order      Order    @relation(fields: [orderId], references: [id])
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-  options    OrderItemOption[]
+  order    Order             @relation(fields: [orderId], references: [id])
+  menuItem MenuItem          @relation(fields: [menuItemId], references: [id])
+  options  OrderItemOption[]
 
   @@map("order_items")
 }
 
 model OrderItemOption {
-  id          BigInt @id @default(autoincrement())
-  orderItemId BigInt @map("order_item_id")
-  optionName  String @map("option_name")
-  optionValue String @map("option_value")
+  id          BigInt  @id @default(autoincrement())
+  orderItemId BigInt  @map("order_item_id")
+  optionName  String  @map("option_name")
+  optionValue String  @map("option_value")
   extraPrice  Decimal @map("extra_price") @db.Decimal(10, 3)
 
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
 
   @@map("order_item_options")
 }
 
 model LoyaltyProgram {
-  id           BigInt   @id @default(autoincrement())
-  cafeId       BigInt   @unique @map("cafe_id")
-  status       String   @default("active")
-  earningRule  String   @map("earning_rule")
-  redemptionRule String @map("redemption_rule")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id                 BigInt   @id @default(autoincrement())
+  cafeId             BigInt   @unique @map("cafe_id")
+  status             String   @default("active")
+  cupsRequired       Int      @default(5) @map("cups_required")
+  rewardItem         String   @default("any_coffee") @map("reward_item")
+  countOnlyCoffee    Boolean  @default(true) @map("count_only_coffee")
+  eligibleCategories String   @default("hot,cold") @map("eligible_categories")
+  autoReset          Boolean  @default(true) @map("auto_reset")
+  branchRules        String   @default("all") @map("branch_rules")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  cafe Cafe @relation(fields: [cafeId], references: [id])
 
   @@map("loyalty_programs")
 }
 
 model LoyaltyAccount {
-  id          BigInt   @id @default(autoincrement())
-  customerId  BigInt   @unique @map("customer_id")
-  points      Int      @default(0)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id              BigInt   @id @default(autoincrement())
+  customerId      BigInt   @unique @map("customer_id")
+  cafeId          BigInt   @map("cafe_id")
+  cups            Int      @default(0)
+  rewardsEarned   Int      @default(0) @map("rewards_earned")
+  rewardsRedeemed Int      @default(0) @map("rewards_redeemed")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  customer     Customer             @relation("CustomerLoyalty", fields: [customerId], references: [id])
+  cafe         Cafe                 @relation(fields: [cafeId], references: [id])
+  transactions LoyaltyTransaction[]
 
   @@map("loyalty_accounts")
 }
 
 model LoyaltyTransaction {
-  id          BigInt   @id @default(autoincrement())
-  accountId   BigInt   @map("account_id")
-  points      Int
-  type        String   @default("earn")
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
+  id         BigInt   @id @default(autoincrement())
+  accountId  BigInt   @map("account_id")
+  action     String   @default("Earned")
+  cupsCount  Int      @map("cups_count")
+  rewardItem String?  @map("reward_item")
+  status     String   @default("Completed")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  account LoyaltyAccount @relation(fields: [accountId], references: [id])
 
   @@map("loyalty_transactions")
 }
@@ -583,7 +602,7 @@ model SupportTicket {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  messages     SupportTicketMessage[]
+  messages SupportTicketMessage[]
 
   @@map("support_tickets")
 }
@@ -596,7 +615,7 @@ model SupportTicketMessage {
   isAdmin   Boolean  @default(false) @map("is_admin")
   createdAt DateTime @default(now()) @map("created_at")
 
-  ticket    SupportTicket @relation(fields: [ticketId], references: [id])
+  ticket SupportTicket @relation(fields: [ticketId], references: [id])
 
   @@map("support_ticket_messages")
 }

@@ -16,7 +16,7 @@ export class AuthService {
       const user = {
         id: '1',
         email: 'admin@cafeqr.com',
-        role: 'super_admin',
+        role: 'SUPER_ADMIN',
         full_name: 'Demo Admin'
       };
 
@@ -37,7 +37,7 @@ export class AuthService {
       id: payload.sub,
       email: payload.email,
       roles: payload.roles,
-      full_name: payload.roles.includes('super_admin') ? 'Super Admin' : 'Cafe User'
+      full_name: payload.roles.includes('SUPER_ADMIN') ? 'Super Admin' : 'Cafe User'
     };
   }
 }

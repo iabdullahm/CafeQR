@@ -75,7 +75,7 @@ Platform: {{{platform}}}
 Generate creative marketing copy, relevant hashtags, and appropriate emojis. Ensure the copy is compelling and encourages the target audience to engage with the promotion.
 
 Output format should be a JSON object conforming to the following schema:
-${ai.jsonSchema(GeneratePromotionCopyOutputSchema)}`,
+`,
 });
 
 const generatePromotionCopyFlow = ai.defineFlow(

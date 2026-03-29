@@ -1,0 +1,105 @@
+
+> nextn@0.1.0 typecheck
+> tsc --noEmit
+
+.next/types/validator.ts(315,31): error TS2344: Type 'typeof import("C:/Projects/CafeQR/project/src/app/api/cafes/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/cafes/[id]">'.
+  Types of property 'GET' are incompatible.
+    Type '(req: Request, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/types/validator.ts(324,31): error TS2344: Type 'typeof import("C:/Projects/CafeQR/project/src/app/api/cafes/[id]/status/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/cafes/[id]/status">'.
+  Types of property 'PATCH' are incompatible.
+    Type '(req: Request, { params }: { params: { id: string; }; }) => Promise<any>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+prisma/seed.ts(3,3): error TS2305: Module '"@prisma/client"' has no exported member 'BranchStatus'.
+prisma/seed.ts(4,3): error TS2305: Module '"@prisma/client"' has no exported member 'CategoryStatus'.
+prisma/seed.ts(5,3): error TS2305: Module '"@prisma/client"' has no exported member 'LoyaltyLogType'.
+prisma/seed.ts(8,3): error TS2305: Module '"@prisma/client"' has no exported member 'ProductStatus'.
+prisma/seed.ts(10,3): error TS2305: Module '"@prisma/client"' has no exported member 'TableStatus'.
+prisma/seed.ts(11,3): error TS2305: Module '"@prisma/client"' has no exported member 'TableType'.
+prisma/seed.ts(27,16): error TS2339: Property 'loyaltyLog' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(29,16): error TS2339: Property 'loyaltyRule' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(33,16): error TS2339: Property 'table' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(34,16): error TS2339: Property 'product' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(35,16): error TS2339: Property 'category' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(37,16): error TS2339: Property 'branch' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(48,7): error TS2353: Object literal may only specify known properties, and 'code' does not exist in type '(Without<PlanCreateInput, PlanUncheckedCreateInput> & PlanUncheckedCreateInput) | (Without<...> & PlanCreateInput)'.
+prisma/seed.ts(63,7): error TS2353: Object literal may only specify known properties, and 'code' does not exist in type '(Without<PlanCreateInput, PlanUncheckedCreateInput> & PlanUncheckedCreateInput) | (Without<...> & PlanCreateInput)'.
+prisma/seed.ts(78,7): error TS2353: Object literal may only specify known properties, and 'code' does not exist in type '(Without<PlanCreateInput, PlanUncheckedCreateInput> & PlanUncheckedCreateInput) | (Without<...> & PlanCreateInput)'.
+prisma/seed.ts(95,7): error TS2353: Object literal may only specify known properties, and 'logoUrl' does not exist in type '(Without<CafeCreateInput, CafeUncheckedCreateInput> & CafeUncheckedCreateInput) | (Without<...> & CafeCreateInput)'.
+prisma/seed.ts(114,7): error TS2353: Object literal may only specify known properties, and 'logoUrl' does not exist in type '(Without<CafeCreateInput, CafeUncheckedCreateInput> & CafeUncheckedCreateInput) | (Without<...> & CafeCreateInput)'.
+prisma/seed.ts(134,34): error TS2551: Property 'ACTIVE' does not exist on type '{ trial: "trial"; active: "active"; expired: "expired"; cancelled: "cancelled"; suspended: "suspended"; }'. Did you mean 'active'?
+prisma/seed.ts(135,7): error TS2561: Object literal may only specify known properties, but 'startsAt' does not exist in type 'Without<SubscriptionCreateInput, SubscriptionUncheckedCreateInput> & SubscriptionUncheckedCreateInput'. Did you mean to write 'startDate'?
+prisma/seed.ts(145,34): error TS2551: Property 'ACTIVE' does not exist on type '{ trial: "trial"; active: "active"; expired: "expired"; cancelled: "cancelled"; suspended: "suspended"; }'. Did you mean 'active'?
+prisma/seed.ts(146,7): error TS2561: Object literal may only specify known properties, but 'startsAt' does not exist in type 'Without<SubscriptionCreateInput, SubscriptionUncheckedCreateInput> & SubscriptionUncheckedCreateInput'. Did you mean to write 'startDate'?
+prisma/seed.ts(155,7): error TS2353: Object literal may only specify known properties, and 'cafeId' does not exist in type '(Without<UserCreateInput, UserUncheckedCreateInput> & UserUncheckedCreateInput) | (Without<...> & UserCreateInput)'.
+prisma/seed.ts(159,13): error TS2693: 'UserRole' only refers to a type, but is being used as a value here.
+prisma/seed.ts(166,7): error TS2353: Object literal may only specify known properties, and 'cafeId' does not exist in type '(Without<UserCreateInput, UserUncheckedCreateInput> & UserUncheckedCreateInput) | (Without<...> & UserCreateInput)'.
+prisma/seed.ts(170,13): error TS2693: 'UserRole' only refers to a type, but is being used as a value here.
+prisma/seed.ts(177,7): error TS2353: Object literal may only specify known properties, and 'cafeId' does not exist in type '(Without<UserCreateInput, UserUncheckedCreateInput> & UserUncheckedCreateInput) | (Without<...> & UserCreateInput)'.
+prisma/seed.ts(181,13): error TS2693: 'UserRole' only refers to a type, but is being used as a value here.
+prisma/seed.ts(187,37): error TS2339: Property 'branch' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(204,37): error TS2339: Property 'branch' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(221,35): error TS2339: Property 'branch' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(248,14): error TS2339: Property 'table' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(270,14): error TS2339: Property 'table' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(290,14): error TS2339: Property 'table' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(315,11): error TS2353: Object literal may only specify known properties, and 'isActive' does not exist in type '(Without<QRCodeCreateInput, QRCodeUncheckedCreateInput> & QRCodeUncheckedCreateInput) | (Without<...> & QRCodeCreateInput)'.
+prisma/seed.ts(322,42): error TS2339: Property 'category' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(332,43): error TS2339: Property 'category' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(342,41): error TS2339: Property 'category' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(354,12): error TS2339: Property 'product' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(370,12): error TS2339: Property 'product' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(385,12): error TS2339: Property 'product' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(400,12): error TS2339: Property 'product' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(415,12): error TS2339: Property 'product' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(430,12): error TS2339: Property 'product' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(448,16): error TS2339: Property 'loyaltyRule' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+prisma/seed.ts(462,7): error TS2353: Object literal may only specify known properties, and 'customerPhone' does not exist in type 'Without<LoyaltyAccountCreateInput, LoyaltyAccountUncheckedCreateInput> & LoyaltyAccountUncheckedCreateInput'.
+prisma/seed.ts(479,28): error TS2551: Property 'DINE_IN' does not exist on type '{ dine_in: "dine_in"; car: "car"; pickup: "pickup"; }'. Did you mean 'dine_in'?
+prisma/seed.ts(480,27): error TS2339: Property 'NEW' does not exist on type '{ pending: "pending"; confirmed: "confirmed"; preparing: "preparing"; ready: "ready"; completed: "completed"; cancelled: "cancelled"; }'.
+prisma/seed.ts(500,28): error TS2339: Property 'CAR_SERVICE' does not exist on type '{ dine_in: "dine_in"; car: "car"; pickup: "pickup"; }'.
+prisma/seed.ts(501,27): error TS2551: Property 'PREPARING' does not exist on type '{ pending: "pending"; confirmed: "confirmed"; preparing: "preparing"; ready: "ready"; completed: "completed"; cancelled: "cancelled"; }'. Did you mean 'preparing'?
+prisma/seed.ts(522,28): error TS2551: Property 'DINE_IN' does not exist on type '{ dine_in: "dine_in"; car: "car"; pickup: "pickup"; }'. Did you mean 'dine_in'?
+prisma/seed.ts(523,27): error TS2551: Property 'READY' does not exist on type '{ pending: "pending"; confirmed: "confirmed"; preparing: "preparing"; ready: "ready"; completed: "completed"; cancelled: "cancelled"; }'. Did you mean 'ready'?
+prisma/seed.ts(543,28): error TS2551: Property 'DINE_IN' does not exist on type '{ dine_in: "dine_in"; car: "car"; pickup: "pickup"; }'. Did you mean 'dine_in'?
+prisma/seed.ts(544,27): error TS2551: Property 'COMPLETED' does not exist on type '{ pending: "pending"; confirmed: "confirmed"; preparing: "preparing"; ready: "ready"; completed: "completed"; cancelled: "cancelled"; }'. Did you mean 'completed'?
+prisma/seed.ts(568,9): error TS2322: Type 'number' is not assignable to type 'string'.
+prisma/seed.ts(582,11): error TS2322: Type '{ productId: any; quantity: number; unitPrice: Decimal; totalPrice: Decimal; }[] | { productId: any; quantity: number; unitPrice: Decimal; totalPrice: Decimal; }[]' is not assignable to type '(Without<OrderItemCreateWithoutOrderInput, OrderItemUncheckedCreateWithoutOrderInput> & OrderItemUncheckedCreateWithoutOrderInput) | (Without<...> & OrderItemCreateWithoutOrderInput) | OrderItemCreateWithoutOrderInput[] | OrderItemUncheckedCreateWithoutOrderInput[] | undefined'.
+  Type '{ productId: any; quantity: number; unitPrice: Decimal; totalPrice: Decimal; }[]' is not assignable to type '(Without<OrderItemCreateWithoutOrderInput, OrderItemUncheckedCreateWithoutOrderInput> & OrderItemUncheckedCreateWithoutOrderInput) | (Without<...> & OrderItemCreateWithoutOrderInput) | OrderItemCreateWithoutOrderInput[] | OrderItemUncheckedCreateWithoutOrderInput[] | undefined'.
+    Type '{ productId: any; quantity: number; unitPrice: Decimal; totalPrice: Decimal; }[]' is not assignable to type 'OrderItemCreateWithoutOrderInput[]'.
+      Type '{ productId: any; quantity: number; unitPrice: Decimal; totalPrice: Decimal; }' is missing the following properties from type 'OrderItemCreateWithoutOrderInput': itemName, menuItem
+prisma/seed.ts(587,38): error TS2551: Property 'COMPLETED' does not exist on type '{ pending: "pending"; confirmed: "confirmed"; preparing: "preparing"; ready: "ready"; completed: "completed"; cancelled: "cancelled"; }'. Did you mean 'completed'?
+prisma/seed.ts(588,20): error TS2339: Property 'loyaltyLog' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/ai/flows/generate-promotion-copy.ts(78,6): error TS2339: Property 'jsonSchema' does not exist on type 'Genkit'.
+src/app/api/auth/logout/route.ts(1,10): error TS2305: Module '"@/modules/auth/auth.controller"' has no exported member 'authController'.
+src/app/api/cafes/[id]/status/route.ts(1,10): error TS2305: Module '"@/modules/cafes/cafes.controller"' has no exported member 'cafeController'.
+src/app/cafe-admin/support/page.tsx(65,3): error TS2305: Module '"lucide-react"' has no exported member 'CheckDouble'.
+src/components/ui/calendar.tsx(57,9): error TS2353: Object literal may only specify known properties, and 'IconLeft' does not exist in type 'Partial<CustomComponents>'.
+src/components/ui/calendar.tsx(57,22): error TS7031: Binding element 'className' implicitly has an 'any' type.
+src/components/ui/calendar.tsx(60,23): error TS7031: Binding element 'className' implicitly has an 'any' type.
+src/lib/auth.ts(24,14): error TS2769: No overload matches this call.
+  Overload 1 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: null, options?: (SignOptions & { algorithm: "none"; }) | undefined): string', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'null'.
+  Overload 2 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, options?: SignOptions | undefined): string', gave the following error.
+    Type 'string' is not assignable to type 'number | StringValue | undefined'.
+  Overload 3 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, callback: SignCallback): void', gave the following error.
+    Object literal may only specify known properties, and 'expiresIn' does not exist in type 'SignCallback'.
+src/utils/jwt.ts(12,14): error TS2769: No overload matches this call.
+  Overload 1 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: null, options?: (SignOptions & { algorithm: "none"; }) | undefined): string', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'null'.
+  Overload 2 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, options?: SignOptions | undefined): string', gave the following error.
+    Type 'string' is not assignable to type 'number | StringValue | undefined'.
+  Overload 3 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, callback: SignCallback): void', gave the following error.
+    Object literal may only specify known properties, and 'expiresIn' does not exist in type 'SignCallback'.
+test-prisma.ts(15,7): error TS2322: Type '{ joinedAt: Date; name: string; slug: string; email: string; city: string; status: string; cafeCode: string; }' is not assignable to type '(Without<CafeCreateInput, CafeUncheckedCreateInput> & CafeUncheckedCreateInput) | (Without<...> & CafeCreateInput)'.
+  Type '{ joinedAt: Date; name: string; slug: string; email: string; city: string; status: string; cafeCode: string; }' is not assignable to type 'Without<CafeUncheckedCreateInput, CafeCreateInput> & CafeCreateInput'.
+    Type '{ joinedAt: Date; name: string; slug: string; email: string; city: string; status: string; cafeCode: string; }' is not assignable to type 'CafeCreateInput'.
+      Types of property 'status' are incompatible.
+        Type 'string' is not assignable to type 'CafeStatus | undefined'.
+test-prisma.ts(23,34): error TS18046: 'e' is of type 'unknown'.

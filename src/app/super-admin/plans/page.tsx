@@ -44,60 +44,95 @@ import { Progress } from "@/components/ui/progress";
 
 const PLANS = [
   {
-    id: "basic",
-    name: "Basic",
-    price: 9.000,
-    yearlyPrice: 90.000,
+    id: "starter",
+    name: "Starter",
+    price: 8.000,
+    yearlyPrice: 80.000,
     billing: "per month",
     icon: Zap,
-    description: "Entry plan for small cafes with essential QR ordering features.",
+    description: "Best for: Small cafés (1 branch)",
     status: "active",
-    features: ["QR Ordering Included", "No Car Ordering", "No Loyalty Program", "Standard Support", "Digital Menu Only"],
-    limits: { branches: 1, tables: 10, products: 50, staff: 3 },
-    color: "bg-blue-500/10 text-blue-600 border-blue-200",
-    popularity: 15
+    features: [
+      "1 branch",
+      "Up to 15 tables",
+      "QR Menu",
+      "Basic order management",
+      "Up to 50 products",
+      "Basic dashboard (orders + revenue)"
+    ],
+    missingFeatures: [
+      "No loyalty system",
+      "No staff roles",
+      "No advanced analytics"
+    ],
+    limits: { branches: 1, tables: 15, products: 50, staff: 1 },
+    color: "bg-green-500/10 text-green-600 border-green-200",
+    popularity: 20
   },
   {
-    id: "standard",
-    name: "Standard",
-    price: 19.000,
-    yearlyPrice: 190.000,
+    id: "growth",
+    name: "Growth",
+    price: 12.000,
+    yearlyPrice: 120.000,
     billing: "per month",
     icon: Shield,
-    description: "Best for growing cafes with loyalty and analytics support.",
+    description: "Best for: Growing cafés. This is your main selling plan.",
     status: "active",
-    features: ["QR & Car Ordering", "Loyalty Program", "Basic Analytics", "Priority Support", "Advanced Menu Control"],
-    limits: { branches: 1, tables: 25, products: 150, staff: 8 },
-    color: "bg-primary/10 text-primary border-primary/20",
+    features: [
+      "Up to 3 branches",
+      "Unlimited tables",
+      "Unlimited products",
+      "Full order management",
+      "Loyalty system (☕ configurable)",
+      "Staff roles (Manager / Cashier)",
+      "Basic analytics (top products, sales)"
+    ],
+    limits: { branches: 3, tables: 999, products: 9999, staff: 10 },
+    color: "bg-blue-500/10 text-blue-600 border-blue-200",
     popular: true,
-    popularity: 65
+    popularity: 60
   },
   {
-    id: "premium",
-    name: "Premium",
-    price: 39.000,
-    yearlyPrice: 390.000,
+    id: "pro",
+    name: "Pro",
+    price: 20.000,
+    yearlyPrice: 200.000,
     billing: "per month",
     icon: Globe,
-    description: "Advanced plan for busy cafes with more branches and branding.",
+    description: "Best for: Established cafés",
     status: "active",
-    features: ["Up to 3 Branches", "Everything in Standard", "White Label Branding", "Advanced Analytics", "Dedicated Support"],
-    limits: { branches: 3, tables: 100, products: 500, staff: 20 },
-    color: "bg-accent/10 text-accent border-accent/20",
-    popularity: 20
+    features: [
+      "Unlimited branches",
+      "Advanced analytics dashboard",
+      "Customer insights (repeat customers)",
+      "Promotions & discounts",
+      "Full staff permissions",
+      "Priority support",
+      "Custom branding (logo/colors)"
+    ],
+    limits: { branches: 999, tables: 999, products: 9999, staff: 999 },
+    color: "bg-purple-500/10 text-purple-600 border-purple-200",
+    popularity: 15
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    price: 99.000,
-    yearlyPrice: 990.000,
-    billing: "per month",
+    price: 0,
+    yearlyPrice: 0,
+    billing: "Custom Pricing",
     icon: Users,
-    description: "Custom plan for large cafe groups and enterprise operations.",
+    description: "Best for: Chains / large businesses",
     status: "active",
-    features: ["Unlimited Branches", "Unlimited Tables", "Custom Contracts", "SLA Guarantees", "API Access"],
+    features: [
+      "Everything in Pro",
+      "Custom integrations (POS / ERP)",
+      "Dedicated support",
+      "SLA guarantees",
+      "Multi-location reporting",
+      "Optional white-label system"
+    ],
     limits: { branches: 999, tables: 999, products: 9999, staff: 999 },
-    color: "bg-indigo-500/10 text-indigo-600 border-indigo-200",
+    color: "bg-yellow-500/10 text-yellow-600 border-yellow-200",
     popularity: 5
   }
 ];
@@ -127,8 +162,8 @@ export default function PlansManagement() {
         {[
           { title: "Total Plans", value: "4", icon: Layers, color: "text-blue-600", bg: "bg-blue-50" },
           { title: "Active Plans", value: "4", icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
-          { title: "Most Popular", value: "Standard", icon: Star, color: "text-primary", bg: "bg-primary/5" },
-          { title: "Monthly Rev", value: "16,450 OMR", icon: TrendingUp, color: "text-accent", bg: "bg-accent/5" },
+          { title: "Most Popular", value: "Growth", icon: Star, color: "text-primary", bg: "bg-primary/5" },
+          { title: "Monthly Rev", value: "0 OMR", icon: TrendingUp, color: "text-accent", bg: "bg-accent/5" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-sm overflow-hidden bg-card">
             <CardContent className="p-5 flex items-center gap-4">
@@ -191,10 +226,16 @@ export default function PlansManagement() {
               </div>
               <div className="mt-6 flex flex-col">
                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-foreground">{plan.price.toFixed(3)}</span>
-                    <span className="text-muted-foreground text-sm font-medium">OMR / mo</span>
+                    <span className="text-4xl font-black text-foreground">
+                       {plan.price === 0 ? "Custom" : plan.price.toFixed(3)}
+                    </span>
+                    {plan.price > 0 && <span className="text-muted-foreground text-sm font-medium">OMR / mo</span>}
                  </div>
-                 <span className="text-xs text-muted-foreground mt-1 font-medium">or {plan.yearlyPrice.toFixed(3)} OMR/year</span>
+                 {plan.price > 0 ? (
+                    <span className="text-xs text-muted-foreground mt-1 font-medium">or {plan.yearlyPrice.toFixed(3)} OMR/year</span>
+                 ) : (
+                    <span className="text-xs text-muted-foreground mt-1 font-medium">Contact sales for pricing</span>
+                 )}
               </div>
             </CardHeader>
 
@@ -203,11 +244,19 @@ export default function PlansManagement() {
                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Included Features</p>
                  <ul className="space-y-2.5">
                     {plan.features.map((feature, i) => (
-                      <li key={i} className="text-sm flex items-start gap-2.5">
+                      <li key={`inc-${i}`} className="text-sm flex items-start gap-2.5">
                          <div className="mt-0.5 h-4 w-4 rounded-full bg-green-100 flex items-center justify-center shrink-0 border border-green-200">
                             <Check className="h-2.5 w-2.5 text-green-600" />
                          </div>
                          <span className="font-medium text-foreground/80 leading-tight">{feature}</span>
+                      </li>
+                    ))}
+                    {(plan as any).missingFeatures?.map((feature: string, i: number) => (
+                      <li key={`miss-${i}`} className="text-sm flex items-start gap-2.5 opacity-60">
+                         <div className="mt-0.5 h-4 w-4 rounded-full bg-muted flex items-center justify-center shrink-0 border border-border">
+                            <span className="text-[10px] font-bold text-muted-foreground">✕</span>
+                         </div>
+                         <span className="font-medium text-muted-foreground leading-tight line-through">{feature}</span>
                       </li>
                     ))}
                  </ul>

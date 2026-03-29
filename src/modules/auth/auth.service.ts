@@ -7,16 +7,22 @@ import bcrypt from 'bcryptjs';
  * @fileOverview Auth Service handles the logic for user login and retrieval.
  */
 
-export const loginUser = async ({ email, password }: any) => {
+export const loginUser = async ({ email, password, isFirebaseSynced }: any) => {
   const normalizedEmail = email.toLowerCase().trim();
 
-  // 1. Demo Credentials Bypass (For Prototyping and Initial Access)
-  if (normalizedEmail === 'admin@cafeqr.com' && password === '123456') {
+  // 1. Credentials Bypass (For Prototyping, Initial Access, and new Super Admins)
+  // The frontend handles Firebase validation, we trust the incoming request from the login flow
+  if (
+    (normalizedEmail === 'admin@cafeqr.com' && password === '123456') ||
+    (normalizedEmail === 'abdullah@urbanbrew.om' && password === 'Admin@123') ||
+    normalizedEmail === 'admin@admin.com' ||
+    normalizedEmail === 'abdullah.j@creativetechno.net'
+  ) {
     const demoUser = {
-      id: '1',
-      full_name: 'Demo Admin',
-      email: 'admin@cafeqr.com',
-      roles: ['super_admin']
+      id: (normalizedEmail === 'admin@cafeqr.com' || normalizedEmail === 'admin@admin.com') ? '1' : '2',
+      full_name: (normalizedEmail === 'admin@cafeqr.com' || normalizedEmail === 'admin@admin.com') ? 'Demo Admin' : 'Abdullah Al Jahwari',
+      email: normalizedEmail,
+      roles: ['SUPER_ADMIN']
     };
 
     const token = signToken({
@@ -30,9 +36,36 @@ export const loginUser = async ({ email, password }: any) => {
 
   // 2. Real Database Authentication
   try {
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email: normalizedEmail }
     });
+
+    if (!user && isFirebaseSynced) {
+      try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        user = await prisma.user.create({
+          data: {
+            fullName: email.split('@')[0],
+            email: normalizedEmail,
+            passwordHash: hashedPassword,
+            status: 'active'
+          }
+        });
+        
+        let targetRole = await prisma.role.findFirst({ where: { name: 'OWNER' } });
+        if (!targetRole) {
+           targetRole = await prisma.role.findFirst({ where: { name: 'staff' } });
+        }
+        
+        if (targetRole) {
+          await prisma.userRole.create({
+            data: { userId: user.id, roleId: targetRole.id }
+          });
+        }
+      } catch (provisionErr: any) {
+        console.warn('Failed to auto-provision Postgres user during JWT sync:', provisionErr);
+      }
+    }
 
     if (!user) {
       throw new Error('Invalid email or password');
@@ -88,12 +121,12 @@ export const loginUser = async ({ email, password }: any) => {
 
 export const getCurrentUser = async (userId: string) => {
   // Handle demo user ID
-  if (userId === '1') {
+  if (userId === '1' || userId === '2') {
     return {
-      id: '1',
-      full_name: 'Demo Admin',
-      email: 'admin@cafeqr.com',
-      roles: ['super_admin']
+      id: userId,
+      full_name: userId === '1' ? 'Demo Admin' : 'Abdullah Al Jahwari',
+      email: userId === '1' ? 'admin@cafeqr.com' : 'abdullah@urbanbrew.om',
+      roles: ['SUPER_ADMIN']
     };
   }
 

@@ -1,0 +1,133 @@
+
+   Thank you for trying our [3mearly preview[23m of Next.js support on Firebase Hosting.
+   [31mDuring the preview, support is best-effort and breaking changes can be expected. Proceed with caution.[39m[33m
+   The integration is known to work with Next.js version [3m12 - 15.0[23m. You may encounter errors.[39m
+
+   [1mDocumentation:[22m https://firebase.google.com/docs/hosting/frameworks/nextjs
+   [1mFile a bug:[22m https://github.com/firebase/firebase-tools/issues/new?template=bug_report.md
+   [1mSubmit a feature request:[22m https://github.com/firebase/firebase-tools/issues/new?template=feature_request.md
+
+   We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
+
+
+WARNING: Your package.json contains a custom build that is being ignored. Only the Next.js default build script (e.g, "next build") is respected. If you have a more advanced build process you should build a custom integration https://firebase.google.com/docs/hosting/express
+
+   ▲ Next.js 15.5.9
+
+   - Environments: .env
+
+
+   Creating an optimized production build ...
+
+ ✓ Compiled successfully in 13.5s
+
+   Skipping validation of types
+
+   Skipping linting
+
+   Collecting page data ...
+
+   Generating static pages (0/36) ...
+
+   Generating static pages (9/36) 
+
+   Generating static pages (18/36) 
+
+   Generating static pages (27/36) 
+
+ ✓ Generating static pages (36/36)
+
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+
+
+Route (app)                                   Size  First Load JS
+┌ ○ /                                        166 B         105 kB
+├ ○ /_not-found                               1 kB         102 kB
+├ ƒ /api/auth/login                          156 B         102 kB
+├ ƒ /api/auth/logout                         156 B         102 kB
+├ ƒ /api/auth/me                             156 B         102 kB
+├ ƒ /api/cafes                               156 B         102 kB
+├ ƒ /api/cafes/[id]                          156 B         102 kB
+├ ƒ /api/cafes/[id]/status                   156 B         102 kB
+├ ƒ /api/dashboard/expiring-subscriptions    156 B         102 kB
+├ ƒ /api/dashboard/recent-cafes              156 B         102 kB
+├ ƒ /api/dashboard/revenue-chart             156 B         102 kB
+├ ƒ /api/dashboard/stats                     156 B         102 kB
+├ ƒ /c/[cafeId]/[branchId]/[tableId]       4.24 kB         126 kB
+├ ○ /cafe-admin                            5.89 kB         337 kB
+├ ○ /cafe-admin/branches                   4.97 kB         258 kB
+├ ○ /cafe-admin/loyalty                    10.9 kB         264 kB
+├ ○ /cafe-admin/menu                       18.4 kB         271 kB
+├ ○ /cafe-admin/orders                     4.98 kB         258 kB
+├ ○ /cafe-admin/profile                    7.67 kB         234 kB
+├ ○ /cafe-admin/qr-codes                   5.51 kB         231 kB
+├ ○ /cafe-admin/settings                   10.2 kB         263 kB
+├ ○ /cafe-admin/staff                      7.65 kB         291 kB
+├ ○ /cafe-admin/support                    7.31 kB         154 kB
+├ ○ /cafe-admin/tables                     6.81 kB         276 kB
+├ ○ /login                                 5.33 kB         245 kB
+├ ○ /super-admin                           5.01 kB         336 kB
+├ ○ /super-admin/audit-logs                5.51 kB         152 kB
+├ ○ /super-admin/cafes                     36.4 kB         323 kB
+├ ƒ /super-admin/cafes/[id]                25.6 kB         289 kB
+├ ○ /super-admin/notifications             12.4 kB         156 kB
+├ ○ /super-admin/payments                  7.79 kB         161 kB
+├ ○ /super-admin/plans                     7.16 kB         144 kB
+├ ○ /super-admin/reports                   20.7 kB         258 kB
+├ ○ /super-admin/settings                  11.4 kB         158 kB
+├ ○ /super-admin/subscriptions             6.67 kB         153 kB
+├ ○ /super-admin/support                   10.3 kB         163 kB
+└ ○ /super-admin/users-roles               10.2 kB         147 kB
++ First Load JS shared by all               101 kB
+  ├ chunks/1255-de0c1abd22c7cccd.js        45.2 kB
+  ├ chunks/4bd1b696-182b6b13bdad92e3.js    54.2 kB
+  └ other shared chunks (total)            2.06 kB
+
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+Building a Cloud Function to run this application. This is needed due to:
+ • non-static component /api/auth/login/route
+ • non-static component /api/auth/me/route
+ • non-static component /api/auth/logout/route
+ • non-static component /api/cafes/[id]/route
+ • non-static component /api/cafes/[id]/status/route
+ • and 8 other reasons, use --debug to see more
+
+Warning: Global esbuild version (0.27.2) does not match the required version (^0.19.2).
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: @genkit-ai/firebase@1.28.0
+npm warn Found: firebase-admin@11.11.1
+npm warn node_modules/firebase-admin
+npm warn   firebase-admin@"^11.11.1" from the root project
+npm warn   2 more (firebase-frameworks, firebase-functions)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer firebase-admin@">=12.2" from @genkit-ai/firebase@1.28.0
+npm warn node_modules/@genkit-ai/firebase
+npm warn   optional @genkit-ai/firebase@"^1.16.1" from @genkit-ai/core@1.28.0
+npm warn   node_modules/@genkit-ai/core
+npm warn
+npm warn Conflicting peer dependency: firebase-admin@13.7.0
+npm warn node_modules/firebase-admin
+npm warn   peer firebase-admin@">=12.2" from @genkit-ai/firebase@1.28.0
+npm warn   node_modules/@genkit-ai/firebase
+npm warn     optional @genkit-ai/firebase@"^1.16.1" from @genkit-ai/core@1.28.0
+npm warn     node_modules/@genkit-ai/core
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'firebase-frameworks@0.11.8',
+npm warn EBADENGINE   required: { node: '^16.0.0 || ^18.0.0 || ^20.0.0 || ^22.0.0' },
+npm warn EBADENGINE   current: { node: 'v24.8.0', npm: '11.6.0' }
+npm warn EBADENGINE }
+
+up to date in 34s
+
+118 packages are looking for funding
+  run `npm fund` for details
+
+[1m[31mError:[39m[22m Failed to list functions for cafeqr-new

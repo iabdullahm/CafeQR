@@ -1,0 +1,6 @@
+
+> nextn@0.1.0 typecheck
+> tsc --noEmit
+
+src/ai/flows/generate-promotion-copy.ts(78,19): error TS1005: '}' expected.
+src/ai/flows/generate-promotion-copy.ts(95,1): error TS1160: Unterminated template literal.

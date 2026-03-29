@@ -28,6 +28,7 @@ export const create = async (req: Request) => {
     const data = await createCafe(validatedData);
     return successResponse('Cafe created successfully', data, 201);
   } catch (error: any) {
+    console.error('Cafe creation error:', error);
     return errorResponse(error.message || 'Creation failed', 400);
   }
 };

@@ -10,12 +10,19 @@ import { LayoutGrid, Plus, Search, Filter, QrCode, Utensils, Car, TreePine, More
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUser, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
+import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
 import { collection, query, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,7 +31,13 @@ export default function TablesManagement() {
   const db = useFirestore();
   const { toast } = useToast();
   
-  const cafeId = user?.email?.includes('urban') ? 'urban-brew-cafe' : 'coastal-cup';
+  const [qrTable, setQrTable] = useState<any>(null);
+  
+  const userProfileRef = useMemoFirebase(() => {
+    return (db && user) ? doc(db, 'users', user.uid) : null;
+  }, [db, user]);
+  const { data: userProfile } = useDoc(userProfileRef);
+  const cafeId = userProfile?.cafeId;
 
   // Optimized Scoped Query for Tables
   const tablesQuery = useMemoFirebase(() => {
@@ -133,7 +146,7 @@ export default function TablesManagement() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem className="gap-2"><Edit className="h-4 w-4" /> Edit</DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2"><QrCode className="h-4 w-4" /> View QR</DropdownMenuItem>
+                      <DropdownMenuItem className="gap-2" onClick={() => setQrTable(table)}><QrCode className="h-4 w-4" /> View QR</DropdownMenuItem>
                       <DropdownMenuItem 
                         className="gap-2 text-destructive"
                         onClick={() => deleteDoc(doc(db!, 'cafes', cafeId!, 'tables', table.id))}
@@ -155,7 +168,7 @@ export default function TablesManagement() {
                     <p className="text-sm font-medium">{table.branchName || 'Unknown Branch'}</p>
                  </div>
                  <div className="pt-2">
-                    <Button variant="secondary" size="sm" className="w-full gap-2 text-xs font-bold rounded-xl">
+                    <Button variant="secondary" size="sm" className="w-full gap-2 text-xs font-bold rounded-xl" onClick={() => setQrTable(table)}>
                       <QrCode className="h-3 w-3" /> Generate QR Code
                     </Button>
                  </div>
@@ -174,6 +187,40 @@ export default function TablesManagement() {
           </button>
         )}
       </div>
+
+      <Dialog open={!!qrTable} onOpenChange={(open) => !open && setQrTable(null)}>
+        <DialogContent className="sm:max-w-md border-none shadow-2xl rounded-3xl overflow-hidden p-0">
+          <div className="bg-primary/5 p-6 pb-4 border-b">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black">Scan to Order</DialogTitle>
+              <DialogDescription className="font-medium">
+                Customer QR Code for {qrTable?.name}
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="flex flex-col items-center justify-center p-8 bg-card">
+             <div className="p-4 bg-white rounded-3xl shadow-lg border-4 border-muted/50 mb-6">
+               {qrTable && cafeId && (
+                 <img 
+                   src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/cafe/${cafeId}?table=${qrTable.id}`)}`} 
+                   alt={`QR Code for ${qrTable.name}`} 
+                   className="w-[200px] h-[200px] object-contain"
+                 />
+               )}
+             </div>
+             
+             <Badge variant="outline" className="mb-2 text-primary border-primary/20 bg-primary/5">{qrTable?.branchName}</Badge>
+             <p className="text-xl font-black">{qrTable?.name}</p>
+             <p className="text-sm font-medium text-muted-foreground mt-1">Place on table for instant ordering</p>
+          </div>
+          <div className="p-4 bg-muted/20 border-t flex gap-2">
+             <Button variant="outline" className="flex-1 font-bold rounded-xl" onClick={() => setQrTable(null)}>Close</Button>
+             <Button className="flex-1 gap-2 font-bold rounded-xl" onClick={() => window.print()}>
+               <QrCode className="h-4 w-4" /> Print Marker
+             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

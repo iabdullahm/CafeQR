@@ -1,27 +1,20 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Coffee, Loader2, AlertCircle } from 'lucide-react';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useUser, useFirestore } from '@/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { useAuth, useUser, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, setDoc, getDoc, query, collection, where, getDocs } from 'firebase/firestore';
 
-// Define the demo accounts for auto-provisioning in the prototype
-const DEMO_ACCOUNTS = [
-  { email: 'admin@cafeqr.com', password: '123456', role: 'SUPER_ADMIN', fullName: 'Platform Admin', cafeId: null },
-  { email: 'abdullah@urbanbrew.om', password: 'Admin@123', role: 'OWNER', fullName: 'Abdullah Al Jahwari', cafeId: 'urban-brew-cafe' },
-  { email: 'sara@urbanbrew.om', password: 'Admin@123', role: 'MANAGER', fullName: 'Sara Al Balushi', cafeId: 'urban-brew-cafe' },
-  { email: 'faisal@coastalcup.om', password: 'Admin@123', role: 'OWNER', fullName: 'Faisal Al Hinai', cafeId: 'coastal-cup' },
-];
-
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -34,23 +27,39 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const userProfileRef = useMemoFirebase(() => {
+    return (db && user) ? doc(db, 'users', user.uid) : null;
+  }, [db, user]);
+  
+  const { data: profile, isLoading: isProfileLoading } = useDoc(userProfileRef);
+
+  const [hasManuallyLoggedIn, setHasManuallyLoggedIn] = useState(false);
+
   useEffect(() => {
-    if (user) {
-      // Redirect handled by AuthGuard or triggered here for speed
-      // We check if it's the admin or a cafe user
-      const isPlatformAdmin = email.includes('admin@cafeqr.com');
-      router.push(isPlatformAdmin ? '/super-admin' : '/cafe-admin');
+    // If there's an error (like unauthorized), don't auto-redirect on initial load, let them see it and login again
+    // However, if they just manually logged in, we SHOULD redirect them.
+    if (searchParams.get('error') && !hasManuallyLoggedIn) return;
+
+    if (user && profile && !isProfileLoading) {
+      if (profile.role === 'SUPER_ADMIN') {
+        router.push('/super-admin');
+      } else {
+        router.push('/cafe-admin');
+      }
     }
-  }, [user, router, email]);
+  }, [user, profile, isProfileLoading, router, searchParams, hasManuallyLoggedIn]);
 
   useEffect(() => {
     const errorType = searchParams.get('error');
     if (errorType === 'inactive') {
       setErrorMessage('Your account is currently inactive. Please contact support.');
     } else if (errorType === 'unauthorized') {
-      setErrorMessage('You do not have permission to access this area.');
+      setErrorMessage('You do not have permission to access that area. Please log in with the correct account.');
+      // Auto sign out to prevent redirect loops and allow changing accounts
+      signOut(auth).catch(console.error);
+      localStorage.removeItem('token');
     }
-  }, [searchParams]);
+  }, [searchParams, auth]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,51 +68,68 @@ export default function LoginPage() {
     if (!email || !password) return;
 
     const normalizedEmail = email.trim().toLowerCase();
+    const authEmail = normalizedEmail.includes('@') ? normalizedEmail : `${normalizedEmail}@cafeqr-tenant.local`;
     setIsLoading(true);
 
     try {
       // 1. Attempt standard sign in
       try {
-        await signInWithEmailAndPassword(auth, normalizedEmail, password);
+        await signInWithEmailAndPassword(auth, authEmail, password);
       } catch (signInErr: any) {
-        // 2. If it's a demo account and doesn't exist, provision it (Prototype logic)
-        const demo = DEMO_ACCOUNTS.find(d => d.email === normalizedEmail && d.password === password);
+        // 2. Dynamic Auto-provisioning logic
+        let shouldProvision = false;
+        let provisionData: any = null;
+
+        // Auto-provision Super Admin for the new project
+        if (normalizedEmail === 'admin@admin.com' || normalizedEmail === 'abdullah.j@creativetechno.net') {
+          shouldProvision = true;
+          provisionData = {
+            email: normalizedEmail,
+            password: password,
+            role: 'SUPER_ADMIN',
+            fullName: 'Platform Administrator',
+            cafeId: 'SUPER_ADMIN',
+            isDynamic: true
+          };
+        } else {
+          // Standard Owner Provisioning
+          const q = query(collection(db, 'cafes'), where('owner_email', '==', normalizedEmail));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const cafeData = snap.docs[0].data();
+            if (cafeData.owner_temp_pass === password && cafeData.adminAccessStatus !== 'suspended') {
+              shouldProvision = true;
+              provisionData = {
+                email: normalizedEmail,
+                password: password,
+                role: 'OWNER',
+                fullName: cafeData.owner_name || 'Cafe Admin',
+                cafeId: snap.docs[0].id,
+                isDynamic: true
+              };
+            }
+          }
+        }
         
-        if (demo && (signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-email')) {
-          const cred = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+        if (shouldProvision && (signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-email' || signInErr.code === 'auth/wrong-password')) {
+          const cred = await createUserWithEmailAndPassword(auth, authEmail, password);
           
           // Create the Firestore profile
           await setDoc(doc(db, 'users', cred.user.uid), {
             uid: cred.user.uid,
-            fullName: demo.fullName,
+            fullName: provisionData.fullName,
             email: normalizedEmail,
-            role: demo.role,
-            cafeId: demo.cafeId,
+            role: provisionData.role,
+            cafeId: provisionData.cafeId,
             isActive: true,
             createdAt: new Date().toISOString()
           });
 
-          // If they are an owner, we should ensure the cafe stub exists too
-          if (demo.cafeId && (demo.role === 'OWNER' || demo.role === 'MANAGER')) {
-            const cafeRef = doc(db, 'cafes', demo.cafeId);
-            const cafeSnap = await getDoc(cafeRef);
-            if (!cafeSnap.exists()) {
-              await setDoc(cafeRef, {
-                id: demo.cafeId,
-                name: normalizedEmail.includes('urban') ? 'Urban Brew Cafe' : 'Coastal Cup',
-                slug: demo.cafeId,
-                isActive: true,
-                currency: 'OMR',
-                timezone: 'Asia/Muscat',
-                createdAt: new Date().toISOString()
-              });
-            }
-          }
-
           toast({
-            title: "Demo account provisioned!",
-            description: "Welcome to the CafeQR prototype.",
+            title: "Admin Account Verified!",
+            description: "Logging you into the platform...",
           });
+          setHasManuallyLoggedIn(true);
           return;
         }
         
@@ -111,10 +137,26 @@ export default function LoginPage() {
         throw signInErr;
       }
       
+      setHasManuallyLoggedIn(true);
       toast({
         title: "Welcome back!",
         description: "Successfully authenticated.",
       });
+
+      // 3. Synchronize with Platform JWT for API access
+      try {
+        const authResponse = await axios.post('/api/auth/login', { 
+          email: normalizedEmail, 
+          password,
+          isFirebaseSynced: true 
+        });
+        
+        if (authResponse.data.success && authResponse.data.data.token) {
+          localStorage.setItem('token', authResponse.data.data.token);
+        }
+      } catch (authApiErr) {
+        console.warn('Platform JWT sync failed, some API features may be limited', authApiErr);
+      }
 
     } catch (err: any) {
       console.error('Login error:', err);
@@ -160,11 +202,11 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider" htmlFor="email">Email Address</label>
+              <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider" htmlFor="email">Login ID (Email or Username)</label>
               <Input
                 id="email"
-                type="email"
-                placeholder="abdullah@urbanbrew.om"
+                type="text"
+                placeholder="admin@example.com or username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
@@ -200,17 +242,16 @@ export default function LoginPage() {
               ) : "Sign In"}
             </Button>
           </form>
-
-          <div className="text-center p-4 bg-muted/50 rounded-2xl text-[10px] text-muted-foreground mt-6 border border-dashed border-muted-foreground/20">
-            <p className="font-bold mb-2 uppercase tracking-widest text-primary/70">Prototype Access</p>
-            <div className="grid grid-cols-1 gap-1 italic">
-              <p>Super Admin: admin@cafeqr.com / 123456</p>
-              <p>Owner: abdullah@urbanbrew.om / Admin@123</p>
-              <p>Manager: sara@urbanbrew.om / Admin@123</p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
