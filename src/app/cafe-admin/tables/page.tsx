@@ -202,7 +202,7 @@ export default function TablesManagement() {
              <div className="p-4 bg-white rounded-3xl shadow-lg border-4 border-muted/50 mb-6">
                {qrTable && cafeId && (
                  <img 
-                   src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/cafe/${cafeId}?table=${qrTable.id}`)}`} 
+                   src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/c/${cafeId}/${qrTable.branchId}/${qrTable.id}`)}`} 
                    alt={`QR Code for ${qrTable.name}`} 
                    className="w-[200px] h-[200px] object-contain"
                  />

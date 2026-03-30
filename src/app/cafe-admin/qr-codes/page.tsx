@@ -39,7 +39,7 @@ export default function QRManagement() {
       scans: 0,
       lastScanned: "Never",
       status: "active",
-      link: cafeId ? `${window.location.origin}/cafe/${cafeId}` : "#"
+      link: cafeId ? `${window.location.origin}/c/${cafeId}/default/takeaway` : "#"
     };
 
     const tableQrs = tables.map((t: any) => ({
@@ -50,7 +50,7 @@ export default function QRManagement() {
       scans: 0, 
       lastScanned: "Never",
       status: t.isActive ? "active" : "inactive",
-      link: cafeId ? `${window.location.origin}/cafe/${cafeId}?table=${t.id}` : "#"
+      link: cafeId ? `${window.location.origin}/c/${cafeId}/${t.branchId || 'default'}/${t.id}` : "#"
     }));
 
     return [generalQr, ...tableQrs];
