@@ -50,7 +50,7 @@ export default function QRManagement() {
       scans: 0, 
       lastScanned: "Never",
       status: t.isActive ? "active" : "inactive",
-      link: cafeId ? `${window.location.origin}/c/${cafeId}/${t.branchId || 'default'}/${t.id}` : "#"
+      link: t.qrToken ? `${window.location.origin}/t/${t.qrToken}` : (cafeId ? `${window.location.origin}/c/${cafeId}/${t.branchId || 'default'}/${t.id}` : "#")
     }));
 
     return [generalQr, ...tableQrs];

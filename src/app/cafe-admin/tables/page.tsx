@@ -65,6 +65,8 @@ export default function TablesManagement() {
     const tableId = `T-${number}`;
     const tableRef = doc(db, 'cafes', cafeId, 'tables', tableId);
     
+    const token = Math.random().toString(36).substring(2, 8) + Date.now().toString(36);
+
     await setDoc(tableRef, {
       number: Number(number),
       name: `Table ${number}`,
@@ -74,10 +76,41 @@ export default function TablesManagement() {
       branchName: selectedBranch.name,
       cafeId,
       isActive: true,
+      qrToken: token,
+      createdAt: new Date().toISOString()
+    });
+
+    // Also store globally for instant token resolution
+    const tokenRef = doc(db, 'qr_tokens', token);
+    await setDoc(tokenRef, {
+      cafeId,
+      branchId: selectedBranch.id,
+      tableId,
       createdAt: new Date().toISOString()
     });
 
     toast({ title: "Table Added", description: `Table ${number} is now active at ${selectedBranch.name}.` });
+  };
+
+  const handleGenerateLegacyToken = async (table: any) => {
+    if (!db || !cafeId) return;
+    const token = Math.random().toString(36).substring(2, 8) + Date.now().toString(36);
+    
+    // Update existing table
+    const tableRef = doc(db, 'cafes', cafeId, 'tables', table.id);
+    await setDoc(tableRef, { qrToken: token }, { merge: true });
+
+    // Store in global lookup
+    const tokenRef = doc(db, 'qr_tokens', token);
+    await setDoc(tokenRef, {
+      cafeId,
+      branchId: table.branchId || 'default',
+      tableId: table.id,
+      createdAt: new Date().toISOString()
+    });
+
+    toast({ title: "Token Generated", description: "Successfully upgraded table QR token." });
+    setQrTable({ ...table, qrToken: token });
   };
 
   const getStatusColor = (status: string) => {
@@ -200,12 +233,19 @@ export default function TablesManagement() {
           </div>
           <div className="flex flex-col items-center justify-center p-8 bg-card">
              <div className="p-4 bg-white rounded-3xl shadow-lg border-4 border-muted/50 mb-6">
-               {qrTable && cafeId && (
+               {qrTable && cafeId && qrTable.qrToken ? (
                  <img 
-                   src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/c/${cafeId}/${qrTable.branchId}/${qrTable.id}`)}`} 
+                   src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/t/${qrTable.qrToken}`)}`} 
                    alt={`QR Code for ${qrTable.name}`} 
                    className="w-[200px] h-[200px] object-contain"
                  />
+               ) : (
+                 <div className="w-[200px] h-[200px] flex flex-col gap-4 items-center justify-center text-center text-muted-foreground p-4">
+                   <p className="text-sm font-bold">Legacy Table Detected</p>
+                   <Button onClick={() => handleGenerateLegacyToken(qrTable)} size="sm" className="font-bold">
+                     Generate Secure QR
+                   </Button>
+                 </div>
                )}
              </div>
              

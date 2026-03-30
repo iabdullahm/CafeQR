@@ -76,5 +76,10 @@ service cloud.firestore {
         allow read: if true;
       }
     }
+
+    match /qr_tokens/{token} {
+      allow get: if true;
+      allow write: if isSignedIn();
+    }
   }
 }
