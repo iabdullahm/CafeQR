@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import CustomerMenuClient from "./CustomerMenuClient";
+import { useEffect, useState, use } from "react";
+import CustomerMenuClient from "../../c/[cafeId]/[branchId]/[tableId]/CustomerMenuClient";
 import { useFirestore } from "@/firebase";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 
+// ...CATEGORIES is already there
 const CATEGORIES = [
   { id: 'hot_drinks', en: 'Hot Drinks', ar: 'المشروبات الساخنة' },
   { id: 'cold_drinks', en: 'Cold Drinks', ar: 'المشروبات الباردة' },
@@ -18,19 +19,36 @@ const CATEGORIES = [
   { id: 'matcha', en: 'Matcha', ar: 'الماتشا' },
 ];
 
-export default function CustomerInterfacePage({ params }: { params: { cafeId: string, branchId: string, tableId: string } }) {
+export default function SecureCustomerTokenPage({ params }: { params: Promise<{ token: string }> }) {
+  const resolvedParamsInput = use(params);
+  const token = resolvedParamsInput.token;
   const db = useFirestore();
   const [cafeData, setCafeData] = useState<any>(null);
+  const [resolvedParams, setResolvedParams] = useState<{ cafeId: string, branchId: string, tableId: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!db) return;
+    if (!db || !token) return;
 
-    const fetchCafeData = async () => {
+    const resolveTokenAndFetch = async () => {
       try {
-        // 1. Fetch Cafe Details
-        const cafeRef = doc(db, 'cafes', params.cafeId);
+        // 1. Resolve Secure Token
+        const tokenRef = doc(db, 'qr_tokens', token);
+        const tokenSnap = await getDoc(tokenRef);
+
+        if (!tokenSnap.exists()) {
+          setError("Invalid or Expired QR Code");
+          setLoading(false);
+          return;
+        }
+
+        const tokenData = tokenSnap.data();
+        const { cafeId, branchId, tableId } = tokenData;
+        setResolvedParams({ cafeId, branchId, tableId });
+
+        // 2. Fetch Cafe Details
+        const cafeRef = doc(db, 'cafes', cafeId);
         const cafeSnap = await getDoc(cafeRef);
         
         if (!cafeSnap.exists()) {
@@ -41,11 +59,11 @@ export default function CustomerInterfacePage({ params }: { params: { cafeId: st
         
         const cafeDoc = cafeSnap.data();
 
-        // 2. Fetch Products
-        const productsSnap = await getDocs(collection(db, 'cafes', params.cafeId, 'products'));
+        // 3. Fetch Products
+        const productsSnap = await getDocs(collection(db, 'cafes', cafeId, 'products'));
         const productsData = productsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-        // 3. Format Data for the CustomerMenuClient Map
+        // 4. Format Data for the CustomerMenuClient Map
         const formattedCategories = CATEGORIES.map(c => ({
           id: c.id,
           nameEn: c.en,
@@ -60,15 +78,15 @@ export default function CustomerInterfacePage({ params }: { params: { cafeId: st
           descEn: p.description || p.ingredients || '',
           descAr: p.description || p.ingredients || '',
           price: Number(p.price) || 0,
-          image: p.imageUrl || "",
+          image: p.imageUrl || `https://picsum.photos/seed/${p.id}/400/400`,
           tags: p.isPopular ? ['popular'] : [],
           options: [] // To be implemented if products have options in firestore
         }));
 
         setCafeData({
-          id: params.cafeId,
+          id: cafeId,
           name: cafeDoc.name || 'Urban Brew',
-          branch: params.branchId === 'default' ? 'Takeaway' : (cafeDoc.branchName || params.branchId),
+          branch: branchId === 'default' ? 'Takeaway' : (cafeDoc.branchName || branchId), // Need actual branch name later!
           logo: cafeDoc.logo || "https://picsum.photos/seed/logo/150/150",
           coverImage: cafeDoc.coverImage || "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=800&fit=crop",
           loyalty: { cups: 0, required: 8 },
@@ -78,26 +96,26 @@ export default function CustomerInterfacePage({ params }: { params: { cafeId: st
         });
 
       } catch (err: any) {
-        console.error("Failed to load customer menu:", err);
-        setError("Could not load menu");
+        console.error("Failed to load customer menu via token:", err);
+        setError("Could not load menu securely");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCafeData();
-  }, [db, params.cafeId, params.branchId, params.tableId]);
+    resolveTokenAndFetch();
+  }, [db, token]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center">
         <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-        <p className="text-muted-foreground font-medium animate-pulse">Brewing your menu...</p>
+        <p className="text-muted-foreground font-medium animate-pulse">Resolving secure connection...</p>
       </div>
     );
   }
 
-  if (error || !cafeData) {
+  if (error || !cafeData || !resolvedParams) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
         <div className="bg-destructive/10 p-6 rounded-3xl mb-4">
@@ -108,6 +126,5 @@ export default function CustomerInterfacePage({ params }: { params: { cafeId: st
     );
   }
 
-  return <CustomerMenuClient cafe={cafeData} params={params} />;
+  return <CustomerMenuClient cafe={cafeData} params={resolvedParams} />;
 }
-

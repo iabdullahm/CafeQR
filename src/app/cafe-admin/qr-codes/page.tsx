@@ -30,6 +30,10 @@ export default function QRManagement() {
   const qrData = useMemo(() => {
     if (!tables) return [];
     
+    // Use environment variable if available, otherwise fallback to window.location.origin.
+    // If on localhost, we show a warning that QR codes won't work on mobile devices.
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+
     // Create a general QR for the cafe
     const generalQr = {
       id: "general",
@@ -39,7 +43,7 @@ export default function QRManagement() {
       scans: 0,
       lastScanned: "Never",
       status: "active",
-      link: cafeId ? `${window.location.origin}/c/${cafeId}/default/takeaway` : "#"
+      link: cafeId ? `${baseUrl}/c/${cafeId}/default/takeaway` : "#"
     };
 
     const tableQrs = tables.map((t: any) => ({
@@ -50,7 +54,7 @@ export default function QRManagement() {
       scans: 0, 
       lastScanned: "Never",
       status: t.isActive ? "active" : "inactive",
-      link: t.qrToken ? `${window.location.origin}/t/${t.qrToken}` : (cafeId ? `${window.location.origin}/c/${cafeId}/${t.branchId || 'default'}/${t.id}` : "#")
+      link: t.qrToken ? `${baseUrl}/t/${t.qrToken}` : (cafeId ? `${baseUrl}/c/${cafeId}/${t.branchId || 'default'}/${t.id}` : "#")
     }));
 
     return [generalQr, ...tableQrs];
@@ -141,6 +145,19 @@ export default function QRManagement() {
           </div>
         }
       />
+
+      {typeof window !== 'undefined' && window.location.hostname === 'localhost' && !process.env.NEXT_PUBLIC_APP_URL && (
+        <div className="bg-amber-50 text-amber-800 p-4 rounded-xl border border-amber-200 flex items-start gap-3">
+          <div className="mt-0.5">⚠️</div>
+          <div>
+            <p className="font-bold">Localhost Detected</p>
+            <p className="text-sm mt-1">
+              QR codes generated while on <strong>localhost</strong> will not work when scanned from a mobile device, as your phone will try to connect to itself. To test QR codes on your phone, open this dashboard using your computer's local IP address (e.g., <strong>http://192.168.X.X:9002</strong>).
+            </p>
+          </div>
+        </div>
+      )}
+
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card className="border-none shadow-sm bg-card md:col-span-2">

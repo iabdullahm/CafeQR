@@ -115,7 +115,7 @@ export default function MenuManagement() {
     if (!db || !cafeId || !newProduct.name || !firebaseApp) return;
     
     setIsUploading(true);
-    let finalImageUrl = newProduct.imageUrl || `https://picsum.photos/seed/${newProduct.name.toLowerCase().replace(/\s+/g, '-')}/400/225`;
+    let finalImageUrl = newProduct.imageUrl || "";
 
     if (imageFile) {
       try {

@@ -49,9 +49,13 @@ export default function OrderManagement() {
     }
   };
 
-  const getTimeAgo = (isoString?: string) => {
-    if (!isoString) return "Just now";
-    const minDiff = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
+  const getTimeAgo = (timestamp?: any) => {
+    if (!timestamp) return "Just now";
+    
+    // Handle Firestore Timestamp or ISO string
+    const dateValue = typeof timestamp.toDate === 'function' ? timestamp.toDate() : new Date(timestamp);
+    const minDiff = Math.floor((Date.now() - dateValue.getTime()) / 60000);
+    
     if (minDiff < 1) return `Just now`;
     if (minDiff < 60) return `${minDiff}m ago`;
     const hrs = Math.floor(minDiff/60);
@@ -105,8 +109,8 @@ export default function OrderManagement() {
               <CardHeader className="pb-3 bg-muted/5 border-b">
                  <div className="flex items-center justify-between">
                     <Badge variant="outline" className="flex items-center gap-1 font-bold">
-                      {order.type === 'dine-in' ? <Utensils className="h-3 w-3" /> : <Car className="h-3 w-3" />}
-                      {order.table || 'N/A'}
+                      {(order.type === 'dine-in' || !order.type) ? <Utensils className="h-3 w-3" /> : <Car className="h-3 w-3" />}
+                      {order.table || order.tableId || 'N/A'}
                     </Badge>
                     <span className="text-xs font-bold text-muted-foreground flex items-center gap-1 uppercase tracking-widest">
                       <Clock className="h-3 w-3" /> {getTimeAgo(order.createdAt)}
@@ -121,7 +125,8 @@ export default function OrderManagement() {
                 <div className="space-y-2 min-h-[100px] bg-muted/10 p-3 rounded-xl border border-muted/20">
                   {order.items?.length > 0 ? order.items.map((item: any, i: number) => (
                     <div key={i} className="flex justify-between text-sm">
-                      <span className="font-bold">{item.quantity}x {item.name}</span>
+                      <span className="font-bold">{item.quantity || item.qty}x {item.name || item.nameEn}</span>
+                      {item.notes && <span className="text-xs text-amber-600 block w-full mt-1">Note: {item.notes}</span>}
                     </div>
                   )) : (
                      <p className="text-sm italic text-muted-foreground">Order items empty</p>

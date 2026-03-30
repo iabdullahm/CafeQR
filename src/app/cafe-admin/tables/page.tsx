@@ -139,6 +139,18 @@ export default function TablesManagement() {
         actions={<Button className="bg-primary gap-2" onClick={handleAddTable}><Plus className="h-4 w-4" /> Add Table</Button>}
       />
 
+      {typeof window !== 'undefined' && window.location.hostname === 'localhost' && !process.env.NEXT_PUBLIC_APP_URL && (
+        <div className="bg-amber-50 text-amber-800 p-4 rounded-xl border border-amber-200 flex items-start gap-3">
+          <div className="mt-0.5">⚠️</div>
+          <div>
+            <p className="font-bold">Localhost Detected</p>
+            <p className="text-sm mt-1">
+              QR codes generated while on <strong>localhost</strong> will not work when scanned from a mobile device, as your phone will try to connect to itself. To test QR codes on your phone, open this dashboard using your computer's local IP address (e.g., <strong>http://192.168.X.X:9002</strong>).
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -235,7 +247,7 @@ export default function TablesManagement() {
              <div className="p-4 bg-white rounded-3xl shadow-lg border-4 border-muted/50 mb-6">
                {qrTable && cafeId && qrTable.qrToken ? (
                  <img 
-                   src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/t/${qrTable.qrToken}`)}`} 
+                   src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/t/${qrTable.qrToken}`)}`} 
                    alt={`QR Code for ${qrTable.name}`} 
                    className="w-[200px] h-[200px] object-contain"
                  />

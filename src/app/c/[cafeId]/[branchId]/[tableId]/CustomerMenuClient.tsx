@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
+import { useFirestore } from "@/firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -20,8 +22,10 @@ type Language = "en" | "ar";
 type ViewState = "landing" | "menu" | "product" | "cart" | "status";
 
 export default function CustomerMenuClient({ cafe, params }: { cafe: any, params: any }) {
+  const db = useFirestore();
   const [lang, setLang] = useState<Language>("en");
   const [view, setView] = useState<ViewState>("landing");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [activeCategory, setActiveCategory] = useState(cafe.categories[0]?.id);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -112,6 +116,46 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
       }
       return i;
     }));
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!db || cart.length === 0) return;
+    setIsSubmitting(true);
+    
+    try {
+      const orderData = {
+        cafeId: cafe.id,
+        branchId: params.branchId,
+        tableId: params.tableId,
+        items: cart.map(item => ({
+          productId: item.product.id,
+          nameEn: item.product.nameEn,
+          nameAr: item.product.nameAr,
+          price: item.product.price,
+          qty: item.qty,
+          options: item.options,
+          notes: item.notes || ""
+        })),
+        subtotal: cartTotal,
+        tax: cartTotal * 0.15,
+        total: cartTotal * 1.15,
+        status: "pending", // pending, confirmed, preparing, ready, completed, cancelled
+        paymentStatus: "PENDING",
+        createdAt: serverTimestamp(),
+        customerPhone: "" // Add state for phone if needed
+      };
+
+      const ordersRef = collection(db, "cafes", cafe.id, "orders");
+      await addDoc(ordersRef, orderData);
+      
+      setCart([]);
+      setView("status");
+    } catch (err) {
+      console.error("Failed to place order:", err);
+      alert(t("Failed to place order. Please try again.", "فشل إرسال الطلب. يرجى المحاولة مرة أخرى."));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // --- RENDERS ---
@@ -291,8 +335,12 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
                     onClick={() => handleOpenProduct(item)}
                     className="w-full text-left bg-white rounded-3xl p-3 flex gap-4 shadow-sm border border-zinc-100 hover:shadow-md transition-all group"
                   >
-                    <div className="w-28 h-28 rounded-2xl bg-zinc-100 overflow-hidden flex-shrink-0 relative">
-                       <img src={item.image} alt={item.nameEn} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="w-28 h-28 rounded-2xl bg-zinc-100 overflow-hidden flex-shrink-0 relative flex items-center justify-center">
+                       {item.image ? (
+                         <img src={item.image} alt={item.nameEn} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                       ) : (
+                         <Coffee className="w-8 h-8 text-zinc-300" />
+                       )}
                        {item.tags?.includes('popular') && (
                          <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-xl border-b-2 border-l-2 border-white">
                            {t("Popular 🔥", "شائع 🔥")}
@@ -335,10 +383,15 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
       {/* PRODUCT DETAILS FULL-SCREEN MODAL */}
       <Sheet open={view === "product"} onOpenChange={(o) => { if(!o) setView("menu") }}>
         <SheetContent side="bottom" className="h-[95vh] rounded-t-[2.5rem] p-0 flex flex-col overflow-hidden bg-zinc-50 border-t-0" hideClose>
+          <SheetTitle className="sr-only">Product Details</SheetTitle>
           {selectedProduct && (
             <>
-              <div className="relative h-72 bg-zinc-200 flex-shrink-0">
-                <img src={selectedProduct.image} className="w-full h-full object-cover" alt="" />
+              <div className="relative h-72 bg-zinc-200 flex-shrink-0 flex items-center justify-center">
+                {selectedProduct.image ? (
+                  <img src={selectedProduct.image} className="w-full h-full object-cover" alt="" />
+                ) : (
+                  <Coffee className="w-20 h-20 text-zinc-300" />
+                )}
                 <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-zinc-50 to-transparent" />
                 <Button 
                   onClick={() => setView("menu")}
@@ -478,6 +531,7 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
       {/* CART FULL-SCREEN SHEET */}
       <Sheet open={view === "cart"} onOpenChange={(o) => { if(!o) setView("menu") }}>
          <SheetContent side="bottom" className="h-[95vh] rounded-t-[2.5rem] p-6 flex flex-col bg-zinc-50" hideClose>
+            <SheetTitle className="sr-only">{t("Your Order", "طلبك")}</SheetTitle>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-3xl font-black text-zinc-900">{t("Your Order", "طلبك")}</h2>
               <Button size="icon" variant="ghost" className="rounded-full bg-zinc-200" onClick={() => setView("menu")}>
@@ -488,8 +542,12 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
             <div className="flex-1 overflow-y-auto space-y-6 pr-2">
               {cart.map(item => (
                 <div key={item.cartItemId} className="flex gap-4 p-4 bg-white rounded-3xl border border-zinc-100 shadow-sm">
-                   <div className="w-20 h-20 rounded-2xl bg-zinc-100 overflow-hidden shrink-0">
-                     <img src={item.product.image} className="w-full h-full object-cover" alt="" />
+                   <div className="w-20 h-20 rounded-2xl bg-zinc-100 overflow-hidden shrink-0 flex items-center justify-center">
+                     {item.product.image ? (
+                       <img src={item.product.image} className="w-full h-full object-cover" alt="" />
+                     ) : (
+                       <Coffee className="w-6 h-6 text-zinc-300" />
+                     )}
                    </div>
                    <div className="flex-1 flex flex-col">
                      <div className="flex justify-between items-start">
@@ -546,10 +604,11 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
                  <span className="text-2xl font-black text-amber-600">{(cartTotal * 1.15).toFixed(2)} {cafe.currency}</span>
                </div>
                <Button 
-                onClick={() => setView("status")}
+                onClick={handlePlaceOrder}
+                disabled={isSubmitting}
                 className="w-full h-[68px] text-xl font-black rounded-3xl bg-amber-500 hover:bg-amber-600 text-black mt-2 shadow-xl shadow-amber-500/20"
                >
-                 {t("Place Order", "إرسال الطلب")}
+                 {isSubmitting ? t("Placing...", "جاري الإرسال...") : t("Place Order", "إرسال الطلب")}
                </Button>
             </div>
          </SheetContent>
