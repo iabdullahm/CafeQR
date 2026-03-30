@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import CustomerMenuClient from "./CustomerMenuClient";
 import { useFirestore } from "@/firebase";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
@@ -18,7 +18,8 @@ const CATEGORIES = [
   { id: 'matcha', en: 'Matcha', ar: 'الماتشا' },
 ];
 
-export default function CustomerInterfacePage({ params }: { params: { cafeId: string, branchId: string, tableId: string } }) {
+export default function CustomerInterfacePage({ params }: { params: Promise<{ cafeId: string, branchId: string, tableId: string }> }) {
+  const resolvedParams = use(params);
   const db = useFirestore();
   const [cafeData, setCafeData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -30,7 +31,7 @@ export default function CustomerInterfacePage({ params }: { params: { cafeId: st
     const fetchCafeData = async () => {
       try {
         // 1. Fetch Cafe Details
-        const cafeRef = doc(db, 'cafes', params.cafeId);
+        const cafeRef = doc(db, 'cafes', resolvedParams.cafeId);
         const cafeSnap = await getDoc(cafeRef);
         
         if (!cafeSnap.exists()) {
@@ -42,7 +43,7 @@ export default function CustomerInterfacePage({ params }: { params: { cafeId: st
         const cafeDoc = cafeSnap.data();
 
         // 2. Fetch Products
-        const productsSnap = await getDocs(collection(db, 'cafes', params.cafeId, 'products'));
+        const productsSnap = await getDocs(collection(db, 'cafes', resolvedParams.cafeId, 'products'));
         const productsData = productsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
         // 3. Format Data for the CustomerMenuClient Map
@@ -66,9 +67,9 @@ export default function CustomerInterfacePage({ params }: { params: { cafeId: st
         }));
 
         setCafeData({
-          id: params.cafeId,
+          id: resolvedParams.cafeId,
           name: cafeDoc.name || 'Urban Brew',
-          branch: params.branchId === 'default' ? 'Takeaway' : (cafeDoc.branchName || params.branchId),
+          branch: resolvedParams.branchId === 'default' ? 'Takeaway' : (cafeDoc.branchName || resolvedParams.branchId),
           logo: cafeDoc.logo || "https://picsum.photos/seed/logo/150/150",
           coverImage: cafeDoc.coverImage || "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=800&fit=crop",
           loyalty: { cups: 0, required: 8 },
@@ -86,7 +87,7 @@ export default function CustomerInterfacePage({ params }: { params: { cafeId: st
     };
 
     fetchCafeData();
-  }, [db, params.cafeId, params.branchId, params.tableId]);
+  }, [db, resolvedParams.cafeId, resolvedParams.branchId, resolvedParams.tableId]);
 
   if (loading) {
     return (
@@ -108,6 +109,6 @@ export default function CustomerInterfacePage({ params }: { params: { cafeId: st
     );
   }
 
-  return <CustomerMenuClient cafe={cafeData} params={params} />;
+  return <CustomerMenuClient cafe={cafeData} params={resolvedParams} />;
 }
 

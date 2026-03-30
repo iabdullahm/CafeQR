@@ -19,13 +19,23 @@ import {
 import { cn } from "@/lib/utils";
 
 type Language = "en" | "ar";
-type ViewState = "landing" | "menu" | "product" | "cart" | "status";
+type ViewState = "landing" | "car_setup" | "menu" | "product" | "cart" | "status";
 
 export default function CustomerMenuClient({ cafe, params }: { cafe: any, params: any }) {
   const db = useFirestore();
   const [lang, setLang] = useState<Language>("en");
-  const [view, setView] = useState<ViewState>("landing");
+  
+  const isCarTable = params.tableId?.toLowerCase().includes("car");
+  const [view, setView] = useState<ViewState>(isCarTable ? "car_setup" : "landing");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [carInfo, setCarInfo] = useState({
+    plateNumber: "",
+    parkingSpot: "",
+    color: "",
+    model: "",
+    notes: ""
+  });
   
   const [activeCategory, setActiveCategory] = useState(cafe.categories[0]?.id);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -123,10 +133,19 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
     setIsSubmitting(true);
     
     try {
+      const isCarOrder = params.tableId?.toLowerCase().includes("car");
       const orderData = {
         cafeId: cafe.id,
         branchId: params.branchId,
         tableId: params.tableId,
+        serviceType: isCarOrder ? "CAR" : (params.tableId === "takeaway" ? "TAKEAWAY" : "DINE_IN"),
+        ...(isCarOrder ? {
+           carPlateNumber: carInfo.plateNumber,
+           parkingSpot: carInfo.parkingSpot,
+           carColor: carInfo.color,
+           carModel: carInfo.model,
+           carNotes: carInfo.notes
+        } : {}),
         items: cart.map(item => ({
           productId: item.product.id,
           nameEn: item.product.nameEn,
@@ -159,6 +178,129 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
   };
 
   // --- RENDERS ---
+
+  if (view === "car_setup") {
+    // Basic validation
+    const isCarFormValid = carInfo.plateNumber.trim() !== "" && carInfo.parkingSpot.trim() !== "";
+    
+    return (
+      <div dir={dir} className="min-h-screen bg-zinc-50 flex flex-col items-center">
+        {/* Header Section */}
+        <div className="w-full bg-white px-6 pt-8 pb-4 border-b border-zinc-100 flex flex-col items-center text-center space-y-2">
+          <div className="w-16 h-16 rounded-2xl bg-zinc-100 p-1 flex items-center justify-center mb-2">
+            <Coffee className="w-8 h-8 text-amber-600" />
+          </div>
+          <h1 className="text-xl font-black text-zinc-900">{cafe.name}</h1>
+          <p className="text-sm font-medium text-amber-600 flex items-center gap-1">
+             <MapPin className="w-3 h-3" /> {cafe.branch}
+          </p>
+          <p className="text-sm text-zinc-500 mt-1">{t("Order from your car easily", "اطلب من سيارتك بسهولة")}</p>
+        </div>
+
+        {/* Hero Section */}
+        <div className="w-full max-w-sm px-6 py-6 text-center space-y-3">
+          <div className="mx-auto w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-2">
+             <Car className="w-10 h-10 text-amber-600" />
+          </div>
+          <h2 className="text-2xl font-black text-zinc-900">{t("Order From Your Car", "اطلب من سيارتك")}</h2>
+          <p className="text-sm text-zinc-500 leading-relaxed">
+            {t("Enter your vehicle details so we can deliver your order to you.", "أدخل تفاصيل مركبتك لنتمكن من توصيل طلبك إليك.")}
+          </p>
+          
+          <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => setLang(isAr ? "en" : "ar")}
+              className="mt-2 text-xs font-bold rounded-full border-zinc-200"
+            >
+              <Globe className="w-3 h-3 mr-2 rtl:ml-2 rtl:mr-0" />
+              {isAr ? "English" : "العربية"}
+          </Button>
+        </div>
+
+        {/* Input Form (Card Style) */}
+        <div className="w-full max-w-sm px-6 pb-32">
+          <Card className="rounded-[2rem] border-zinc-100 shadow-sm shadow-zinc-200/50 overflow-hidden bg-white">
+            <CardContent className="p-6 space-y-5">
+              <div className="space-y-2">
+                 <Label className="text-sm font-bold text-zinc-800">{t("Car Plate Number *", "رقم اللوحة *")}</Label>
+                 <Input 
+                   autoFocus
+                   placeholder={t("e.g. 45873", "مثال: 45873")} 
+                   value={carInfo.plateNumber}
+                   onChange={e => setCarInfo({...carInfo, plateNumber: e.target.value})}
+                   className="h-12 bg-zinc-50 border-zinc-200 rounded-xl focus-visible:ring-amber-500" 
+                 />
+              </div>
+
+              <div className="space-y-2">
+                 <Label className="text-sm font-bold text-zinc-800">{t("Parking Spot Number *", "رقم الموقف *")}</Label>
+                 <Input 
+                   placeholder={t("e.g. P3", "مثال: P3")} 
+                   value={carInfo.parkingSpot}
+                   onChange={e => setCarInfo({...carInfo, parkingSpot: e.target.value})}
+                   className="h-12 bg-zinc-50 border-zinc-200 rounded-xl focus-visible:ring-amber-500" 
+                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                   <Label className="text-xs font-bold text-zinc-700">{t("Car Color", "لون السيارة")}</Label>
+                   <Input 
+                     placeholder={t("White", "أبيض")} 
+                     value={carInfo.color}
+                     onChange={e => setCarInfo({...carInfo, color: e.target.value})}
+                     className="bg-zinc-50 border-zinc-200 rounded-xl focus-visible:ring-amber-500" 
+                   />
+                </div>
+                <div className="space-y-2">
+                   <Label className="text-xs font-bold text-zinc-700">{t("Car Model", "طراز السيارة")}</Label>
+                   <Input 
+                     placeholder={t("e.g. Camry", "مثال: كامري")} 
+                     value={carInfo.model}
+                     onChange={e => setCarInfo({...carInfo, model: e.target.value})}
+                     className="bg-zinc-50 border-zinc-200 rounded-xl focus-visible:ring-amber-500" 
+                   />
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                 <Label className="text-xs font-bold text-zinc-700">{t("Notes (Optional)", "ملاحظات (إختياري)")}</Label>
+                 <Input 
+                   placeholder={t("Any extra details", "تفاصيل إضافية")} 
+                   value={carInfo.notes}
+                   onChange={e => setCarInfo({...carInfo, notes: e.target.value})}
+                   className="bg-zinc-50 border-zinc-200 rounded-xl focus-visible:ring-amber-500" 
+                 />
+              </div>
+
+            </CardContent>
+          </Card>
+          
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 text-zinc-400">
+             <p className="text-xs text-center font-medium px-4">{t("Your order will be delivered directly to your car", "سيتم توصيل طلبك مباشرة إلى سيارتك")}</p>
+             <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-wider">
+               <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {t("No Waiting", "بدون انتظار")}</span>
+               <span className="flex items-center gap-1"><Car className="w-3 h-3" /> {t("Contactless", "بدون تلامس")}</span>
+             </div>
+          </div>
+        </div>
+
+        {/* Sticky CTA Button */}
+        <div className="fixed bottom-0 inset-x-0 p-4 bg-gradient-to-t from-zinc-50 via-zinc-50 to-transparent z-20 pointer-events-none">
+           <div className="max-w-sm mx-auto pointer-events-auto">
+             <Button 
+                disabled={!isCarFormValid}
+                onClick={() => setView("menu")}
+                className="w-full h-14 text-lg font-bold rounded-2xl bg-amber-600 hover:bg-amber-700 text-white shadow-xl shadow-amber-600/20 transition-all hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0"
+              >
+                {t("Continue to Menu", "المتابعة للقائمة")} <ChevronRight className="w-5 h-5 ml-2 rtl:hidden" /><ChevronRight className="w-5 h-5 mr-2 hidden rtl:block rotate-180" />
+              </Button>
+           </div>
+        </div>
+      </div>
+    );
+  }
 
   if (view === "landing") {
     return (

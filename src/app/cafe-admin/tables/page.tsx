@@ -68,9 +68,9 @@ export default function TablesManagement() {
     const token = Math.random().toString(36).substring(2, 8) + Date.now().toString(36);
 
     await setDoc(tableRef, {
-      number: Number(number),
+      number: isNaN(Number(number)) ? 0 : Number(number),
       name: `Table ${number}`,
-      type: "DINE_IN",
+      type: number.toLowerCase().includes("car") ? "CAR_SERVICE" : "DINE_IN",
       status: "AVAILABLE",
       branchId: selectedBranch.id,
       branchName: selectedBranch.name,
