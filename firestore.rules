@@ -58,16 +58,22 @@ service cloud.firestore {
       
       // Specific Public Overrides
       match /orders/{orderId} {
-        allow create: if true; // Customers can create orders
+        allow create: if true;
       }
       match /products/{productId} {
-        allow get: if true; // Customers can see products
+        allow read: if true;
       }
       match /categories/{categoryId} {
-        allow list, get: if true; // Customers can see categories
+        allow read: if true;
       }
       match /tables/{tableId} {
-        allow get: if true; // Customers can see table status via scan
+        allow read: if true;
+      }
+      match /branches/{branchId} {
+        allow read: if true;
+      }
+      match /config/{document=**} {
+        allow read: if true;
       }
     }
   }
