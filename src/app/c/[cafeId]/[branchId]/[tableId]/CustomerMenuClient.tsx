@@ -452,6 +452,7 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
                   <div className="text-2xl font-black">{cafe.loyalty.cups}/{cafe.loyalty.required}</div>
                 </div>
                 <div className="h-2 w-full bg-black/20 rounded-full overflow-hidden">
+                  {/* eslint-disable-next-line */}
                   <div className="h-full bg-white rounded-full transition-all duration-1000" style={{ width: `${(cafe.loyalty.cups / cafe.loyalty.required) * 100}%` }} />
                 </div>
              </div>
