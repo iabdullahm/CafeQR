@@ -1,0 +1,105 @@
+ ⚠ Found lockfile missing swc dependencies, patching...
+   ▲ Next.js 15.5.9
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ⨯ Failed to patch lockfile, please try uninstalling and reinstalling next in this workspace
+[TypeError: Cannot read properties of undefined (reading 'os')]
+ ⚠ Found lockfile missing swc dependencies, patching...
+ ⨯ Failed to patch lockfile, please try uninstalling and reinstalling next in this workspace
+[TypeError: Cannot read properties of undefined (reading 'os')]
+ ⚠ Compiled with warnings in 5.1s
+
+./node_modules/@opentelemetry/sdk-node/build/src/TracerProviderWithEnvExporter.js
+Module not found: Can't resolve '@opentelemetry/exporter-jaeger' in 'C:\Projects\CafeQR\project\node_modules\@opentelemetry\sdk-node\build\src'
+
+Import trace for requested module:
+./node_modules/@opentelemetry/sdk-node/build/src/TracerProviderWithEnvExporter.js
+./node_modules/@opentelemetry/sdk-node/build/src/sdk.js
+./node_modules/@opentelemetry/sdk-node/build/src/index.js
+./node_modules/@genkit-ai/core/lib/tracing/node-telemetry-provider.js
+./node_modules/@genkit-ai/core/lib/node.js
+./node_modules/genkit/lib/common.js
+./node_modules/genkit/lib/index.mjs
+./src/ai/flows/generate-menu-description.ts
+
+ ⚠ Found lockfile missing swc dependencies, patching...
+ ⚠ Found lockfile missing swc dependencies, patching...
+ ⨯ Failed to patch lockfile, please try uninstalling and reinstalling next in this workspace
+[TypeError: Cannot read properties of undefined (reading 'os')]
+ ✓ Compiled successfully in 8.3s
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/36) ...
+Automatic initialization failed. Falling back to firebase config object. Error [FirebaseError]: Firebase: Need to provide options, when not being deployed to hosting via source. (app/no-options).
+    at W (C:\Projects\CafeQR\project\.next\server\chunks\5801.js:1:86720)
+    at l (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:10520)
+    at <unknown> (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:224)
+    at h (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:211) {
+  code: 'app/no-options',
+  customData: {}
+}
+Automatic initialization failed. Falling back to firebase config object. Error [FirebaseError]: Firebase: Need to provide options, when not being deployed to hosting via source. (app/no-options).
+    at W (C:\Projects\CafeQR\project\.next\server\chunks\5801.js:1:86720)
+    at l (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:10520)
+    at <unknown> (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:224)
+    at h (C:\Projects\CafeQR\project\.next\server\chunks\4967.js:1:211) {
+  code: 'app/no-options',
+  customData: {}
+}
+   Generating static pages (9/36) 
+   Generating static pages (18/36) 
+   Generating static pages (27/36) 
+ ✓ Generating static pages (36/36)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                   Size  First Load JS
+┌ ○ /                                      12.8 kB         127 kB
+├ ○ /_not-found                               1 kB         103 kB
+├ ƒ /api/auth/login                          156 B         102 kB
+├ ƒ /api/auth/logout                         156 B         102 kB
+├ ƒ /api/auth/me                             156 B         102 kB
+├ ƒ /api/cafes                               156 B         102 kB
+├ ƒ /api/cafes/[id]                          156 B         102 kB
+├ ƒ /api/cafes/[id]/status                   156 B         102 kB
+├ ƒ /api/dashboard/expiring-subscriptions    156 B         102 kB
+├ ƒ /api/dashboard/recent-cafes              156 B         102 kB
+├ ƒ /api/dashboard/revenue-chart             156 B         102 kB
+├ ƒ /api/dashboard/stats                     156 B         102 kB
+├ ƒ /c/[cafeId]/[branchId]/[tableId]       1.52 kB         260 kB
+├ ○ /cafe-admin                            5.89 kB         340 kB
+├ ○ /cafe-admin/branches                   4.98 kB         264 kB
+├ ○ /cafe-admin/loyalty                    10.4 kB         270 kB
+├ ○ /cafe-admin/menu                       17.9 kB         278 kB
+├ ○ /cafe-admin/orders                     10.5 kB         280 kB
+├ ○ /cafe-admin/profile                    7.46 kB         237 kB
+├ ○ /cafe-admin/qr-codes                   6.55 kB         235 kB
+├ ○ /cafe-admin/settings                   9.79 kB         269 kB
+├ ○ /cafe-admin/staff                      10.5 kB         291 kB
+├ ○ /cafe-admin/support                    9.42 kB         154 kB
+├ ○ /cafe-admin/tables                     10.1 kB         277 kB
+├ ○ /login                                 6.04 kB         248 kB
+├ ○ /super-admin                           5.01 kB         339 kB
+├ ○ /super-admin/audit-logs                11.7 kB         154 kB
+├ ○ /super-admin/cafes                     36.3 kB         323 kB
+├ ƒ /super-admin/cafes/[id]                23.8 kB         287 kB
+├ ○ /super-admin/notifications             8.37 kB         157 kB
+├ ○ /super-admin/payments                  10.7 kB         160 kB
+├ ○ /super-admin/plans                     7.87 kB         150 kB
+├ ○ /super-admin/reports                     20 kB         262 kB
+├ ○ /super-admin/settings                    14 kB         159 kB
+├ ○ /super-admin/subscriptions             6.72 kB         156 kB
+├ ○ /super-admin/support                   8.18 kB         163 kB
+├ ○ /super-admin/users-roles               10.6 kB         152 kB
+└ ƒ /t/[token]                             1.63 kB         260 kB
++ First Load JS shared by all               102 kB
+  ├ chunks/1255-8befde0980f5cba9.js        45.6 kB
+  ├ chunks/4bd1b696-100b9d70ed4e49c1.js    54.2 kB
+  └ other shared chunks (total)            2.06 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

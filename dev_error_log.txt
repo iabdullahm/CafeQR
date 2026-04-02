@@ -1,0 +1,19 @@
+ ⚠ Found lockfile missing swc dependencies, patching...
+ ⨯ Failed to patch lockfile, please try uninstalling and reinstalling next in this workspace
+[TypeError: Cannot read properties of undefined (reading 'os')]
+ ⚠ Found lockfile missing swc dependencies, patching...
+   ▲ Next.js 15.5.9
+   - Local:        http://localhost:9012
+   - Network:      http://172.17.0.109:9012
+   - Environments: .env
+
+ ✓ Starting...
+ ⨯ Failed to patch lockfile, please try uninstalling and reinstalling next in this workspace
+[TypeError: Cannot read properties of undefined (reading 'os')]
+ ✓ Ready in 6.3s
+ ○ Compiling / ...
+ ✓ Compiled / in 7.7s (1049 modules)
+ GET / 200 in 8644ms
+ ✓ Compiled in 1135ms (372 modules)
+ ✓ Compiled in 147ms (358 modules)
+^C^C

@@ -1,14 +1,41 @@
+"use client";
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { 
   Coffee, QrCode, Smartphone, Car, LayoutDashboard, 
-  MapPin, Zap, TrendingUp, Heart, Star, CheckCircle2, ChevronRight, Store, CreditCard, ShoppingBag
+  MapPin, Zap, TrendingUp, Heart, Star, CheckCircle2, ChevronRight, Store, CreditCard, ShoppingBag, Globe
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { translations } from './locales';
 
 export default function Home() {
+  const [lang, setLang] = useState<"en" | "ar">("en");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const savedLang = localStorage.getItem("lang") as "en" | "ar";
+    if (savedLang && (savedLang === "en" || savedLang === "ar")) {
+      setLang(savedLang);
+    } else if (navigator.language.includes("ar")) {
+      setLang("ar");
+    }
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.documentElement.lang = lang;
+    localStorage.setItem("lang", lang);
+  }, [lang]);
+
+  if (!mounted) return <div className="min-h-screen bg-[#fafaf9]" />;
+
+  const t = translations[lang];
+
+
   return (
-    <div className="flex flex-col min-h-screen bg-[#fafaf9] overflow-x-hidden">
+    <div className={`flex flex-col min-h-screen bg-[#fafaf9] overflow-x-hidden ${lang === 'ar' ? 'font-arabic' : ''}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* HEADER */}
       <header className="fixed top-0 inset-x-0 z-50 h-16 sm:h-20 flex items-center px-6 lg:px-12 backdrop-blur-xl bg-white/80 border-b border-zinc-100">
         <Link className="flex items-center gap-2 group" href="#">
@@ -17,17 +44,22 @@ export default function Home() {
           </div>
           <span className="font-black text-2xl tracking-tight text-zinc-900">Cafe<span className="text-amber-600">QR</span></span>
         </Link>
-        <nav className="ml-auto hidden md:flex items-center gap-8">
-          <Link className="text-sm font-bold text-zinc-600 hover:text-amber-600 transition-colors" href="#how-it-works">How It Works</Link>
-          <Link className="text-sm font-bold text-zinc-600 hover:text-amber-600 transition-colors" href="#features">Features</Link>
-          <Link className="text-sm font-bold text-zinc-600 hover:text-amber-600 transition-colors" href="#pricing">Pricing</Link>
+        <nav className={`ml-auto hidden md:flex items-center gap-8 ${lang === 'ar' ? 'mx-auto' : ''}`}>
+          <Link className="text-sm font-bold text-zinc-600 hover:text-amber-600 transition-colors" href="#how-it-works">{t.nav.works}</Link>
+          <Link className="text-sm font-bold text-zinc-600 hover:text-amber-600 transition-colors" href="#features">{t.nav.features}</Link>
+          <Link className="text-sm font-bold text-zinc-600 hover:text-amber-600 transition-colors" href="#pricing">{t.nav.pricing}</Link>
         </nav>
-        <div className="ml-auto md:ml-8 flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${lang === 'ar' ? 'mr-auto ml-0' : 'ml-auto md:ml-8'}`}>
+          <div className="flex items-center gap-2 mr-2 md:mr-4 bg-zinc-100 p-1 rounded-full px-3 cursor-pointer hover:bg-zinc-200 transition-colors" 
+               onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}>
+            <Globe className="w-4 h-4 text-zinc-600" />
+            <span className="text-xs font-bold text-zinc-700">{lang === 'ar' ? 'English' : 'العربية'}</span>
+          </div>
           <Link href="/cafe-admin" className="text-sm font-bold text-zinc-700 hover:text-amber-600 hidden sm:block">
-            Login
+            {t.nav.login}
           </Link>
           <Button asChild className="rounded-full bg-zinc-900 hover:bg-black text-white px-6 font-bold shadow-xl shadow-zinc-900/20">
-            <Link href="/cafe-admin">Get Started</Link>
+            <Link href="/cafe-admin">{t.nav.start}</Link>
           </Button>
         </div>
       </header>
@@ -39,29 +71,37 @@ export default function Home() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(22,163,74,0.05),transparent_40%)]" />
           <div className="container px-6 lg:px-12 mx-auto relative z-10 flex flex-col lg:flex-row items-center gap-16">
             <div className="flex-1 space-y-8 text-center lg:text-left">
-               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-200/50 text-amber-700 font-bold text-sm mb-4">
-                 <Zap className="w-4 h-4 fill-amber-500 text-amber-500" />
-                 Transforms your cafe operations instantly
-               </div>
-               <h1 className="text-5xl lg:text-7xl font-black tracking-tight text-zinc-900 leading-[1.1]">
-                 Let Customers Order & Pay from Their Table — <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-500">No Staff Needed</span>
-               </h1>
-               <p className="text-lg lg:text-xl text-zinc-600 font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                 Customers scan, order, and pay in seconds — while you track sales, manage menus, and grow your cafe from one dashboard.
-               </p>
-               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
-                 <div className="flex flex-col items-center sm:items-start w-full sm:w-auto">
-                   <Button asChild size="lg" className="w-full sm:w-auto rounded-full h-14 px-8 text-lg font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-2xl shadow-amber-600/30 transition-all hover:-translate-y-1">
-                     <Link href="/cafe-admin">Start Free Trial</Link>
-                   </Button>
-                   <p className="text-xs text-zinc-500 mt-2 font-medium flex items-center gap-1">
-                     <CheckCircle2 className="w-3 h-3 text-green-500" /> No credit card required
-                   </p>
-                 </div>
-                 <Button asChild size="lg" variant="outline" className="w-full sm:w-auto rounded-full h-14 px-8 text-lg font-bold border-zinc-200 hover:bg-zinc-50 transition-all">
-                   <Link href="/c/demo/branch1/table1">View Live Demo</Link>
-                 </Button>
-               </div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 text-amber-700 font-bold text-sm tracking-wide mb-8 animate-fade-in shadow-sm border border-amber-200">
+                <Coffee className="w-4 h-4" />
+                {t.hero.badge}
+              </div>
+              <h1 className="text-5xl lg:text-7xl font-black text-zinc-900 tracking-tight leading-[1.1] mb-8 lg:leading-[1.1]">
+                {t.hero.title1}
+                <span className="text-amber-600 relative inline-block">
+                  {t.hero.title2}
+                  <svg className="absolute w-full h-3 -bottom-1 left-0 text-amber-300/60 -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
+                    <path d="M0,5 Q50,10 100,5" stroke="currentColor" strokeWidth="8" fill="none" className="path-draw" />
+                  </svg>
+                </span>
+              </h1>
+              <p className="text-xl text-zinc-600 leading-relaxed font-medium mb-12 max-w-2xl mx-auto lg:mx-0">
+                {t.hero.desc}
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 items-center justify-center lg:justify-start">
+                <Button asChild className="h-16 px-10 rounded-full font-black text-lg bg-zinc-900 hover:bg-black text-white shadow-2xl shadow-zinc-900/30 w-full sm:w-auto hover:scale-105 transition-transform group relative overflow-hidden">
+                  <Link href="/cafe-admin">
+                    <span className="relative z-10">{t.hero.cta}</span>
+                    <div className="absolute inset-0 h-full w-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                  </Link>
+                </Button>
+                <div className="flex flex-col items-center sm:items-start gap-1">
+                  <Button asChild className="h-16 px-8 rounded-full font-bold text-lg bg-white border-2 border-zinc-200 text-zinc-700 hover:border-amber-500 hover:text-amber-600 hover:bg-amber-50 shadow-sm w-full sm:w-auto transition-all">
+                    <Link href="#demo">{t.hero.demo}</Link>
+                  </Button>
+                  <p className="text-xs text-zinc-400 font-medium px-4">{t.hero.noCard}</p>
+                </div>
+              </div>
             </div>
             {/* Visuals - Phone and Dashboard Abstract Mockup */}
             <div className="flex-1 w-full relative h-[500px] lg:h-[600px] flex items-center justify-center -rotate-2 hover:rotate-0 transition-transform duration-700">
@@ -117,7 +157,7 @@ export default function Home() {
         {/* 2. TRUST / LOGOS */}
         <section className="w-full py-10 border-y border-zinc-100 bg-white">
           <div className="container mx-auto px-6 text-center">
-            <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest mb-6">Trusted by 50+ Cafes & Restaurants</p>
+            <p className="text-center font-bold text-zinc-400 uppercase tracking-widest text-sm mb-10">{t.trusted}</p>
             <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-60 grayscale">
               <div className="flex items-center gap-2 font-black text-2xl text-zinc-900"><Coffee className="w-8 h-8"/> BrewHouse</div>
               <div className="flex items-center gap-2 font-black text-2xl text-zinc-900"><Store className="w-8 h-8"/> Urban Cafe</div>
@@ -127,45 +167,34 @@ export default function Home() {
         </section>
 
         {/* 3. HOW IT WORKS */}
-        <section id="how-it-works" className="w-full py-24 bg-zinc-50">
+        <section id="how-it-works" className="w-full py-24 bg-zinc-50 border-t border-zinc-100">
           <div className="container px-6 lg:px-12 mx-auto">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl font-black text-zinc-900 mb-4">Ordering Made Effortless</h2>
-              <p className="text-lg text-zinc-500 font-medium">A seamless experience for your customers from scan to sip.</p>
+             <div className="text-center max-w-3xl mx-auto mb-16">
+              <h2 className="text-4xl font-black text-zinc-900 mb-4">{t.works.title}</h2>
+              <p className="text-lg text-zinc-500 font-medium">{t.works.desc}</p>
             </div>
-            <div className="grid md:grid-cols-3 gap-8 relative">
-               {/* Connecting lines for desktop */}
-               <div className="hidden md:block absolute top-12 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-amber-200 via-amber-200 to-amber-200 z-0" />
+            
+             <div className="grid md:grid-cols-3 gap-8 relative">
+               {/* Connecting Line (desktop) */}
+               <div className="hidden md:block absolute top-[5rem] left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-amber-200 to-transparent z-0" />
                
-               {[
-                 {
-                   step: '1', title: 'Scan QR Code', 
-                   desc: 'Customers scan the code at their table, car, or at the counter—no app download required.', 
-                   icon: QrCode
-                 },
-                 {
-                   step: '2', title: 'Choose Items', 
-                   desc: 'They browse your beautiful digital menu, customize items, and see smart recommendations.', 
-                   icon: Smartphone
-                 },
-                 {
-                   step: '3', title: 'Place Order & Pay', 
-                   desc: 'Orders sync instantly to your dashboard or kitchen screen while payment is processed securely.', 
-                   icon: CheckCircle2
-                 }
-               ].map((s, i) => (
-                 <div key={i} className="relative z-10 flex flex-col items-center text-center p-6 bg-white rounded-3xl shadow-xl shadow-zinc-200/30 border border-zinc-100">
-                   <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center shadow-inner mb-6 relative">
-                     <div className="absolute -top-3 -right-3 w-8 h-8 bg-amber-600 text-white font-black rounded-full flex items-center justify-center border-4 border-white">
-                       {s.step}
-                     </div>
-                     <s.icon className="w-8 h-8 text-amber-600" />
-                   </div>
-                   <h3 className="text-2xl font-black text-zinc-900 mb-3">{s.title}</h3>
-                   <p className="text-zinc-600 leading-relaxed font-medium">{s.desc}</p>
-                 </div>
-               ))}
-            </div>
+               {t.works.steps.map((s: any, i: number) => {
+                 const icons = [QrCode, Smartphone, CheckCircle2];
+                 const Icon = icons[i];
+                 return (
+                  <div key={i} className="relative z-10 flex flex-col items-center text-center p-6 bg-white rounded-3xl shadow-xl shadow-zinc-200/30 border border-zinc-100 hover:-translate-y-2 transition-transform duration-300">
+                    <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center shadow-inner mb-6 relative">
+                      <div className={`absolute -top-3 ${lang === 'ar' ? '-left-3' : '-right-3'} w-8 h-8 bg-amber-600 text-white font-black rounded-full flex items-center justify-center border-4 border-white`}>
+                        {i + 1}
+                      </div>
+                      <Icon className="w-8 h-8 text-amber-600" />
+                    </div>
+                    <h3 className="text-2xl font-black text-zinc-900 mb-3">{s.title}</h3>
+                    <p className="text-zinc-600 leading-relaxed font-medium">{s.desc}</p>
+                  </div>
+                 );
+               })}
+             </div>
           </div>
         </section>
 
@@ -173,27 +202,26 @@ export default function Home() {
         <section id="features" className="w-full py-24 bg-white">
           <div className="container px-6 lg:px-12 mx-auto">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl font-black text-zinc-900 mb-4">Everything You Need to Scale</h2>
-              <p className="text-lg text-zinc-500 font-medium">Built specifically to boost revenue, speed up service, and slash operational costs.</p>
+              <h2 className="text-4xl font-black text-zinc-900 mb-4">{t.features.title}</h2>
+              <p className="text-lg text-zinc-500 font-medium">{t.features.desc}</p>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-               {[
-                 { title: 'Instant Ordering', desc: 'Customers scan and order in seconds — no waiting for waiters, leading to faster table turnovers.', icon: Zap, color: 'text-yellow-600', bg: 'bg-yellow-100' },
-                 { title: 'Increase Revenue', desc: 'Upsell items automatically with smart suggestions and beautiful, mouth-watering visual menus.', icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-100' },
-                 { title: 'Order from Car 🚗', desc: 'A unique drive-thru alternative. Customers enter parking spot and vehicle details for seamless delivery to their window.', icon: Car, color: 'text-amber-600', bg: 'bg-amber-100' },
-                 { title: 'Manage Everything Easily', desc: 'Track live orders, update menus instantly, and monitor performance in real-time from any device.', icon: LayoutDashboard, color: 'text-blue-600', bg: 'bg-blue-100' },
-                 { title: 'Loyalty Program', desc: 'Keep customers coming back with automated stamp cards and rewards directly integrated into their ordering flow.', icon: Heart, color: 'text-red-600', bg: 'bg-red-100' },
-                 { title: 'Multi-branch Management', desc: 'Control all your locations from a single dashboard. Synchronize menus or create branch-specific offerings.', icon: Store, color: 'text-purple-600', bg: 'bg-purple-100' }
-               ].map((f, i) => (
-                 <div key={i} className="flex flex-col p-8 rounded-3xl border border-zinc-100 bg-zinc-50 hover:bg-white hover:shadow-2xl hover:shadow-zinc-200/50 transition-all group">
-                   <div className={`w-14 h-14 ${f.bg} rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform`}>
-                     <f.icon className={`w-7 h-7 ${f.color}`} />
-                   </div>
-                   <h3 className="text-xl font-black text-zinc-900 mb-3">{f.title}</h3>
-                   <p className="text-zinc-600 font-medium leading-relaxed">{f.desc}</p>
-                 </div>
-               ))}
+               {t.features.list.map((f: any, i: number) => {
+                 const icons = [Zap, TrendingUp, Car, LayoutDashboard, Heart, Store];
+                 const colors = ['text-yellow-600', 'text-green-600', 'text-amber-600', 'text-blue-600', 'text-red-600', 'text-purple-600'];
+                 const bgs = ['bg-yellow-100', 'bg-green-100', 'bg-amber-100', 'bg-blue-100', 'bg-red-100', 'bg-purple-100'];
+                 const Icon = icons[i];
+                 return (
+                  <div key={i} className="flex flex-col p-8 rounded-3xl border border-zinc-100 bg-zinc-50 hover:bg-white hover:shadow-2xl hover:shadow-zinc-200/50 transition-all group">
+                    <div className={`w-14 h-14 ${bgs[i]} rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform`}>
+                      <Icon className={`w-7 h-7 ${colors[i]}`} />
+                    </div>
+                    <h3 className="text-xl font-black text-zinc-900 mb-3">{f.title}</h3>
+                    <p className="text-zinc-600 font-medium leading-relaxed">{f.desc}</p>
+                  </div>
+                 );
+               })}
             </div>
           </div>
         </section>
@@ -203,15 +231,11 @@ export default function Home() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(217,119,6,0.15),transparent_60%)]" />
           <div className="container px-6 lg:px-12 mx-auto relative z-10">
             <div className="flex flex-col lg:flex-row gap-16 items-center">
-              <div className="flex-1 space-y-8">
-                <h2 className="text-4xl lg:text-5xl font-black">Versatile Ordering Channels</h2>
-                <p className="text-xl text-zinc-400 font-medium leading-relaxed">Meet your customers wherever they are. CafeQR seamlessly handles multiple service types simultaneously.</p>
-                <div className="space-y-6 pt-4">
-                  {[
-                    { title: 'Dine-in Excellence', desc: 'QR codes tailored to specific tables for exact location tracking.' },
-                    { title: 'Streamlined Takeaway', desc: 'Counter QR codes or pre-ordering links for express pickup.' },
-                    { title: 'Car/Parking Delivery', desc: 'Customers provide vehicle metadata for curbside delivery.' }
-                  ].map((uc, i) => (
+              <div className="flex-1 space-y-8 text-center lg:text-left">
+                <h2 className="text-4xl lg:text-5xl font-black">{t.usecases.title}</h2>
+                <p className="text-xl text-zinc-400 font-medium leading-relaxed">{t.usecases.desc}</p>
+                <div className="space-y-6 pt-4 text-left">
+                  {t.usecases.list.map((uc: any, i: number) => (
                      <div key={i} className="flex gap-4 items-start">
                        <CheckCircle2 className="w-6 h-6 text-amber-500 shrink-0 mt-1" />
                        <div>
@@ -250,10 +274,10 @@ export default function Home() {
         {/* 6. DASHBOARD PREVIEW */}
         <section className="w-full py-24 bg-zinc-50">
           <div className="container px-6 lg:px-12 mx-auto text-center">
-            <h2 className="text-4xl font-black text-zinc-900 mb-4">Command Center for Cafe Owners</h2>
-            <p className="text-lg text-zinc-500 font-medium max-w-2xl mx-auto mb-16">Monitor live orders, update your menu in real time, and view deep analytics from a beautiful, intuitive dashboard.</p>
+            <h2 className="text-4xl font-black text-zinc-900 mb-4">{t.dashboard.title}</h2>
+            <p className="text-lg text-zinc-500 font-medium max-w-2xl mx-auto mb-16">{t.dashboard.desc}</p>
             
-            <div className="w-full max-w-5xl mx-auto bg-white rounded-[2rem] shadow-2xl shadow-zinc-200 border border-zinc-200 overflow-hidden text-left relative">
+            <div className={`w-full max-w-5xl mx-auto bg-white rounded-[2rem] shadow-2xl shadow-zinc-200 border border-zinc-200 overflow-hidden ${lang === 'ar' ? 'text-right' : 'text-left'} relative`}>
                <div className="h-12 bg-zinc-100 border-b border-zinc-200 flex items-center px-4 gap-2">
                  <div className="w-3 h-3 rounded-full bg-red-400" />
                  <div className="w-3 h-3 rounded-full bg-amber-400" />
@@ -266,7 +290,7 @@ export default function Home() {
                  {/* Sidebar mock */}
                  <div className="w-16 md:w-64 bg-white border-r border-zinc-200 p-4 space-y-4">
                    <div className="h-8 w-8 md:w-full bg-zinc-100 rounded-lg mb-8" />
-                   {[1,2,3,4,5].map(i => <div key={i} className="h-8 w-8 md:w-full bg-zinc-100 rounded-lg" />)}
+                   {[1,2,3,4,5].map((i: number) => <div key={i} className="h-8 w-8 md:w-full bg-zinc-100 rounded-lg" />)}
                  </div>
                  {/* Content mock */}
                  <div className="flex-1 p-6 md:p-8 space-y-6 overflow-hidden">
@@ -275,123 +299,71 @@ export default function Home() {
                      <div className="h-8 w-24 bg-amber-500 rounded-lg" />
                    </div>
                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                     {[1,2,3,4].map(i => <div key={i} className="h-24 bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm" />)}
+                     {[1,2,3,4].map((i: number) => <div key={i} className="h-24 bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm" />)}
                    </div>
                    <div className="h-64 bg-white border border-zinc-200 rounded-2xl p-4 shadow-sm" />
                  </div>
                </div>
                
                {/* Floating Overlay Element */}
-               <div className="absolute bottom-8 right-8 bg-zinc-900 text-white p-4 rounded-2xl shadow-2xl animate-bounce hidden md:flex items-center gap-4">
+               <div className={`absolute bottom-8 ${lang === 'ar' ? 'left-8' : 'right-8'} bg-zinc-900 text-white p-4 rounded-2xl shadow-2xl animate-bounce hidden md:flex items-center gap-4`}>
                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
                     <CheckCircle2 className="w-6 h-6 text-white" />
                  </div>
                  <div>
-                   <p className="font-bold">New Order Received!</p>
-                   <p className="text-sm text-zinc-400">Table 4 • 12.50 OMR</p>
+                   <p className="font-bold">{t.dashboard.alertTitle}</p>
+                   <p className="text-sm text-zinc-400">{t.dashboard.alertDesc}</p>
                  </div>
                </div>
             </div>
           </div>
         </section>
 
-        {/* 7. PRICING PREVIEW */}
         <section id="pricing" className="w-full py-24 bg-white">
           <div className="container px-6 lg:px-12 mx-auto">
              <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl font-black text-zinc-900 mb-4">Simple, Transparent Pricing</h2>
-              <p className="text-lg text-zinc-500 font-medium">No hidden fees. Pick the perfect plan as you grow your cafe business.</p>
+              <h2 className="text-4xl font-black text-zinc-900 mb-4">{t.pricing.title}</h2>
+              <p className="text-lg text-zinc-500 font-medium">{t.pricing.desc}</p>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-              <Card className="rounded-[2rem] border-zinc-200 bg-white hover:border-amber-500 transition-colors shadow-none hover:shadow-xl flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-black">Basic</CardTitle>
-                  <CardDescription className="text-zinc-500 font-medium mt-2">Perfect for small cafes starting digital.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="mt-4 mb-8">
-                    <span className="text-4xl font-black text-zinc-900">8 OMR</span>
-                    <span className="text-zinc-500 font-medium">/mo</span>
-                  </div>
-                  <ul className="space-y-3">
-                    <li className="flex gap-3 text-zinc-600 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> QR Code Generation</li>
-                    <li className="flex gap-3 text-zinc-600 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Digital Menu</li>
-                    <li className="flex gap-3 text-zinc-600 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Up to 50 items</li>
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full rounded-2xl h-12 font-bold" variant="outline">Start Free Trial</Button>
-                </CardFooter>
-              </Card>
-
-              <Card className="rounded-[2rem] border-amber-500 bg-amber-50 shadow-xl shadow-amber-500/10 flex flex-col relative scale-105 z-10">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-white font-black text-xs px-4 py-1 rounded-full uppercase tracking-widest">
-                  Most Popular
-                </div>
-                <CardHeader>
-                  <CardTitle className="text-2xl font-black text-amber-900">Pro</CardTitle>
-                  <CardDescription className="text-amber-700/80 font-medium mt-2">For busy cafes needing table orders.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="mt-4 mb-8">
-                    <span className="text-4xl font-black text-amber-900">12 OMR</span>
-                    <span className="text-amber-700/80 font-medium">/mo</span>
-                  </div>
-                  <ul className="space-y-3">
-                    <li className="flex gap-3 text-amber-900 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-600 shrink-0" /> Everything in Basic</li>
-                    <li className="flex gap-3 text-amber-900 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-600 shrink-0" /> Direct Table Ordering</li>
-                    <li className="flex gap-3 text-amber-900 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-600 shrink-0" /> Order from Car Flow</li>
-                    <li className="flex gap-3 text-amber-900 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-600 shrink-0" /> Basic Analytics</li>
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full rounded-2xl h-12 font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-600/30">Get Started</Button>
-                </CardFooter>
-              </Card>
-
-              <Card className="rounded-[2rem] border-zinc-200 bg-white hover:border-amber-500 transition-colors shadow-none hover:shadow-xl flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-black">Premium</CardTitle>
-                  <CardDescription className="text-zinc-500 font-medium mt-2">Full platform for established cafes.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="mt-4 mb-8">
-                    <span className="text-4xl font-black text-zinc-900">20 OMR</span>
-                    <span className="text-zinc-500 font-medium">/mo</span>
-                  </div>
-                  <ul className="space-y-3">
-                    <li className="flex gap-3 text-zinc-600 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Everything in Pro</li>
-                    <li className="flex gap-3 text-zinc-600 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Online Payments</li>
-                    <li className="flex gap-3 text-zinc-600 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Loyalty Program</li>
-                    <li className="flex gap-3 text-zinc-600 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Review System</li>
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full rounded-2xl h-12 font-bold" variant="outline">Start Free Trial</Button>
-                </CardFooter>
-              </Card>
-
-               <Card className="rounded-[2rem] border-zinc-200 bg-zinc-900 text-white hover:border-amber-500 transition-colors shadow-none hover:shadow-xl flex flex-col">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-black">Enterprise</CardTitle>
-                  <CardDescription className="text-zinc-400 font-medium mt-2">For multi-branch chains.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="mt-4 mb-8 flex flex-col items-start justify-center h-12">
-                    <span className="text-3xl font-black text-white">Custom</span>
-                  </div>
-                  <ul className="space-y-3">
-                    <li className="flex gap-3 text-zinc-300 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Multi-branch HQ</li>
-                    <li className="flex gap-3 text-zinc-300 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> POS Integrations</li>
-                    <li className="flex gap-3 text-zinc-300 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Priority Support</li>
-                    <li className="flex gap-3 text-zinc-300 font-medium"><CheckCircle2 className="w-5 h-5 text-amber-500 shrink-0" /> Advanced AI Analytics</li>
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full rounded-2xl h-12 font-bold bg-white text-black hover:bg-zinc-200" variant="outline">Contact Sales</Button>
-                </CardFooter>
-              </Card>
+              {t.pricing.cards.map((c: any, i: number) => (
+                <Card key={i} className={`rounded-[2rem] flex flex-col transition-colors shadow-none hover:shadow-xl ${
+                    i === 1 ? 'border-amber-500 bg-amber-50 shadow-xl shadow-amber-500/10 relative scale-105 z-10' : 
+                    i === 3 ? 'border-zinc-200 bg-zinc-900 text-white hover:border-amber-500' :
+                    'border-zinc-200 bg-white hover:border-amber-500'
+                }`}>
+                    {c.tag && (
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-white font-black text-xs px-4 py-1 rounded-full uppercase tracking-widest">
+                        {c.tag}
+                      </div>
+                    )}
+                    <CardHeader>
+                      <CardTitle className={`text-2xl font-black ${i === 1 ? 'text-amber-900' : ''}`}>{c.name}</CardTitle>
+                      <CardDescription className={`font-medium mt-2 ${i === 1 ? 'text-amber-700/80' : i === 3 ? 'text-zinc-400' : 'text-zinc-500'}`}>{c.desc}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <div className="mt-4 mb-8">
+                        <span className={`text-3xl font-black ${i === 1 ? 'text-amber-900' : i === 3 ? 'text-white' : 'text-zinc-900'}`}>{c.price}</span>
+                      </div>
+                      <ul className="space-y-3">
+                        {c.features.map((feat: any, fi: number) => (
+                           <li key={fi} className={`flex gap-3 font-medium ${i === 1 ? 'text-amber-900' : i === 3 ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                             <CheckCircle2 className={`w-5 h-5 shrink-0 ${i === 1 ? 'text-amber-600' : 'text-amber-500'}`} /> {feat}
+                           </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                    <CardFooter>
+                      <Button className={`w-full rounded-2xl h-12 font-bold ${
+                          i === 1 ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-600/30' : 
+                          i === 3 ? 'bg-white text-black hover:bg-zinc-200' : ''
+                      }`} variant={i !== 1 ? 'outline' : 'default'} asChild>
+                         <Link href="/cafe-admin">{c.btn}</Link>
+                      </Button>
+                    </CardFooter>
+                </Card>
+              ))}
             </div>
           </div>
         </section>
@@ -400,24 +372,24 @@ export default function Home() {
         <section className="w-full py-24 bg-zinc-50 border-t border-zinc-200">
           <div className="container px-6 lg:px-12 mx-auto">
              <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-4xl font-black text-zinc-900 mb-4">Loved by Cafe Owners</h2>
+              <h2 className="text-4xl font-black text-zinc-900 mb-4">{t.reviews.title}</h2>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className={`grid md:grid-cols-2 lg:grid-cols-3 gap-8 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
               {[
                 { name: 'Ahmed', role: 'Owner, The Roastery', quote: 'CafeQR cut our table waiting times by 50%. The Car Ordering feature alone boosted our evening sales by thousands of OMR.' },
                 { name: 'Sarah', role: 'Manager, Bean&Co', quote: 'The dashboard is incredibly intuitive. Updating the menu used to take days with prints, now it takes 2 minutes.' },
                 { name: 'Khalid', role: 'Operations, Drip Connect', quote: 'Customers love the visual menu. We saw an immediate 20% increase in average ticket size just through smart upselling.' }
-              ].map((t, i) => (
+              ].map((tw: any, i: number) => (
                 <div key={i} className="bg-white p-8 rounded-[2rem] shadow-lg shadow-zinc-200/50 border border-zinc-100 flex flex-col gap-6 relative">
-                  <div className="flex gap-1">
-                    {[1,2,3,4,5].map(s => <Star key={s} className="w-5 h-5 text-amber-400 fill-amber-400" />)}
+                  <div className="flex gap-1 justify-start">
+                    {[1,2,3,4,5].map((s: number) => <Star key={s} className="w-5 h-5 text-amber-400 fill-amber-400" />)}
                   </div>
-                  <p className="text-lg text-zinc-700 font-medium italic">"{t.quote}"</p>
+                  <p className="text-lg text-zinc-700 font-medium italic">"{tw.quote}"</p>
                   <div className="mt-auto flex items-center gap-4">
-                    <div className="w-12 h-12 bg-zinc-200 rounded-full flex items-center justify-center font-black text-zinc-500">{t.name[0]}</div>
+                    <div className="w-12 h-12 bg-zinc-200 rounded-full flex items-center justify-center font-black text-zinc-500">{tw.name[0]}</div>
                     <div>
-                      <p className="font-bold text-zinc-900">{t.name}</p>
-                      <p className="text-sm text-zinc-500">{t.role}</p>
+                      <p className="font-bold text-zinc-900">{tw.name}</p>
+                      <p className="text-sm text-zinc-500">{tw.role}</p>
                     </div>
                   </div>
                 </div>
@@ -431,12 +403,12 @@ export default function Home() {
            <div className="max-w-4xl mx-auto bg-gradient-to-br from-amber-600 to-amber-800 rounded-[3rem] p-12 lg:p-20 shadow-2xl relative overflow-hidden">
              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
              <div className="relative z-10 flex flex-col items-center">
-               <h2 className="text-4xl lg:text-6xl font-black text-white mb-6 tracking-tight">Ready to Transform Your Cafe?</h2>
+               <h2 className="text-4xl lg:text-6xl font-black text-white mb-6 tracking-tight">{t.finalCta.title}</h2>
                <p className="text-xl text-amber-100/90 font-medium mb-10 max-w-2xl mx-auto">
-                 Join 50+ innovative cafes scaling their operations and revenue with CafeQR today.
+                 {t.finalCta.desc}
                </p>
                <Button asChild size="lg" className="rounded-full bg-white text-amber-900 hover:bg-zinc-100 h-16 w-full sm:w-auto px-12 text-xl font-black shadow-xl transition-transform hover:scale-105">
-                 <Link href="/cafe-admin">Start Your Smart Cafe Today</Link>
+                 <Link href="/cafe-admin">{t.finalCta.btn}</Link>
                </Button>
              </div>
            </div>
@@ -454,12 +426,14 @@ export default function Home() {
              <span className="font-black text-xl tracking-tight text-zinc-900">Cafe<span className="text-amber-600">QR</span></span>
           </div>
           <p className="text-sm font-medium text-zinc-500 text-center md:text-left">
-            © 2024 CafeQR SaaS. Crafted for modern hospitality.
+            {t.footer.copy}
           </p>
-          <div className="flex gap-6">
-            <Link className="text-sm font-bold text-zinc-600 hover:text-amber-600 transition-colors" href="#">Terms</Link>
-            <Link className="text-sm font-bold text-zinc-600 hover:text-amber-600 transition-colors" href="#">Privacy</Link>
-            <Link className="text-sm font-bold text-zinc-600 hover:text-amber-600 transition-colors" href="#">Contact</Link>
+          <div className="flex items-center gap-6">
+            {t.footer.links.map((link: any, i: number) => (
+              <Link key={i} href="#" className="text-sm font-medium text-zinc-500 hover:text-amber-600 transition-colors">
+                {link}
+              </Link>
+            ))}
           </div>
         </div>
       </footer>

@@ -1,0 +1,4 @@
+.next/types/app/super-admin/cafes/[id]/page.ts(34,29): error TS2344: Type '{ params: { id: string; } | Promise<{ id: string; }>; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'params' are incompatible.
+    Type '{ id: string; } | Promise<{ id: string; }>' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]

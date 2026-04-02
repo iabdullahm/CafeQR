@@ -84,9 +84,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export default function CafeDetailsPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
+export default function CafeDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   // Handle Next.js 15 async params or sync params depending on setup
-  const resolvedParams = params instanceof Promise ? use(params) : params as { id: string };
+  const resolvedParams = use(params);
   const { id } = resolvedParams;
   
   const [activeTab, setActiveTab] = useState("overview");
