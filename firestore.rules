@@ -37,19 +37,48 @@ service cloud.firestore {
     match /reports/{reportId} {
       allow read, write: if isSuperAdmin();
     }
-    // NOTE: tickets/notifications/payments are still scoped only to "isSignedIn"
-    // and should be tightened to owner/cafe scope when resource.data schema is confirmed.
+    // Support tickets carry a cafeId field. Cafe staff see only their cafe;
+    // super admins see everything. Any signed-in cafe user can open a ticket.
     match /supportTickets/{ticketId} {
-      allow read, write: if isSignedIn();
+      allow get: if isSignedIn() && (
+        isSuperAdmin() ||
+        (resource != null && getUserData().cafeId == resource.data.cafeId)
+      );
+      allow list: if isSuperAdmin();
+      allow create: if isSignedIn() && (
+        isSuperAdmin() ||
+        request.resource.data.cafeId == getUserData().cafeId
+      );
+      allow update: if isSignedIn() && (
+        isSuperAdmin() ||
+        (resource != null && getUserData().cafeId == resource.data.cafeId)
+      );
+      allow delete: if isSuperAdmin();
     }
+
+    // Notifications are super-admin-authored. Targets can be "All Cafes" or
+    // a specific cafe via cafeId. Anyone signed in can read (client filters by
+    // target); only super admins can mutate.
     match /notifications/{notificationId} {
-      allow read, write: if isSignedIn();
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
     }
+
     match /auditLogs/{logId} {
       allow read, write: if isSuperAdmin();
     }
+
+    // Payment records carry a cafeId. Cafe staff see only their cafe's payments;
+    // super admins see everything. Customers and unauthenticated users never see
+    // any payment. All writes are super-admin only (creation happens server-side
+    // / via billing webhook in production).
     match /payments/{paymentId} {
-      allow read, write: if isSignedIn();
+      allow get: if isSignedIn() && (
+        isSuperAdmin() ||
+        (resource != null && getUserData().cafeId == resource.data.cafeId)
+      );
+      allow list: if isSuperAdmin();
+      allow write: if isSuperAdmin();
     }
 
     match /users/{userId} {
@@ -159,10 +188,20 @@ service cloud.firestore {
       }
     }
 
+    // QR token resolver: customer (unauthenticated) fetches a token to know
+    // which cafe/branch/table to load. Staff create/delete tokens for their
+    // own cafe only; cross-cafe writes are forbidden.
     match /qr_tokens/{token} {
       allow get: if true;
-      // TODO: tighten to belongsToCafe; currently any signed-in user can write.
-      allow write: if isSignedIn();
+      allow list: if isSuperAdmin();
+      allow create: if isSignedIn() && (
+        isSuperAdmin() ||
+        request.resource.data.cafeId == getUserData().cafeId
+      );
+      allow update, delete: if isSignedIn() && (
+        isSuperAdmin() ||
+        (resource != null && getUserData().cafeId == resource.data.cafeId)
+      );
     }
   }
 }
