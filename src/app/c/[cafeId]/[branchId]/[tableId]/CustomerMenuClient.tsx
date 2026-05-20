@@ -2,19 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useFirestore } from "@/firebase";
-import { collection, addDoc, serverTimestamp, onSnapshot, doc, getDocs } from "firebase/firestore";
+import { collection, onSnapshot, doc, getDocs } from "firebase/firestore";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
-  Coffee, ShoppingBag, Plus, Minus, X, Info, 
-  Utensils, Car, Globe, Bell, CheckCircle2, 
-  ChevronRight, Star, Clock, MapPin, Heart, Gift, Search
+  Coffee, ShoppingBag, Plus, Minus, X,
+  Car, Globe, CheckCircle2,
+  ChevronRight, Star, Clock, MapPin, Gift, Search
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
@@ -22,6 +21,90 @@ import { useToast } from "@/hooks/use-toast";
 
 type Language = "en" | "ar";
 type ViewState = "landing" | "car_setup" | "menu" | "product" | "cart" | "phone_capture" | "otp" | "status";
+
+interface CafeProduct {
+  id: string;
+  categoryId?: string;
+  nameEn: string;
+  nameAr?: string;
+  descriptionEn?: string;
+  descriptionAr?: string;
+  // Legacy short names actually present in Firestore docs:
+  descEn?: string;
+  descAr?: string;
+  price: number;
+  image?: string;
+  available?: boolean;
+  options?: ProductOption[];
+  [key: string]: unknown;
+}
+
+interface ProductOption {
+  id: string;
+  nameEn: string;
+  nameAr?: string;
+  multiSelect?: boolean;
+  required?: boolean;
+  values: ProductOptionValue[];
+}
+
+interface ProductOptionValue {
+  id: string;
+  nameEn: string;
+  nameAr?: string;
+  extraPrice?: number;
+}
+
+interface CafeCategory {
+  id: string;
+  nameEn: string;
+  nameAr?: string;
+}
+
+interface CafeShape {
+  id: string;
+  name: string;
+  nameAr?: string;
+  logo?: string;
+  coverImage?: string;
+  currency?: string;
+  lat?: number;
+  lng?: number;
+  isActive?: boolean;
+  categories: CafeCategory[];
+  // Legacy: some Firestore docs expose products under `items` instead of `products`.
+  products?: CafeProduct[];
+  items?: CafeProduct[];
+  [key: string]: unknown;
+}
+
+interface NearbyCafe {
+  id: string;
+  name?: string;
+  logo?: string;
+  coverImage?: string;
+  lat?: number;
+  lng?: number;
+  location?: { lat?: number; lng?: number };
+  settings?: { location?: { lat?: number; lng?: number } };
+  [key: string]: unknown;
+}
+
+interface CartLine {
+  cartItemId?: string;
+  product: CafeProduct;
+  qty: number;
+  options: Record<string, string[]>;
+  totalPrice: number;
+  notes: string;
+}
+
+interface PageParams {
+  cafeId: string;
+  branchId: string;
+  tableId: string;
+  tableName?: string;
+}
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371; // km
@@ -34,7 +117,8 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * c;
 }
 
-export default function CustomerMenuClient({ cafe, params }: { cafe: any, params: any }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- cafe document carries many legacy/dynamic fields; tighten incrementally.
+export default function CustomerMenuClient({ cafe, params }: { cafe: any, params: PageParams }) {
   const db = useFirestore();
   const { toast } = useToast();
   const [lang, setLang] = useState<Language>("en");
@@ -53,7 +137,9 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
   });
   
   const [activeCategory, setActiveCategory] = useState(cafe.categories[0]?.id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [cart, setCart] = useState<any[]>([]);
   
   // Product Customization State
@@ -72,7 +158,7 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
 
   // Nearby Cafes State
   const [mainTab, setMainTab] = useState<"menu" | "nearby">("menu");
-  const [nearbyCafes, setNearbyCafes] = useState<any[]>([]);
+  const [nearbyCafes, setNearbyCafes] = useState<NearbyCafe[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
 
   useEffect(() => {
@@ -80,7 +166,7 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
     const fetchCafes = async () => {
        try {
          const snap = await getDocs(collection(db, 'cafes'));
-         const cafesList: any[] = [];
+         const cafesList: NearbyCafe[] = [];
          snap.forEach(docSnap => {
             if (docSnap.id !== cafe.id) {
                const data = docSnap.data();
@@ -90,7 +176,7 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
             }
          });
          setNearbyCafes(cafesList);
-       } catch (err) {}
+       } catch { /* swallow */ }
     };
     fetchCafes();
   }, [db, cafe.id]);
@@ -140,7 +226,7 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
         if (configSnap.exists() && configSnap.data().cupsRequired) {
           req = configSnap.data().cupsRequired;
         }
-      } catch(e) {}
+      } catch { /* swallow */ }
       
       const unsub = onSnapshot(doc(db, "customers", `${cafe.id}_${customerPhone}`), (snap) => {
           if (snap.exists()) {
@@ -1180,7 +1266,7 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
                        </span>
                      </div>
                      <div className="text-xs text-zinc-500 mt-1 line-clamp-2">
-                       {Object.entries(item.options).map(([k, v]: any) => v.join(', ')).filter(Boolean).join(' • ')}
+                       {Object.values(item.options as Record<string, string[]>).map((v) => v.join(', ')).filter(Boolean).join(' • ')}
                      </div>
                      {item.notes && (
                        <div className="text-xs text-amber-600 mt-1 font-medium bg-amber-50 rounded-md px-2 py-1 w-fit">
