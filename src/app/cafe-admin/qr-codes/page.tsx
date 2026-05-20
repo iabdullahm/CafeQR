@@ -281,7 +281,7 @@ export default function QRManagement() {
                  <div className="p-3 rounded-xl bg-white/10 border border-white/20">
                     <p className="text-sm font-bold flex items-center gap-2"><QrCode className="h-3.5 w-3.5" /> {t("Essential Labels", "الملصقات الضرورية")}</p>
                     <p className="text-xs opacity-90 mt-2 leading-relaxed">
-                       {t("Always include:", "دائما اضف:")} <strong>"{t("Scan to Order", "أمسح للطلب")}"</strong><br />
+                       {t("Always include:", "دائما اضف:")} <strong>&quot;{t("Scan to Order", "أمسح للطلب")}&quot;</strong><br />
                        {t("Table QRs must definitively print the table name (e.g. ", "ملصقات الطاولات يجب أن تحتوي بشكل واضح على اسمها (مثال: ")} <strong>{t("Table 5", "طاولة 5")}</strong>).
                     </p>
                  </div>

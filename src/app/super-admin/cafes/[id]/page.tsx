@@ -329,7 +329,7 @@ export default function CafeDetailsPage({ params }: { params: Promise<{ id: stri
                    <AlertDialogHeader>
                      <AlertDialogTitle>Login as {CAFE_DATA.name} Admin?</AlertDialogTitle>
                      <AlertDialogDescription>
-                        For security and compliance purposes, this action will be logged in the system's Audit Trail. You will be signed in with full administrative privileges over this cafe.
+                        For security and compliance purposes, this action will be logged in the system&apos;s Audit Trail. You will be signed in with full administrative privileges over this cafe.
                      </AlertDialogDescription>
                    </AlertDialogHeader>
                    <AlertDialogFooter>
@@ -653,7 +653,7 @@ export default function CafeDetailsPage({ params }: { params: Promise<{ id: stri
                           <div className="h-2 w-2 rounded-full bg-destructive mt-1.5 shrink-0" />
                           <div className="flex flex-col text-sm">
                             <span className="font-bold">No recent activity</span>
-                            <span className="text-xs text-muted-foreground">Admin hasn't logged in for 7 days.</span>
+                            <span className="text-xs text-muted-foreground">Admin hasn&apos;t logged in for 7 days.</span>
                           </div>
                        </div>
                        <div className="flex items-start gap-2">
@@ -894,7 +894,7 @@ export default function CafeDetailsPage({ params }: { params: Promise<{ id: stri
                 </div>
                 <div className="max-w-xs mx-auto space-y-2">
                    <h3 className="text-lg font-bold capitalize">No {tab.replace('_', ' ')} yet</h3>
-                   <p className="text-sm text-muted-foreground">It looks like {CAFE_DATA.name} hasn't configured any {tab.replace('_', ' ')} yet. Help them get started.</p>
+                   <p className="text-sm text-muted-foreground">It looks like {CAFE_DATA.name} hasn&apos;t configured any {tab.replace('_', ' ')} yet. Help them get started.</p>
                    <Button 
                      variant="secondary" 
                      className="mt-4 gap-2 border shadow-sm w-full"

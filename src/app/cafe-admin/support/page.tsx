@@ -254,7 +254,7 @@ export default function SupportCenterPage() {
                    <MessageSquare className="h-10 w-10 text-primary/40" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">No support tickets yet</h3>
-                <p className="text-muted-foreground mb-6 max-w-[300px]">Have a question or facing an issue? We're here to help you succeed.</p>
+                <p className="text-muted-foreground mb-6 max-w-[300px]">Have a question or facing an issue? We&apos;re here to help you succeed.</p>
                 <Button onClick={() => setIsCreateOpen(true)} className="rounded-xl shadow-md h-11 px-6">
                    <Plus className="h-4 w-4 mr-2" /> Create Your First Ticket
                 </Button>

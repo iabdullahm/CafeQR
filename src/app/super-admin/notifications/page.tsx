@@ -334,7 +334,7 @@ export default function NotificationsCenterPage() {
                  <Bell className="h-10 w-10 text-primary/40" />
               </div>
               <h3 className="text-xl font-bold mb-2">No notifications found</h3>
-              <p className="text-muted-foreground mb-6 max-w-[300px]">It looks like there's no broadcast history matching your filters.</p>
+              <p className="text-muted-foreground mb-6 max-w-[300px]">It looks like there&apos;s no broadcast history matching your filters.</p>
            </CardContent>
         ) : (
           <div className="overflow-x-auto">

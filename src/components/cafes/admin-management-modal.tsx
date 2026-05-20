@@ -132,7 +132,7 @@ export function AdminManagementModal({ cafe, open, onOpenChange }: AdminManageme
               <div className="space-y-2">
                 <Label>New Password</Label>
                 <Input name="tempPassword" type="password" placeholder="Leave blank to keep current password" />
-                <p className="text-xs text-muted-foreground mt-1">If specified, this will update the admin's login password.</p>
+                <p className="text-xs text-muted-foreground mt-1">If specified, this will update the admin&apos;s login password.</p>
               </div>
               <Button type="submit" disabled={loadingAction === "save_admin"} className="w-full mt-2">
                 {loadingAction === "save_admin" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}

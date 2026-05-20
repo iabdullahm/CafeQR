@@ -428,7 +428,7 @@ export default function Home() {
                         <div className="h-10 w-10 bg-zinc-200 rounded-full overflow-hidden border-2 border-white shadow-sm" />
                         <div className="hidden sm:block">
                            <h4 className="font-black text-lg text-zinc-800 leading-tight">Welcome back</h4>
-                           <p className="text-xs text-zinc-400 font-bold">Today's Overview</p>
+                           <p className="text-xs text-zinc-400 font-bold">Today&apos;s Overview</p>
                         </div>
                      </div>
                      <div className="h-10 px-4 bg-zinc-900 text-white rounded-lg font-bold flex items-center gap-2 shadow-md">
@@ -629,7 +629,7 @@ export default function Home() {
                   <div className="flex gap-1 justify-start">
                     {[1,2,3,4,5].map((s: number) => <Star key={s} className="w-4 h-4 text-amber-400 fill-amber-400" />)}
                   </div>
-                  <p className="text-lg text-zinc-700 font-medium italic">"{tw.quote}"</p>
+                  <p className="text-lg text-zinc-700 font-medium italic">&quot;{tw.quote}&quot;</p>
                   <div className="mt-auto flex items-center gap-4">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={tw.img} alt={tw.name} className="w-14 h-14 bg-zinc-200 rounded-full object-cover border-2 border-zinc-100" />
