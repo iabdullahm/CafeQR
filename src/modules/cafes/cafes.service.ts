@@ -2,7 +2,7 @@
 import prisma from '../../config/prisma';
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, collection, addDoc, serverTimestamp, setDoc, doc } from 'firebase/firestore';
+import { getFirestore, serverTimestamp, setDoc, doc } from 'firebase/firestore';
 
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 

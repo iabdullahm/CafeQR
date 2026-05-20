@@ -2,10 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { 
-  Coffee, QrCode, Smartphone, Car, LayoutDashboard, 
-  MapPin, Zap, TrendingUp, Heart, Star, CheckCircle2, ChevronRight, Store, CreditCard, ShoppingBag, Globe, ArrowRight, Utensils, ChefHat, BellRing, XCircle, Clock
-} from 'lucide-react';
+import { Coffee, QrCode, Smartphone, Car, LayoutDashboard, MapPin, Zap, TrendingUp, Heart, Star, CheckCircle2, Store, CreditCard, Globe, ArrowRight, Utensils, XCircle, Clock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { translations } from './locales';
 import { useFirestore } from '@/firebase';

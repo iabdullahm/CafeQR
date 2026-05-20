@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Globe, Mail, Phone, MapPin, Save, Instagram, Facebook, Twitter, Loader2, CheckCircle2, AlertCircle, Smartphone } from "lucide-react";
+import { Camera, Globe, Mail, Phone, MapPin, Save, Instagram, Facebook, Twitter, Loader2, AlertCircle, Smartphone } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
 import { doc, setDoc } from "firebase/firestore";

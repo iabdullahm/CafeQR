@@ -9,8 +9,7 @@ import { QrCode, Download, Printer, ExternalLink, Link2, Search, Filter, Store, 
 import { Input } from "@/components/ui/input";
 import { DataTableReusable } from "@/components/tables/data-table-reusable";
 import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection } from "@/firebase";
-import { collection, query, doc, where } from "firebase/firestore";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { collection, query, doc } from "firebase/firestore";
 
 export default function QRManagement() {
   const { user } = useUser();

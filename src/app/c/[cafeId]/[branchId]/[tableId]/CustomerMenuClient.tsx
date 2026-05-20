@@ -1233,8 +1233,6 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
         </SheetContent>
       </Sheet>
 
-
-
       {/* CART FULL-SCREEN SHEET */}
       <Sheet open={view === "cart"} onOpenChange={(o) => { if(!o) changeView("menu") }}>
          <SheetContent side="bottom" className="h-[95vh] rounded-t-[2.5rem] p-6 flex flex-col bg-zinc-50" hideClose>

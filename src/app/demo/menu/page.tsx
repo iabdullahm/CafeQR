@@ -1,11 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { 
-  Coffee, ShoppingBag, Plus, Minus, X, 
-  MapPin, Globe, ChevronRight, CheckCircle2, ArrowRight
-} from "lucide-react";
+import { Coffee, ShoppingBag, Plus, Minus, X, MapPin, CheckCircle2, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

@@ -1,14 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SectionHeader } from "@/components/dashboard/section-header";
-import { 
-  MapPin, Phone, Plus, MoreVertical, Edit, Trash2, LayoutGrid, 
-  ChefHat, ToggleLeft, ArrowUpRight, ReceiptText, Signal, Info, Activity
-} from "lucide-react";
+import { MapPin, Plus, MoreVertical, Edit, Trash2, LayoutGrid, ToggleLeft, ArrowUpRight, ReceiptText, Signal, Info, Activity } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

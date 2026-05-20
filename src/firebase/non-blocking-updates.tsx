@@ -30,7 +30,6 @@ export function setDocumentNonBlocking(docRef: DocumentReference, data: any, opt
   // Execution continues immediately
 }
 
-
 /**
  * Initiates an addDoc operation for a collection reference.
  * Does NOT await the write operation internally.
@@ -51,7 +50,6 @@ export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
   return promise;
 }
 
-
 /**
  * Initiates an updateDoc operation for a document reference.
  * Does NOT await the write operation internally.
@@ -69,7 +67,6 @@ export function updateDocumentNonBlocking(docRef: DocumentReference, data: any) 
       )
     });
 }
-
 
 /**
  * Initiates a deleteDoc operation for a document reference.

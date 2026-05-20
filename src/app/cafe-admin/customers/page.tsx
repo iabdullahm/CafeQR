@@ -1,24 +1,19 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
-import { collection, query, orderBy, doc, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, doc } from "firebase/firestore";
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { DataTableReusable } from "@/components/tables/data-table-reusable";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Users, UserPlus, Download, Search, ChevronRight, 
-  MapPin, Coffee, ShoppingBag, Star, Mail, Phone, Calendar, Heart, MessageCircle, Crown, Gift, TrendingUp, Clock, Activity
-} from "lucide-react";
+import { Users, UserPlus, Download, Search, ChevronRight, Coffee, ShoppingBag, Star, Phone, Heart, MessageCircle, Crown, Gift, TrendingUp, Clock, Activity } from "lucide-react";
 import { 
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger 
 } from "@/components/ui/sheet";
-import { 
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";

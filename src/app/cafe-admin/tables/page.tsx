@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SectionHeader } from "@/components/dashboard/section-header";
-import { LayoutGrid, Plus, Search, Filter, QrCode, Utensils, Car, TreePine, MoreVertical, Edit, Trash2, ArrowUpRight, ReceiptText, Clock, FileDown, PowerOff, Download, Activity, ScanLine } from "lucide-react";
+import { Plus, Search, Filter, QrCode, Utensils, Car, MoreVertical, Edit, Trash2, ArrowUpRight, ReceiptText, Clock, PowerOff, Download, ScanLine } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {

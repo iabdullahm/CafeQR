@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFirestore, useMemoFirebase, useCollection, useUser, useDoc } from "@/firebase";
-import { collection, query, where, doc } from "firebase/firestore";
+import { collection, query, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Minus, X, Coffee, ShoppingBag, Utensils, Car } from "lucide-react";
+import { Plus, Minus, ShoppingBag, Utensils, Car } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useCafe } from "@/hooks/use-cafe";
 
@@ -64,7 +64,6 @@ export function ManualOrderModal({ customTrigger }: ManualOrderModalProps) {
   const [selectedTable, setSelectedTable] = useState("unassigned");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentStatus, setPaymentStatus] = useState("paid");
-
 
   const addToCart = (product: any) => {
     setCart(prev => {
