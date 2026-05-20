@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb, FieldValue } from '@/lib/firebase-admin';
+import { withFirebaseAuth } from '@/middleware/firebase-auth';
 import {
   type OrderStatus,
   getTableStatusOnOrderUpdate,
@@ -9,56 +10,66 @@ import {
  * Server-side counterpart of updateOrderStatusAtomic.
  *
  * PATCH /api/orders/[id]/status
- *   body: { cafeId: string, status: string }
+ *   headers: Authorization: Bearer <firebase id token>
+ *   body:    { cafeId: string, status: string }
  *
- * Does the same single-transaction sequence as the legacy lib function:
- *   1. Update the order's status.
+ * Gated by withFirebaseAuth to one of the staff roles. Additionally, the
+ * caller's profile.cafeId must match the order's cafeId (super admins
+ * skip that check).
+ *
+ * Sequence (single transaction):
+ *   1. Update the order's status + updatedAt.
  *   2. Cascade the table status (READY when ready, AVAILABLE when done).
- *   3. On the first transition to COMPLETED, award loyalty cups to the
- *      customer per /loyaltySettings/{cafeId}; mark order.loyaltyProcessed
- *      to prevent double-crediting.
- *
- * Auth: TODO — currently relies on the fact that only staff use the kds
- * and cafe-admin/orders UIs. Phase 4 (rules tightening) will require this
- * endpoint to start checking cafeId membership via withAuth/withRole.
+ *   3. On the first transition to COMPLETED, award loyalty cups per
+ *      /loyaltySettings/{cafeId}; mark order.loyaltyProcessed to prevent
+ *      double credit.
  */
 
 const VALID_STATUSES: OrderStatus[] = [
   'PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'COMPLETED', 'CANCELLED',
 ];
 
+const STAFF_ROLES = ['SUPER_ADMIN', 'OWNER', 'MANAGER', 'CASHIER', 'KITCHEN'];
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: orderId } = await params;
-  if (!orderId) {
-    return NextResponse.json({ success: false, message: 'Missing order id' }, { status: 400 });
-  }
+  return withFirebaseAuth(req, STAFF_ROLES, async (user) => {
+    const { id: orderId } = await params;
+    if (!orderId) {
+      return NextResponse.json({ success: false, message: 'Missing order id' }, { status: 400 });
+    }
 
-  let body: { cafeId?: string; status?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ success: false, message: 'Invalid JSON body' }, { status: 400 });
-  }
-  const { cafeId, status: statusRaw } = body;
-  if (!cafeId || !statusRaw) {
-    return NextResponse.json(
-      { success: false, message: 'Missing required fields: cafeId, status' },
-      { status: 400 }
-    );
-  }
-  const newStatus = statusRaw.toUpperCase() as OrderStatus;
-  if (!VALID_STATUSES.includes(newStatus)) {
-    return NextResponse.json(
-      { success: false, message: `Invalid status: ${statusRaw}` },
-      { status: 400 }
-    );
-  }
+    let body: { cafeId?: string; status?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ success: false, message: 'Invalid JSON body' }, { status: 400 });
+    }
+    const { cafeId, status: statusRaw } = body;
+    if (!cafeId || !statusRaw) {
+      return NextResponse.json(
+        { success: false, message: 'Missing required fields: cafeId, status' },
+        { status: 400 }
+      );
+    }
 
-  try {
-    const db = getAdminDb();
+    // Cross-cafe guard: non-super-admins can only touch their own cafe.
+    if (user.role !== 'SUPER_ADMIN' && user.cafeId !== cafeId) {
+      return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 });
+    }
+
+    const newStatus = statusRaw.toUpperCase() as OrderStatus;
+    if (!VALID_STATUSES.includes(newStatus)) {
+      return NextResponse.json(
+        { success: false, message: `Invalid status: ${statusRaw}` },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const db = getAdminDb();
     const orderRef = db.collection('cafes').doc(cafeId).collection('orders').doc(orderId);
 
     await db.runTransaction(async (tx) => {
@@ -126,14 +137,15 @@ export async function PATCH(
       }
     });
 
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unknown error';
-    console.error('PATCH /api/orders/[id]/status error:', msg);
-    const notFound = msg === 'Order not found';
-    return NextResponse.json(
-      { success: false, message: msg },
-      { status: notFound ? 404 : 500 }
-    );
-  }
+      return NextResponse.json({ success: true });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('PATCH /api/orders/[id]/status error:', msg);
+      const notFound = msg === 'Order not found';
+      return NextResponse.json(
+        { success: false, message: msg },
+        { status: notFound ? 404 : 500 }
+      );
+    }
+  });
 }

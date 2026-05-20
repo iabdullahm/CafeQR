@@ -119,9 +119,13 @@ export default function KDSManagement() {
     if (!db || !cafeId) return;
     try {
        setUpdatingId(order.id);
+       const idToken = user ? await user.getIdToken() : null;
        const res = await fetch(`/api/orders/${order.id}/status`, {
          method: 'PATCH',
-         headers: { 'Content-Type': 'application/json' },
+         headers: {
+           'Content-Type': 'application/json',
+           ...(idToken ? { Authorization: `Bearer ${idToken}` } : {})
+         },
          body: JSON.stringify({ cafeId, status: newStatus })
        });
        const payload = await res.json();
