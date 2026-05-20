@@ -11,7 +11,6 @@ import { collection, query, where, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Minus, X, Coffee, ShoppingBag, Utensils, Car } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { placeOrderAtomic } from "@/lib/orders-logic";
 import { useCafe } from "@/hooks/use-cafe";
 
 const CATEGORIES = [
@@ -117,20 +116,28 @@ export function ManualOrderModal({ customTrigger }: ManualOrderModalProps) {
 
     setLoading(true);
     try {
-      await placeOrderAtomic({
-        cafeId,
-        branchId: currentBranchId,
-        tableId: orderType === 'TAKEAWAY' ? 'takeaway' : (orderType === 'CAR_SERVICE' ? 'car' : (selectedTable !== 'unassigned' ? selectedTable : null)),
-        type: orderType as any,
-        customerName: customerName.trim() || undefined,
-        customerPhone: customerPhone.trim() || undefined,
-        items: cart,
-        source: "cashier_manual",
-        createdBy: user.uid,
-        paymentMethod,
-        paymentStatus,
-        loyaltyEligible: !!customerPhone.trim() // Only eligible if phone exists
+      const res = await fetch('/api/orders/place', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cafeId,
+          branchId: currentBranchId,
+          tableId: orderType === 'TAKEAWAY' ? 'takeaway' : (orderType === 'CAR_SERVICE' ? 'car' : (selectedTable !== 'unassigned' ? selectedTable : null)),
+          type: orderType,
+          customerName: customerName.trim() || undefined,
+          customerPhone: customerPhone.trim() || undefined,
+          items: cart,
+          source: "cashier_manual",
+          createdBy: user.uid,
+          paymentMethod,
+          paymentStatus,
+          loyaltyEligible: !!customerPhone.trim()
+        })
       });
+      const payload = await res.json();
+      if (!res.ok || !payload.success) {
+        throw new Error(payload.message || 'Failed to create order');
+      }
 
       toast({ title: t("Success", "نجاح"), description: t("Manual order created", "تم إنشاء الطلب بنجاح") });
       setOpen(false);

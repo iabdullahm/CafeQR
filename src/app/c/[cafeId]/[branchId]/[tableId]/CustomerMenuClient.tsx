@@ -293,9 +293,7 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
         localStorage.setItem("cafe_customer_phone", customerPhone);
       }
 
-      const { placeOrderAtomic } = await import('@/lib/orders-logic');
-      
-      const orderRes = await placeOrderAtomic({
+      const orderPayload = {
         cafeId: cafe.id,
         branchId: params.branchId,
         tableId: params.tableId,
@@ -315,10 +313,21 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
           quantity: item.qty,
           options: item.options,
           notes: item.notes || ""
-        })) as any
-      });
+        }))
+      };
 
-      setPlacedOrderInfo({ id: orderRes.id as string, orderNo: (orderRes as any).orderNumber });
+      const res = await fetch('/api/orders/place', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload)
+      });
+      const payload = await res.json();
+      if (!res.ok || !payload.success) {
+        throw new Error(payload.message || 'Failed to place order');
+      }
+      const orderRes = payload.data;
+
+      setPlacedOrderInfo({ id: orderRes.id as string, orderNo: orderRes.orderNumber });
       
       setCart([]);
       changeView("status");
