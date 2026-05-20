@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -61,20 +63,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 
-// --- MOCK DATA ---
-const SUMMARY_STATS = [
-  { title: "Total Revenue", value: "0.000 OMR", desc: "No revenue yet", icon: Wallet, color: "text-green-600", bg: "bg-green-50" },
-  { title: "Monthly Reccurring", value: "0.000 OMR", desc: "No subscriptions yet", icon: Briefcase, color: "text-blue-600", bg: "bg-blue-50" },
-  { title: "Pending Payments", value: "0", desc: "0.000 OMR pending", icon: Clock, color: "text-orange-600", bg: "bg-orange-50" },
-  { title: "Failed Payments", value: "0", desc: "No failed payments", icon: AlertCircle, color: "text-red-600", bg: "bg-red-50" },
-  { title: "Active Subs", value: "0", desc: "No active subscriptions", icon: CheckCircle, color: "text-primary", bg: "bg-primary/10" },
-  { title: "Expired Subs", value: "0", desc: "No expired subscriptions", icon: Shield, color: "text-muted-foreground", bg: "bg-secondary" },
-];
-
-const MOCK_PAYMENTS: any[] = [];
-
 const getStatusBadge = (status: string) => {
-  switch (status.toLowerCase()) {
+  switch (status?.toLowerCase()) {
     case "paid":
       return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 shadow-none">Paid</Badge>;
     case "pending":
@@ -82,12 +72,12 @@ const getStatusBadge = (status: string) => {
     case "failed":
       return <Badge variant="destructive" className="bg-red-50 text-red-700 hover:bg-red-50 border-red-200 shadow-none">Failed</Badge>;
     default:
-      return <Badge variant="secondary" className="shadow-none">{status}</Badge>;
+      return <Badge variant="secondary" className="shadow-none">{status || 'Unknown'}</Badge>;
   }
 };
 
 const getPlanBadge = (plan: string) => {
-  switch (plan.toLowerCase()) {
+  switch (plan?.toLowerCase()) {
     case "starter":
       return <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50/50 shadow-none">Starter</Badge>;
     case "growth":
@@ -97,7 +87,7 @@ const getPlanBadge = (plan: string) => {
     case "enterprise":
       return <Badge variant="outline" className="text-yellow-600 border-yellow-200 bg-yellow-50/50 shadow-none">Enterprise</Badge>;
     default:
-      return <Badge variant="outline" className="shadow-none">{plan}</Badge>;
+      return <Badge variant="outline" className="shadow-none">{plan || 'Free'}</Badge>;
   }
 };
 
@@ -105,6 +95,31 @@ export default function PaymentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const db = useFirestore();
+
+  const paymentsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'payments'), orderBy('createdAt', 'desc'));
+  }, [db]);
+  const { data, isLoading } = useCollection(paymentsQuery);
+  const payments = data || [];
+
+  const stats = useMemo(() => {
+    const totalRev = payments.filter((p: any) => p.status === 'paid').reduce((acc: number, p: any) => acc + (p.amount || 0), 0);
+    const mrr = totalRev; // Simplified MRR derivation for display
+    const pending = payments.filter((p: any) => p.status === 'pending').length;
+    const failed = payments.filter((p: any) => p.status === 'failed').length;
+    const activeSubs = payments.filter((p: any) => p.autoRenew && p.status === 'paid').length;
+    
+    return [
+      { title: "Total Revenue", value: `${totalRev.toLocaleString()} OMR`, desc: "Total processed", icon: Wallet, color: "text-green-600", bg: "bg-green-50" },
+      { title: "Monthly Reccurring", value: `${mrr.toLocaleString()} OMR`, desc: "Active MRR", icon: Briefcase, color: "text-blue-600", bg: "bg-blue-50" },
+      { title: "Pending Payments", value: pending.toString(), desc: "Requires action", icon: Clock, color: "text-orange-600", bg: "bg-orange-50" },
+      { title: "Failed Payments", value: failed.toString(), desc: "Retry needed", icon: AlertCircle, color: "text-red-600", bg: "bg-red-50" },
+      { title: "Active Subs", value: activeSubs.toString(), desc: "Current subscriptions", icon: CheckCircle, color: "text-primary", bg: "bg-primary/10" },
+      { title: "Total Logs", value: payments.length.toString(), desc: "Payment records", icon: Shield, color: "text-muted-foreground", bg: "bg-secondary" },
+    ];
+  }, [payments]);
 
   const viewDetails = (payment: any) => {
     setSelectedPayment(payment);
@@ -120,7 +135,7 @@ export default function PaymentsPage() {
 
       {/* SUMMARY STATS CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {SUMMARY_STATS.map((stat, i) => (
+        {stats.map((stat, i) => (
           <Card key={i} className="border-none shadow-sm bg-card overflow-hidden">
              <CardContent className="p-5 flex flex-col gap-3">
                <div className={`h-10 w-10 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
@@ -138,6 +153,7 @@ export default function PaymentsPage() {
       {/* MAIN DATA TABLE CARD */}
       <Card className="border-border/50 shadow-sm overflow-hidden">
         <CardHeader className="bg-muted/10 border-b px-6 py-5">
+
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-xl">Platform Transactions</CardTitle>
@@ -207,7 +223,16 @@ export default function PaymentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {MOCK_PAYMENTS.length === 0 ? (
+                {isLoading ? (
+                  <TableRow>
+                     <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                           <RefreshCw className="h-8 w-8 text-muted-foreground/50 animate-spin" />
+                           <p>Loading payments...</p>
+                        </div>
+                     </TableCell>
+                  </TableRow>
+                ) : payments.length === 0 ? (
                   <TableRow>
                      <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                         <div className="flex flex-col items-center justify-center gap-2">
@@ -217,19 +242,19 @@ export default function PaymentsPage() {
                      </TableCell>
                   </TableRow>
                 ) : (
-                  MOCK_PAYMENTS.map((payment) => (
+                  payments.map((payment: any) => (
                     <TableRow key={payment.id} className="cursor-pointer group hover:bg-muted/10">
                       <TableCell className="px-6 font-medium text-muted-foreground">{payment.id}</TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1.5">
-                          <span className="font-bold text-foreground group-hover:text-primary transition-colors">{payment.cafeName}</span>
+                          <span className="font-bold text-foreground group-hover:text-primary transition-colors">{payment.cafeName || 'Unknown'}</span>
                           <div className="flex items-center gap-2">
                              {getPlanBadge(payment.plan)}
                              {payment.autoRenew && <RefreshCw className="h-3 w-3 text-muted-foreground" />}
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-black tabular-nums">{payment.amount.toFixed(3)}</TableCell>
+                      <TableCell className="text-right font-black tabular-nums">{(payment.amount || 0).toFixed(3)}</TableCell>
                       <TableCell>
                          <span className="text-sm font-medium text-muted-foreground">{payment.method}</span>
                       </TableCell>
@@ -308,7 +333,7 @@ export default function PaymentsPage() {
           {selectedPayment && (
             <div className="space-y-8">
                
-              {/* STATUS BANNER */}
+               {/* STATUS BANNER */}
               <div className="rounded-xl border bg-muted/20 p-4">
                  <div className="flex items-center justify-between mb-4">
                     <span className="text-sm font-medium text-muted-foreground">Status</span>
@@ -316,7 +341,7 @@ export default function PaymentsPage() {
                  </div>
                  <div className="flex items-end justify-between">
                     <span className="text-sm font-medium text-muted-foreground">Amount</span>
-                    <span className="text-3xl font-black">{selectedPayment.amount.toFixed(3)} OMR</span>
+                    <span className="text-3xl font-black">{(selectedPayment.amount || 0).toFixed(3)} OMR</span>
                  </div>
                  {selectedPayment.status === "pending" && (
                    <div className="mt-4 pt-4 border-t flex gap-2">
@@ -333,7 +358,7 @@ export default function PaymentsPage() {
                     <CardContent className="p-4 space-y-3">
                        <div className="flex items-center gap-3">
                           <Store className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-semibold">{selectedPayment.cafeName}</span>
+                          <span className="font-semibold">{selectedPayment.cafeName || 'Unknown'}</span>
                        </div>
                        <Separator />
                        <div className="grid grid-cols-2 gap-4">
@@ -357,12 +382,12 @@ export default function PaymentsPage() {
                     <div className="relative border-l-2 border-primary/30 pl-6 pb-4">
                        <div className="absolute -left-[5px] top-0 h-2 w-2 rounded-full bg-primary" />
                        <p className="text-sm font-bold leading-none mb-1">Coverage Start</p>
-                       <p className="text-xs text-muted-foreground">{selectedPayment.period.split(" - ")[0]}</p>
+                       <p className="text-xs text-muted-foreground">{selectedPayment.period ? selectedPayment.period.split(" - ")[0] : selectedPayment.paymentDate}</p>
                     </div>
                     <div className="relative border-l-2 border-transparent pl-6">
                        <div className={`absolute -left-[5px] top-0 h-2 w-2 rounded-full ${selectedPayment.status === 'paid' ? 'bg-muted-foreground' : 'bg-orange-500'}`} />
                        <p className="text-sm font-bold leading-none mb-1">Exipry Date</p>
-                       <p className="text-xs text-muted-foreground">{selectedPayment.expiryDate}</p>
+                       <p className="text-xs text-muted-foreground">{selectedPayment.expiryDate || 'N/A'}</p>
                     </div>
                  </div>
                </div>

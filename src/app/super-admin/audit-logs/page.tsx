@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { format } from "date-fns";
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { 
   Card, 
   CardContent, 
@@ -50,44 +52,31 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
-  X
+  X,
+  RefreshCcw
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-// Type definitions for production readiness
-interface AuditLog {
-  id: string;
-  timestamp: string;
-  user: {
-    name: string;
-    email: string;
-    avatar?: string;
-  };
-  role: string;
-  action: string;
-  entityType: string;
-  entityId: string;
-  details: string;
-  status: 'success' | 'failed' | 'warning';
-  ipAddress: string;
-  userAgent: string;
-  beforeData?: any;
-  afterData?: any;
-}
-
 export default function AuditLogsPage() {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const db = useFirestore();
+  const logsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(100));
+  }, [db]);
+  const { data: logsData = [], isLoading } = useCollection(logsQuery);
+  const logs = logsData || [];
+
+  const [selectedLog, setSelectedLog] = useState<any>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
   // Sorting state
-  const [sortConfig, setSortConfig] = useState<{key: keyof AuditLog | '', direction: 'asc' | 'desc'}>({
+  const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'}>({
     key: 'timestamp',
     direction: 'desc'
   });
 
-  const handleSort = (key: keyof AuditLog) => {
+  const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -95,13 +84,13 @@ export default function AuditLogsPage() {
     setSortConfig({ key, direction });
   };
 
-  const getSortIcon = (key: keyof AuditLog) => {
+  const getSortIcon = (key: string) => {
     if (sortConfig.key !== key) return <Activity className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />;
     return sortConfig.direction === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />;
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'success': 
         return <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 border font-bold shadow-sm"><CheckCircle2 className="h-3 w-3 mr-1" /> Success</Badge>;
       case 'failed': 
@@ -109,12 +98,12 @@ export default function AuditLogsPage() {
       case 'warning': 
         return <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200 border font-bold shadow-sm"><Activity className="h-3 w-3 mr-1" /> Warning</Badge>;
       default: 
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">{status || 'Unknown'}</Badge>;
     }
   };
 
   const getRoleBadge = (role: string) => {
-    switch (role.toLowerCase()) {
+    switch (role?.toLowerCase()) {
       case 'super admin':
         return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm font-semibold">Super Admin</Badge>;
       case 'cafe admin':
@@ -122,11 +111,11 @@ export default function AuditLogsPage() {
       case 'system':
         return <Badge variant="outline" className="bg-slate-100 text-slate-700 border-slate-200 shadow-sm font-semibold">System</Badge>;
       default:
-        return <Badge variant="outline" className="shadow-sm font-semibold">{role}</Badge>;
+        return <Badge variant="outline" className="shadow-sm font-semibold">{role || 'Unknown'}</Badge>;
     }
   };
 
-  const openDrawer = (log: AuditLog) => {
+  const openDrawer = (log: any) => {
     setSelectedLog(log);
     setIsDrawerOpen(true);
   };
@@ -216,7 +205,12 @@ export default function AuditLogsPage() {
         </div>
 
         {/* 3) Table Area */}
-        {logs.length === 0 ? (
+        {isLoading ? (
+           <div className="py-24 flex flex-col items-center justify-center text-center bg-white border-t">
+              <RefreshCcw className="h-10 w-10 text-slate-300 animate-spin mb-4" />
+              <p className="text-muted-foreground text-sm">Loading audit logs...</p>
+           </div>
+        ) : logs.length === 0 ? (
           <div className="py-24 flex flex-col items-center justify-center text-center bg-white border-t">
              <div className="h-20 w-20 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mb-5 shadow-sm">
                 <Shield className="h-10 w-10 text-slate-300" />
@@ -256,38 +250,38 @@ export default function AuditLogsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {logs.map((log) => (
+                {logs.map((log: any) => (
                   <TableRow key={log.id} className="hover:bg-slate-50/80 transition-colors cursor-pointer group h-16" onClick={() => openDrawer(log)}>
                     <TableCell className="px-6 py-4">
-                      <span className="text-[13px] font-medium text-slate-600 font-mono tracking-tight">{log.timestamp}</span>
+                      <span className="text-[13px] font-medium text-slate-600 font-mono tracking-tight">{log.timestamp || (log.createdAt?.toDate?.()?.toLocaleString() || "N/A")}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8 rounded-lg shadow-sm border border-slate-100">
-                          {log.user.avatar ? <AvatarImage src={log.user.avatar} /> : <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs rounded-lg">{log.user.name.charAt(0)}</AvatarFallback>}
+                          {log.user?.avatar ? <AvatarImage src={log.user.avatar} /> : <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs rounded-lg">{log.user?.name?.charAt(0) || 'U'}</AvatarFallback>}
                         </Avatar>
                         <div className="flex flex-col max-w-[150px] truncate">
-                          <span className="font-semibold text-sm truncate">{log.user.name}</span>
-                          <span className="text-xs text-muted-foreground truncate">{log.user.email}</span>
+                          <span className="font-semibold text-sm truncate">{log.user?.name || 'Unknown'}</span>
+                          <span className="text-xs text-muted-foreground truncate">{log.user?.email || 'No Email'}</span>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>{getRoleBadge(log.role)}</TableCell>
                     <TableCell>
-                      <span className="text-[13px] font-semibold tracking-tight">{log.action}</span>
+                      <span className="text-[13px] font-semibold tracking-tight">{log.action || 'Unknown Action'}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-[13px] font-medium text-slate-700 capitalize">{log.entityType}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono bg-slate-100 w-fit px-1 rounded truncate max-w-[120px]" title={log.entityId}>{log.entityId}</span>
+                        <span className="text-[13px] font-medium text-slate-700 capitalize">{log.entityType || 'Unknown'}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono bg-slate-100 w-fit px-1 rounded truncate max-w-[120px]" title={log.entityId}>{log.entityId || 'N/A'}</span>
                       </div>
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate">
-                      <span className="text-[13px] text-slate-600 truncate" title={log.details}>{log.details}</span>
+                      <span className="text-[13px] text-slate-600 truncate" title={log.details}>{log.details || 'No details'}</span>
                     </TableCell>
                     <TableCell>{getStatusBadge(log.status)}</TableCell>
                     <TableCell className="max-w-[150px] truncate">
-                       <span className="text-[12px] font-mono text-slate-500">{log.ipAddress}</span>
+                       <span className="text-[12px] font-mono text-slate-500">{log.ipAddress || 'Unknown IP'}</span>
                     </TableCell>
                     <TableCell className="text-right pr-6" onClick={(e) => e.stopPropagation()}>
                        <Button onClick={() => openDrawer(log)} variant="outline" size="sm" className="rounded-lg bg-white h-8 shadow-sm opacity-0 group-hover:opacity-100 group-hover:border-primary/50 group-hover:text-primary transition-all">
@@ -339,11 +333,11 @@ export default function AuditLogsPage() {
                     <CardContent className="p-4 space-y-3 bg-white">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10 border border-slate-100">
-                           {selectedLog.user.avatar ? <AvatarImage src={selectedLog.user.avatar} /> : <AvatarFallback className="bg-slate-100 font-bold">{selectedLog.user.name.charAt(0)}</AvatarFallback>}
+                           {selectedLog.user?.avatar ? <AvatarImage src={selectedLog.user.avatar} /> : <AvatarFallback className="bg-slate-100 font-bold">{selectedLog.user?.name?.charAt(0) || 'U'}</AvatarFallback>}
                         </Avatar>
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-slate-900">{selectedLog.user.name}</span>
-                          <span className="text-xs text-slate-500">{selectedLog.user.email}</span>
+                          <span className="font-bold text-sm text-slate-900">{selectedLog.user?.name || 'System / Unknown'}</span>
+                          <span className="text-xs text-slate-500">{selectedLog.user?.email || 'No email available'}</span>
                         </div>
                       </div>
                       <div className="flex items-center justify-between border-t pt-3">

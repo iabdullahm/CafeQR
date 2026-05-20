@@ -2,17 +2,7 @@
 import { type Cafe } from '@/lib/db-types';
 
 export class CafeService {
-  private mockCafes: any[] = [
-    { 
-      id: "1", 
-      uuid: "caf-001-uuid", 
-      cafe_code: "CAF-001",
-      name: "Brew Corner", 
-      city: "Muscat",
-      status: "active", 
-      joined_at: new Date().toISOString()
-    }
-  ];
+  private mockCafes: any[] = [];
 
   async findAll(params: { search?: string; status?: string; page?: number; limit?: number }) {
     // Mocking pagination and filtering

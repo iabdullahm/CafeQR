@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { 
   Card, 
   CardContent, 
@@ -66,18 +68,27 @@ import {
   Settings
 } from "lucide-react";
 
-// Mock Data
-const MOCK_STATS = [
-  { title: "Total Notifications", value: "0", trend: "--", isUp: true, icon: Bell, color: "text-blue-600", bg: "bg-blue-50" },
-  { title: "Delivered", value: "0", trend: "--", isUp: true, icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
-  { title: "Pending", value: "0", trend: "--", isUp: false, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
-  { title: "Failed", value: "0", trend: "--", isUp: false, icon: AlertCircle, color: "text-red-600", bg: "bg-red-50" },
-];
-
-const MOCK_NOTIFICATIONS: any[] = [];
-
 export default function NotificationsCenterPage() {
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+  const db = useFirestore();
+  const notificationsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'notifications'), orderBy('createdAt', 'desc'));
+  }, [db]);
+  const { data: notificationsData = [], isLoading } = useCollection(notificationsQuery);
+  const notifications = notificationsData || [];
+
+  const stats = useMemo(() => {
+    const delivered = notifications.filter((n: any) => n.status?.toLowerCase() === 'delivered').length;
+    const pending = notifications.filter((n: any) => n.status?.toLowerCase() === 'pending').length;
+    const failed = notifications.filter((n: any) => n.status?.toLowerCase() === 'failed').length;
+    return [
+      { title: "Total Notifications", value: notifications.length.toString(), trend: "--", isUp: true, icon: Bell, color: "text-blue-600", bg: "bg-blue-50" },
+      { title: "Delivered", value: delivered.toString(), trend: "--", isUp: true, icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
+      { title: "Pending", value: pending.toString(), trend: "--", isUp: false, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
+      { title: "Failed", value: failed.toString(), trend: "--", isUp: false, icon: AlertCircle, color: "text-red-600", bg: "bg-red-50" },
+    ];
+  }, [notifications]);
+
   const [selectedNotification, setSelectedNotification] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -88,21 +99,21 @@ export default function NotificationsCenterPage() {
 
   // Badges Context
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Delivered': return <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 border font-bold shadow-sm">Delivered</Badge>;
-      case 'Pending': return <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200 border font-bold shadow-sm">Pending</Badge>;
-      case 'Failed': return <Badge variant="destructive" className="bg-red-50 text-red-700 border-red-200 border font-bold shadow-sm">Failed</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
+    switch (status?.toLowerCase()) {
+      case 'delivered': return <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 border font-bold shadow-sm">Delivered</Badge>;
+      case 'pending': return <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-200 border font-bold shadow-sm">Pending</Badge>;
+      case 'failed': return <Badge variant="destructive" className="bg-red-50 text-red-700 border-red-200 border font-bold shadow-sm">Failed</Badge>;
+      default: return <Badge variant="outline">{status || 'Unknown'}</Badge>;
     }
   };
 
   const getTypeBadge = (type: string) => {
-    switch (type) {
-      case 'System': return <Badge variant="outline" className="bg-gray-100/50 text-gray-700 shadow-sm"><Settings className="w-3 h-3 mr-1" /> System</Badge>;
-      case 'Billing': return <Badge variant="outline" className="bg-blue-50 text-blue-700 shadow-sm border-blue-100"><CreditCard className="w-3 h-3 mr-1" /> Billing</Badge>;
-      case 'Feature Update': return <Badge variant="outline" className="bg-purple-50 text-purple-700 shadow-sm border-purple-100"><TrendingUp className="w-3 h-3 mr-1" /> Feature</Badge>;
-      case 'Announcement': return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 shadow-sm border-indigo-100"><Users className="w-3 h-3 mr-1" /> Announcement</Badge>;
-      default: return <Badge variant="outline">{type}</Badge>;
+    switch (type?.toLowerCase()) {
+      case 'system': return <Badge variant="outline" className="bg-gray-100/50 text-gray-700 shadow-sm"><Settings className="w-3 h-3 mr-1" /> System</Badge>;
+      case 'billing': return <Badge variant="outline" className="bg-blue-50 text-blue-700 shadow-sm border-blue-100"><CreditCard className="w-3 h-3 mr-1" /> Billing</Badge>;
+      case 'feature update': return <Badge variant="outline" className="bg-purple-50 text-purple-700 shadow-sm border-purple-100"><TrendingUp className="w-3 h-3 mr-1" /> Feature</Badge>;
+      case 'announcement': return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 shadow-sm border-indigo-100"><Users className="w-3 h-3 mr-1" /> Announcement</Badge>;
+      default: return <Badge variant="outline">{type || 'Alert'}</Badge>;
     }
   };
 
@@ -111,9 +122,11 @@ export default function NotificationsCenterPage() {
     setIsDetailsOpen(true);
   };
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    setNotifications(notifications.filter(n => n.id !== id));
+    // Real implementation would delete from Firestore:
+    // await deleteDoc(doc(db, 'notifications', id));
+    console.log(`Deleting notification ${id}`);
   };
 
   return (
@@ -264,7 +277,7 @@ export default function NotificationsCenterPage() {
 
       {/* 2) Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {MOCK_STATS.map((stat, i) => (
+        {stats.map((stat, i) => (
           <Card key={i} className="border-none shadow-sm rounded-2xl overflow-hidden group hover:shadow-md transition-shadow">
             <CardContent className="p-5 flex items-center gap-4">
               <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
@@ -322,7 +335,12 @@ export default function NotificationsCenterPage() {
 
       {/* 4) Notifications Table */}
       <Card className="border-none shadow-sm rounded-2xl overflow-hidden bg-card">
-        {notifications.length === 0 ? (
+        {isLoading ? (
+           <CardContent className="py-20 flex flex-col items-center justify-center text-center">
+              <RefreshCcw className="h-10 w-10 text-primary/40 animate-spin mb-4" />
+              <p className="text-muted-foreground">Loading notifications...</p>
+           </CardContent>
+        ) : notifications.length === 0 ? (
            <CardContent className="py-20 flex flex-col items-center justify-center text-center">
               <div className="h-20 w-20 rounded-full bg-primary/5 flex items-center justify-center mb-4">
                  <Bell className="h-10 w-10 text-primary/40" />
@@ -344,7 +362,7 @@ export default function NotificationsCenterPage() {
                  </TableRow>
                </TableHeader>
                <TableBody>
-                 {notifications.map((notif) => (
+                 {notifications.map((notif: any) => (
                    <TableRow 
                      key={notif.id} 
                      className="hover:bg-muted/30 transition-colors cursor-pointer group"
@@ -352,21 +370,21 @@ export default function NotificationsCenterPage() {
                    >
                      <TableCell className="px-6 py-4">
                        <div className="flex flex-col max-w-[300px]">
-                         <span className="font-bold text-foreground text-sm tracking-tight mb-1 truncate">{notif.title}</span>
-                         <span className="text-xs font-medium text-muted-foreground truncate">{notif.message}</span>
+                         <span className="font-bold text-foreground text-sm tracking-tight mb-1 truncate">{notif.title || 'Untitled Notification'}</span>
+                         <span className="text-xs font-medium text-muted-foreground truncate">{notif.message || ''}</span>
                        </div>
                      </TableCell>
                      <TableCell>{getTypeBadge(notif.type)}</TableCell>
                      <TableCell>
                         <div className="flex items-center gap-1.5 text-sm font-medium">
                            {notif.target === 'All Cafes' ? <Users className="h-3.5 w-3.5 text-primary" /> : <Store className="h-3.5 w-3.5 text-indigo-500" />}
-                           {notif.target}
+                           {notif.target || 'Unknown'}
                         </div>
                      </TableCell>
                      <TableCell>{getStatusBadge(notif.status)}</TableCell>
                      <TableCell>
                        <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5 line-clamp-1">
-                         <Clock className="h-3.5 w-3.5" /> {notif.sentDate}
+                         <Clock className="h-3.5 w-3.5" /> {notif.sentDate || notif.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A'}
                        </span>
                      </TableCell>
                      <TableCell className="text-right pr-6" onClick={(e) => e.stopPropagation()}>

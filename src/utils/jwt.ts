@@ -6,6 +6,8 @@ export interface TokenPayload {
   sub: string;
   email: string;
   roles: string[];
+  cafeId?: string;
+  impersonatedBy?: string;
 }
 
 export const signToken = (payload: TokenPayload): string => {

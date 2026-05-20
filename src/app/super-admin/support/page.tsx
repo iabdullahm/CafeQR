@@ -44,6 +44,8 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { 
   Search, 
   Filter, 
@@ -69,12 +71,19 @@ import {
   History,
   Info,
   Calendar,
-  User
+  User,
+  RefreshCw
 } from "lucide-react";
 
-const TICKETS: any[] = [];
-
 export default function SupportPage() {
+  const db = useFirestore();
+  const ticketsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc'), limit(100));
+  }, [db]);
+  const { data: ticketsData = [], isLoading } = useCollection(ticketsQuery);
+  const tickets = ticketsData || [];
+
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -219,7 +228,16 @@ export default function SupportPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {TICKETS.length === 0 ? (
+                {isLoading ? (
+                   <TableRow>
+                      <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
+                         <div className="flex flex-col items-center justify-center gap-2">
+                            <RefreshCw className="h-8 w-8 text-muted-foreground/50 animate-spin" />
+                            <p className="font-medium text-sm">Loading support tickets...</p>
+                         </div>
+                      </TableCell>
+                   </TableRow>
+                ) : tickets.length === 0 ? (
                   <TableRow>
                      <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
                         <div className="flex flex-col items-center justify-center gap-2">
@@ -230,40 +248,40 @@ export default function SupportPage() {
                      </TableCell>
                   </TableRow>
                 ) : (
-                  TICKETS.map((ticket) => (
+                  tickets.map((ticket: any) => (
                     <TableRow key={ticket.id} className="hover:bg-muted/20 transition-colors group cursor-pointer" onClick={() => openTicketDetails(ticket)}>
                       <TableCell className="px-6 py-4">
                         <div className="flex flex-col">
                           <span className="font-mono font-bold text-primary tracking-tight text-sm">{ticket.id}</span>
                           <span className="text-xs font-semibold text-foreground mt-1 flex items-center gap-1">
-                            <Store className="h-3 w-3 text-muted-foreground" /> {ticket.cafeName}
+                            <Store className="h-3 w-3 text-muted-foreground" /> {ticket.cafeName || 'Unknown Cafe'}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col max-w-[300px]">
-                          <span className="font-semibold text-sm truncate" title={ticket.subject}>{ticket.subject}</span>
-                          <span className="text-[11px] text-muted-foreground mt-1 uppercase font-bold tracking-wider">{ticket.category}</span>
+                          <span className="font-semibold text-sm truncate" title={ticket.subject}>{ticket.subject || 'No Subject'}</span>
+                          <span className="text-[11px] text-muted-foreground mt-1 uppercase font-bold tracking-wider">{ticket.category || 'General'}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        {getPriorityBadge(ticket.priority)}
+                        {getPriorityBadge(ticket.priority || 'Low')}
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(ticket.status)}
+                        {getStatusBadge(ticket.status || 'Open')}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col text-xs space-y-1 text-muted-foreground">
-                          <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> <span className="font-medium text-foreground">Updated:</span> {ticket.lastUpdated}</span>
-                          <span className="flex items-center gap-1.5"><Calendar className="h-3 w-3" /> <span className="font-medium">Created:</span> {ticket.createdAt}</span>
+                          <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> <span className="font-medium text-foreground">Updated:</span> {ticket.lastUpdated || 'N/A'}</span>
+                          <span className="flex items-center gap-1.5"><Calendar className="h-3 w-3" /> <span className="font-medium">Created:</span> {ticket.createdAt?.toDate?.()?.toLocaleDateString() || ticket.created || 'N/A'}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="h-7 w-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-[10px]">
-                            {ticket.assignedTo.split(' ').map((n: string) => n[0]).join('')}
+                            {(ticket.assignedTo || 'U').split(' ').map((n: string) => n[0]).join('')}
                           </div>
-                          <span className="text-sm font-medium">{ticket.assignedTo}</span>
+                          <span className="text-sm font-medium">{ticket.assignedTo || 'Unassigned'}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right pr-6" onClick={(e) => e.stopPropagation()}>
@@ -355,11 +373,11 @@ export default function SupportPage() {
                            <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                  <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">
-                                    {selectedTicket.contact.name.split(' ').map((n: string) => n[0]).join('')}
+                                    {(selectedTicket.contact?.name || 'U').split(' ').map((n: string) => n[0]).join('')}
                                  </div>
                                  <div>
-                                    <p className="font-bold text-sm">{selectedTicket.contact.name}</p>
-                                    <p className="text-[10px] text-muted-foreground">{selectedTicket.createdAt}</p>
+                                    <p className="font-bold text-sm">{selectedTicket.contact?.name || 'Unknown User'}</p>
+                                    <p className="text-[10px] text-muted-foreground">{selectedTicket.createdAt?.toDate?.()?.toLocaleDateString() || selectedTicket.created || 'N/A'}</p>
                                  </div>
                               </div>
                               <Badge variant="outline" className="bg-white">Initial Request</Badge>
@@ -367,7 +385,7 @@ export default function SupportPage() {
                         </CardHeader>
                         <CardContent className="p-4 pt-3">
                            <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                              {selectedTicket.desc}
+                              {selectedTicket.desc || 'No description provided.'}
                            </p>
                            <div className="mt-4 flex gap-2">
                               <Badge variant="secondary" className="gap-1.5 text-xs bg-white cursor-pointer hover:bg-muted font-normal"><Paperclip className="h-3 w-3"/> screenshot_error.png</Badge>
@@ -439,15 +457,15 @@ export default function SupportPage() {
                         <CardContent className="p-4 space-y-3">
                            <div className="flex items-center gap-3 text-sm">
                               <div className="h-8 w-8 rounded bg-muted flex items-center justify-center shrink-0"><User className="h-4 w-4 text-muted-foreground" /></div>
-                              <div><p className="text-xs text-muted-foreground">Admin Name</p><p className="font-medium">{selectedTicket.contact.name}</p></div>
+                              <div><p className="text-xs text-muted-foreground">Admin Name</p><p className="font-medium">{selectedTicket.contact?.name || 'Unknown'}</p></div>
                            </div>
                            <div className="flex items-center gap-3 text-sm">
                               <div className="h-8 w-8 rounded bg-muted flex items-center justify-center shrink-0"><Mail className="h-4 w-4 text-muted-foreground" /></div>
-                              <div><p className="text-xs text-muted-foreground">Email Address</p><p className="font-medium">{selectedTicket.contact.email}</p></div>
+                              <div><p className="text-xs text-muted-foreground">Email Address</p><p className="font-medium">{selectedTicket.contact?.email || 'N/A'}</p></div>
                            </div>
                            <div className="flex items-center gap-3 text-sm">
                               <div className="h-8 w-8 rounded bg-muted flex items-center justify-center shrink-0"><Phone className="h-4 w-4 text-muted-foreground" /></div>
-                              <div><p className="text-xs text-muted-foreground">Phone Number</p><p className="font-medium">{selectedTicket.contact.phone}</p></div>
+                              <div><p className="text-xs text-muted-foreground">Phone Number</p><p className="font-medium">{selectedTicket.contact?.phone || 'N/A'}</p></div>
                            </div>
                         </CardContent>
                      </Card>

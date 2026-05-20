@@ -22,6 +22,7 @@ export default function CustomerInterfacePage({ params }: { params: Promise<{ ca
   const resolvedParams = use(params);
   const db = useFirestore();
   const [cafeData, setCafeData] = useState<any>(null);
+  const [paramsWithTableName, setParamsWithTableName] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -34,15 +35,26 @@ export default function CustomerInterfacePage({ params }: { params: Promise<{ ca
         const cafeRef = doc(db, 'cafes', resolvedParams.cafeId);
         const cafeSnap = await getDoc(cafeRef);
         
-        if (!cafeSnap.exists()) {
-          setError("Cafe not found");
-          setLoading(false);
-          return;
+        let cafeDoc: any = {};
+        if (cafeSnap.exists()) {
+          cafeDoc = cafeSnap.data();
+        } else {
+          console.warn(`Cafe document not found for ID: ${resolvedParams.cafeId}. Proceeding with default data.`);
+          try {
+            const res = await fetch(`/api/public/cafes/${resolvedParams.cafeId}`);
+            if (res.ok) {
+               const json = await res.json();
+               if (json.success && json.data) cafeDoc = json.data;
+            }
+          } catch(e) {}
         }
-        
-        const cafeDoc = cafeSnap.data();
 
-        // 2. Fetch Products
+        // 2. Fetch Cafe Settings (for tax rate)
+        const configRef = doc(db, 'cafes', resolvedParams.cafeId, 'config', 'settings');
+        const configSnap = await getDoc(configRef);
+        const configData = configSnap.exists() ? configSnap.data() : null;
+
+        // 3. Fetch Products
         const productsSnap = await getDocs(collection(db, 'cafes', resolvedParams.cafeId, 'products'));
         const productsData = productsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
@@ -66,6 +78,12 @@ export default function CustomerInterfacePage({ params }: { params: Promise<{ ca
           options: [] // To be implemented if products have options in firestore
         }));
 
+        // Tax rate: read from settings, default to 0 if not set
+        const vatString = configData?.taxes?.vat;
+        const taxRate = vatString !== undefined && vatString !== null && vatString !== '' 
+          ? parseFloat(vatString) / 100 
+          : 0;
+
         setCafeData({
           id: resolvedParams.cafeId,
           name: cafeDoc.name || 'Urban Brew',
@@ -74,9 +92,19 @@ export default function CustomerInterfacePage({ params }: { params: Promise<{ ca
           coverImage: cafeDoc.coverImage || "https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=800&fit=crop",
           loyalty: { cups: 0, required: 8 },
           currency: cafeDoc.currency || "OMR",
+          taxRate, // e.g. 0.05 for 5%, 0 if disabled
+          activeOrderTypes: configData?.activeOrderTypes || { dineIn: true, carService: true, pickup: true },
           categories: formattedCategories,
           items: formattedItems
         });
+        
+        let tableName = resolvedParams.tableId;
+        const tableRef = doc(db, 'cafes', resolvedParams.cafeId, 'tables', resolvedParams.tableId);
+        const tableSnap = await getDoc(tableRef);
+        if (tableSnap.exists() && tableSnap.data().name) {
+          tableName = tableSnap.data().name;
+        }
+        setParamsWithTableName({ ...resolvedParams, tableName });
 
       } catch (err: any) {
         console.error("Failed to load customer menu:", err);
@@ -109,6 +137,6 @@ export default function CustomerInterfacePage({ params }: { params: Promise<{ ca
     );
   }
 
-  return <CustomerMenuClient cafe={cafeData} params={resolvedParams} />;
+  return <CustomerMenuClient cafe={cafeData} params={paramsWithTableName || resolvedParams} />;
 }
 

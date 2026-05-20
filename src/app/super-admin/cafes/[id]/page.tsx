@@ -58,6 +58,7 @@ import { Progress } from "@/components/ui/progress";
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { useToast } from "@/hooks/use-toast";
+import api from "@/lib/api";
 
 // Dialog / Modal components
 import { 
@@ -138,6 +139,26 @@ export default function CafeDetailsPage({ params }: { params: Promise<{ id: stri
       toast({ title: "Error", description: err.message || "Failed to save.", variant: "destructive" });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleImpersonate = async (cafeId: string, cafeName: string) => {
+    try {
+      toast({ title: `Impersonating ${cafeName}...` });
+      const oldToken = localStorage.getItem("token");
+      if (oldToken) {
+        localStorage.setItem("superAdminToken", oldToken);
+      }
+      const response = await api.post(`/super-admin/impersonate/${cafeId}`);
+      if (response.data?.data?.token) {
+        localStorage.setItem("token", response.data.data.token);
+        window.dispatchEvent(new Event("storage"));
+        window.location.href = "/cafe-admin";
+      } else {
+        throw new Error(response.data?.message || "Failed to get impersonation token");
+      }
+    } catch (e: any) {
+      toast({ title: e.response?.data?.message || e.message || "Impersonation failed", variant: "destructive" });
     }
   };
 
@@ -313,7 +334,7 @@ export default function CafeDetailsPage({ params }: { params: Promise<{ id: stri
                    </AlertDialogHeader>
                    <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction className="bg-primary text-primary-foreground font-bold">Confirm Access</AlertDialogAction>
+                      <AlertDialogAction onClick={() => handleImpersonate(CAFE_DATA.id, CAFE_DATA.name)} className="bg-primary text-primary-foreground font-bold">Confirm Access</AlertDialogAction>
                    </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

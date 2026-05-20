@@ -1,144 +1,286 @@
 export const translations = {
   en: {
-    nav: { works: "How It Works", features: "Features", pricing: "Pricing", login: "Login", start: "Get Started" },
+    nav: { works: "How It Works", features: "Features", pricing: "Pricing", login: "Owner Login", start: "Get Started" },
     hero: {
-      badge: "Transforms your cafe operations instantly",
-      title1: "Let Customers Order & Pay from Their Table — ",
-      title2: "No Staff Needed",
-      desc: "Customers scan, order, and pay in seconds — while you track sales, manage menus, and grow your cafe from one dashboard.",
-      cta: "Start Free Trial",
+      badge: "Transforms your cafe instantly",
+      title1: "Increase Your Cafe Revenue by 30% — ",
+      title2: "Without Hiring More Staff",
+      desc: "Let customers scan, order, and pay in seconds — while you manage everything in one place.",
+      bullets: [
+        "No waiting lines",
+        "Fewer staff interruptions",
+        "Faster table turnover",
+        "Works for dine-in, takeaway & cars"
+      ],
+      cta: "Start Getting Orders Today",
       noCard: "No credit card required",
-      demo: "View Live Demo"
+      demo: "Try Demo Menu"
     },
-    trusted: "Trusted by 50+ Cafes & Restaurants",
+    trusted: "Trusted by 50+ cafes in Oman",
+    noAppNeeded: "Works on any phone — no app needed",
+    pain: {
+      title: "What's costing your cafe money right now?",
+      list: [
+        "Customers waiting → leaving",
+        "Staff taking wrong orders",
+        "No data about best-selling items",
+        "No repeat customers tracking"
+      ],
+      transition: "CafeQR fixes all of this automatically."
+    },
     works: {
-      title: "Ordering Made Effortless",
-      desc: "A seamless experience for your customers from scan to sip.",
+      title: "From Scan to Serve — Fully Automated",
+      desc: "It's an end-to-end system, not just a digital menu. Watch how it works from the table to the kitchen.",
       steps: [
-        { title: "Scan QR Code", desc: "Customers scan the code at their table, car, or at the counter—no app download required." },
-        { title: "Choose Items", desc: "They browse your beautiful digital menu, customize items, and see smart recommendations." },
-        { title: "Place Order & Pay", desc: "Orders sync instantly to your dashboard or kitchen screen while payment is processed securely." }
+        { title: "1. Scan", desc: "Customer scans QR from table or car" },
+        { title: "2. Order", desc: "Browse menu, customize, place order" },
+        { title: "3. Pay", desc: "Online or cash on delivery" },
+        { title: "4. Kitchen", desc: "Order appears instantly in kitchen dashboard" },
+        { title: "5. Serve", desc: "Customer gets live status updates" }
       ]
     },
-    features: {
-      title: "Everything You Need to Scale",
-      desc: "Built specifically to boost revenue, speed up service, and slash operational costs.",
+    setup: {
+      title: "Launch in 5 Minutes",
+      steps: [
+        "Create account",
+        "Upload menu",
+        "Print QR",
+        "Start receiving orders"
+      ]
+    },
+    roi: {
+      title: "Your ROI with CafeQR",
+      subtitle: "How much extra can you make?",
       list: [
-        { title: "Instant Ordering", desc: "Customers scan and order in seconds — no waiting for waiters, leading to faster table turnovers." },
-        { title: "Increase Revenue", desc: "Upsell items automatically with smart suggestions and beautiful, mouth-watering visual menus." },
-        { title: "Order from Car 🚗", desc: "A unique drive-thru alternative. Customers enter parking spot and vehicle details for seamless delivery." },
-        { title: "Manage Everything Easily", desc: "Track live orders, update menus instantly, and monitor performance in real-time from any device." },
-        { title: "Loyalty Program", desc: "Keep customers coming back with automated stamp cards and rewards directly integrated into their ordering flow." },
-        { title: "Multi-branch Management", desc: "Control all your locations from a single dashboard. Synchronize menus or create branch-specific offerings." }
+        { stat: "+25%", text: "more orders during peak hours" },
+        { stat: "-40%", text: "order mistakes" },
+        { stat: "2x", text: "Faster table turnover" }
       ]
     },
     usecases: {
-      title: "Versatile Ordering Channels",
-      desc: "Meet your customers wherever they are. CafeQR seamlessly handles multiple service types simultaneously.",
+      title: "Let Customers Order From Their Cars",
+      subtitle: "No Waiting, No Parking Stress",
       list: [
-        { title: "Dine-in Excellence", desc: "QR codes tailored to specific tables for exact location tracking." },
-        { title: "Streamlined Takeaway", desc: "Counter QR codes or pre-ordering links for express pickup." },
-        { title: "Car/Parking Delivery", desc: "Customers provide vehicle metadata for curbside delivery." }
+         "Customer scans QR from parking",
+         "Enters car number",
+         "Orders instantly",
+         "Staff delivers to car"
+      ]
+    },
+    features: {
+      title: "Everything You Need to Run a Smarter Cafe",
+      desc: "Built specifically to boost revenue, speed up service, and slash operational costs.",
+      list: [
+        { title: "⚡ Instant Ordering", desc: "Customers order without waiting for staff" },
+        { title: "📈 Smart Upselling", desc: "Increase order value with combos & suggestions" },
+        { title: "🍽 Kitchen Dashboard", desc: "Real-time orders with status control" },
+        { title: "🪑 Table Management", desc: "Track active tables and orders live" },
+        { title: "🎯 Loyalty System", desc: "Reward repeat customers automatically" },
+        { title: "🌍 Multi-Branch Ready", desc: "Manage all branches from one dashboard" }
       ]
     },
     dashboard: {
-      title: "Command Center for Cafe Owners",
-      desc: "Monitor live orders, update your menu in real time, and view deep analytics from a beautiful, intuitive dashboard.",
+      title: "Your Cafe. Fully Under Control.",
+      desc: "Monitor everything in real-time — from one simple dashboard",
       alertTitle: "New Order Received!",
       alertDesc: "Table 4 • 12.50 OMR"
     },
     pricing: {
-      title: "Simple, Transparent Pricing",
-      desc: "No hidden fees. Pick the perfect plan as you grow your cafe business.",
+      preTitle: "How much are you losing without a smart system?",
+      preDesc: "Cafes like yours increased orders by 30% while reducing operational costs.",
+      title: "Plans that fit every Cafe ☕",
+      desc: "No contracts • No complexity • Cancel anytime",
       cards: [
-        { name: "Basic", desc: "Perfect for small cafes starting digital.", price: "8 OMR", features: ["QR Code Generation", "Digital Menu", "Up to 50 items"], btn: "Start Free Trial" },
-        { name: "Pro", tag: "Most Popular", desc: "For busy cafes needing table orders.", price: "12 OMR", features: ["Everything in Basic", "Direct Table Ordering", "Order from Car Flow", "Basic Analytics"], btn: "Get Started" },
-        { name: "Premium", desc: "Full platform for established cafes.", price: "20 OMR", features: ["Everything in Pro", "Online Payments", "Loyalty Program", "Review System"], btn: "Start Free Trial" },
-        { name: "Enterprise", desc: "For multi-branch chains.", price: "Custom", features: ["Multi-branch HQ", "POS Integrations", "Priority Support", "Advanced AI Analytics"], btn: "Contact Sales" }
-      ]
+        { name: "Free", planId: "free", desc: "Basic digital menu", price: "0 OMR", priceSub: "Free forever", features: ["QR Menu", "Up to 20 items", "No loyalty", "No analytics"], btn: "Start Free" },
+        { name: "Basic", planId: "starter", desc: "For solid beginnings", price: "5 OMR", priceSub: "Less than 0.16 OMR/day", features: ["Full Menu", "QR Ordering", "Order Management"], btn: "Start Now" },
+        { name: "Popular ⭐", planId: "growth", tag: "⭐ Most Popular", desc: "For growing cafes", price: "9 OMR", priceSub: "Less than 0.3 OMR/day", features: ["Everything in Basic", "Loyalty System 🎁", "Offers & Discounts", "Basic Analytics", "Notifications"], btn: "Grow Your Cafe" },
+        { name: "Business", planId: "pro", desc: "For professional chains", price: "15 OMR", priceSub: "Less than 0.5 OMR/day", features: ["Multi-branch", "Advanced Analytics", "Priority Support", "Custom Branding"], btn: "Start Pro" }
+      ],
+      offerTitle: "🎉 Launch Offer",
+      offerDesc: "🔥 Only 50 Cafes in Oman Get Lifetime 50% Discount",
+      offerExample: "Popular Plan: 9 OMR → 4.5 OMR only",
+      offerBtn: "Claim Your Spot Now",
+      spotsLeft: "17 spots left",
+      compareTitle: "Feature Comparison",
+      compareHeaders: ["Feature", "Free", "Basic", "Popular ⭐", "Business"],
+      compareRows: [
+        { name: "QR Menu", values: ["✅", "✅", "✅", "✅"] },
+        { name: "Loyalty System", values: ["❌", "❌", "✅", "✅"] },
+        { name: "Analytics", values: ["❌", "❌", "✅", "✅"] },
+        { name: "Multi-branch", values: ["❌", "❌", "❌", "✅"] }
+      ],
+      microcopy1: "No credit card required",
+      microcopy2: "Instant access",
+      footerNote: "Every plan is designed to build your customer base and increase visits ☕"
     },
     reviews: {
-      title: "Loved by Cafe Owners"
+      title: "Loved by Cafe Owners",
+      list: [
+        { name: 'Ahmed', city: 'Brew House', quote: 'We reduced order time by 40%', img: "https://i.pravatar.cc/150?u=awefd" },
+        { name: 'Khalid', city: 'Urban Cafe', quote: 'Customers love ordering from their cars', img: "https://i.pravatar.cc/150?u=ssdf" },
+      ]
     },
     finalCta: {
-      title: "Ready to Transform Your Cafe?",
-      desc: "Join 50+ innovative cafes scaling their operations and revenue with CafeQR today.",
-      btn: "Start Your Smart Cafe Today"
+      title: "Launch Your QR Menu in 5 Minutes",
+      desc: "No setup. No complexity. Just scan and go.",
+      btn: "🚀 Start Getting Orders Today"
+    },
+    bonus: {
+      title: "Built for the Way Cafes Actually Work",
+      list: [
+        "Dine-in QR ordering",
+        "Car ordering",
+        "Takeaway",
+        "No app needed",
+        "Arabic & English support"
+      ]
     },
     footer: {
-      copy: "© 2024 CafeQR SaaS. Crafted for modern hospitality.",
-      links: ["Terms", "Privacy", "Contact"]
+      copy: "© 2024 CafeQR. Crafted for modern hospitality.",
+      links: ["Terms", "Privacy", "Contact"],
+      devLogin: "Developer Login"
     }
   },
   ar: {
-    nav: { works: "كيف نعمل", features: "المميزات", pricing: "الأسعار", login: "تسجيل الدخول", start: "ابدأ الآن" },
+    nav: { works: "كيف نعمل", features: "المميزات", pricing: "الأسعار", login: "تسجيل دخول الكافيه", start: "ابدأ الآن" },
     hero: {
-      badge: "طوّر عمليات المقهى الخاص بك في ثوانٍ",
-      title1: "خلّ عملاءك يطلبوا ويدفعوا مباشرة من الطاولة — ",
-      title2: "بدون أي انتظار",
-      desc: "امكّن عملاءك من الطلب خلال ثوانٍ عبر مسح QR — مع إدارة كاملة للطلبات والقائمة من لوحة تحكم واحدة.",
-      cta: "ابدأ التجربة مجاناً",
-      noCard: "لا تتطلب بطاقة ائتمانية",
-      demo: "مشاهدة العرض التجريبي"
+      badge: "نظام متكامل لمقهاك",
+      title1: "خلّي الطلبات تمشي بدون زحمة — ",
+      title2: "ولا انتظار",
+      desc: "دع عملاءك يطلبون ويدفعون مباشرة من الطاولة أو السيارة، بينما تدير كل شيء من لوحة تحكم واحدة.",
+      bullets: [
+        "تسريع الطلبات وتقليل الانتظار",
+        "تقليل ضغط العمل على الموظفين",
+        "زيادة قيمة الطلبات تلقائياً",
+        "يدعم الطلب من السيارة بدون أجهزة إضافية"
+      ],
+      cta: "🚀 ابدأ باستقبال الطلبات اليوم",
+      noCard: "بدون بطاقة ائتمانية • بدون تعقيد",
+      demo: "📱 جرب منيو الديمو"
     },
-    trusted: "نحظى بثقة أكثر من 50 مقهى ومطعم",
+    trusted: "يعمل مع +50 مقهى في عمان",
+    noAppNeeded: "يعمل على أي هاتف — بدون الحاجة لتحميل تطبيق",
+    pain: {
+      title: "ما الذي يكلف مقهاك أموالاً ضائعة الآن؟",
+      list: [
+        "زبائن ينتظرون → يغادرون",
+        "أخطاء الموظفين في أخذ الطلبات",
+        "لا توجد بيانات عن المنتجات الأكثر مبيعاً",
+        "لا يوجد تتبع للزبائن المخلصين"
+      ],
+      transition: "نظام CafeQR يحل كل هذه المشاكل تلقائياً."
+    },
     works: {
-      title: "طلب سلس وبدون مجهود",
-      desc: "تجربة سهلة ومريحة لعملائك من المسح إلى الاستلام.",
+      title: "من مسح QR إلى التقديم — تجربة سلسة لزبائنك",
+      desc: "نظام تشغيلي متكامل يختصر الوقت ويرفع المبيعات.",
       steps: [
-        { title: "مسح كود QR", desc: "يقوم العملاء بمسح الكود على الطاولة، السيارة، أو الكاونتر—بدون الحاجة لتحميل تطبيق." },
-        { title: "اختيار الطلب", desc: "تصفح المنيو الرقمي بتصميم رائع، تخصيص الأصناف، واستلام اقتراحات ذكية." },
-        { title: "الدفع والاستلام", desc: "تصل الطلبات فوراً إلى لوحة التحكم أو شاشة المطبخ مع معالجة الدفع بأمان." }
+        { title: "يمسح QR", desc: "يشوف المنيو فوراً — بدون تحميل تطبيق" },
+        { title: "يطلب", desc: "يختار الإضافات ويدفع — بدون انتظار" },
+        { title: "للمطبخ مباشرة", desc: "الطلب يوصل للمطبخ — بدون أخطاء" },
+        { title: "تجهيز أسرع", desc: "تنظيم تلقائي للطلبات — شاشة للمطبخ" },
+        { title: "الاستلام", desc: "الزبون يستلم الطلب — بدون زحمة عند الكاشير" }
       ]
     },
-    features: {
-      title: "كل ما تحتاجه للنمو",
-      desc: "صُمم خصيصاً لزيادة الأرباح، تسريع الخدمة، وتقليل التكاليف التشغيلية.",
+    setup: {
+      title: "ابدأ في 5 دقائق",
+      steps: [
+        "أنشئ حسابك",
+        "ارفع المنيو",
+        "اطبع كود QR",
+        "ابدأ باستقبال الطلبات"
+      ]
+    },
+    roi: {
+      title: "عائد الاستثمار مع CafeQR",
+      subtitle: "كم يمكنك أن تكسب إضافياً؟",
       list: [
-        { title: "طلب سريع عبر QR", desc: "اطلب بسهولة بدون انتظار أو تواصل مباشر، مما يؤدي إلى خدمة أسرع ودوران طاولات أعلى." },
-        { title: "زيادة المبيعات", desc: "عزز أرباحك تلقائياً عبر الاقتراحات الذكية وقوائم مرئية جذابة لعملائك." },
-        { title: "الطلب من السيارة 🚗", desc: "بديل سريع ومبتكر للطلبات الخارجية. يُدخل العميل بيانات السيارة لتسليم الطلب مباشرة للدريشة." },
-        { title: "تحكم كامل وقتيّ", desc: "تابع الطلبات مباشرة، حدّث المنيو، وحلل الأداء بشكل فوري من أي جهاز ومن مكان واحد." },
-        { title: "نظام الولاء", desc: "حافظ على عودة عملائك عبر بطاقات الطوابع التلقائية والمكافآت المدمجة في مسار الطلب." },
-        { title: "إدارة عدة فروع", desc: "تحكم بجميع فروعك من مكان واحد. قم بمزامنة القوائم أو إنشاء عروض خاصة بكل فرع من نفس لوحة التحكم." }
+        { stat: "+25%", text: "طلبات أكثر في أوقات الذروة" },
+        { stat: "-40%", text: "أخطاء أقل في الطلبات" },
+        { stat: "2x", text: "دوران أسرع للطاولات" }
       ]
     },
     usecases: {
-      title: "قنوات طلب متعددة",
-      desc: "صل لعملائك أينما كانوا. CafeQR يدير عمليات الخدمة المتعددة في نفس الوقت وبكل سلاسة.",
+      title: "دع عملائك يطلبون من سياراتهم",
+      subtitle: "بدون انتظار، بدون إزعاج المواقف",
       list: [
-        { title: "الطلب المحلي المتميز", desc: "أكواد QR مخصصة لكل طاولة على حدة لتتبع الموقع بدقة." },
-        { title: "استلام الطلبات الخارجية", desc: "أكواد كاونتر أو روابط طلب مسبق لاستلام سريع وسلس." },
-        { title: "خدمة توصيل للسيارة", desc: "خدمة متطورة حيث يُدخل العميل نوع سيارته ورقم الموقف لاستلامه بالسيارة." }
+         "العميل يمسح الـ QR من المواقف",
+         "يدخل رقم سيارته",
+         "يطلب فوراً",
+         "الموظف يوصل الطلب للسيارة"
+      ]
+    },
+    features: {
+      title: "كل ما تحتاجه لإدارة مقهى أسرع وأكثر كفاءة",
+      desc: "مصمم خصيصاً لزيادة أرباحك وتقليل تكاليف التشغيل.",
+      list: [
+        { title: "تحكم كامل في الطلبات", desc: "إدارة الطلبات بسلاسة بدون أخطاء وبدون زحمة." },
+        { title: "اعرف أكثر المنتجات مبيعًا", desc: "تقارير ذكية تساعدك تضاعف أرباحك." },
+        { title: "تجربة أسرع لعملائك", desc: "لا انتظار بعد اليوم، المطبخ يرى الطلبات فوراً." },
+        { title: "تنظيم ممتاز للطاولات", desc: "تابع كل طاولة وقدم خدمة مميزة لكل ضيف." },
+        { title: "حافظ على ولاء عملائك", desc: "نظام نقاط يضمن عودة العميل لك مرة أخرى." },
+        { title: "إدارة الفروع بسهولة", desc: "تابع أداء كل فروعك من شاشة واحدة فقط." }
       ]
     },
     dashboard: {
-      title: "تحكم كامل بمقهك في الوقت الحقيقي",
-      desc: "تتبع الطلبات الحية، قم بتحديث قائمتك فوريًا، واعرض تحليلات أداء مقهاك من لوحة تحكم واحدة بسيطة وجميلة.",
+      title: "مقهىك تحت السيطرة بالكامل",
+      desc: "تابع الطلبات، الإيرادات، وحالة الطاولات لحظياً من لوحة تحكم بسيطة وسريعة.",
       alertTitle: "تم استلام طلب جديد!",
-      alertDesc: "طاولة 4 • 12.50 ريال عماني"
+      alertDesc: "طاولة 4 • 12.50 ر.ع"
     },
     pricing: {
-      title: "أسعار بسيطة وشفافة",
-      desc: "لا توجد رسوم خفية. اختر الباقة المناسبة والداعمة لنمو مقهاك.",
+      preTitle: "كم تخسر يوميًا بدون نظام ذكي؟",
+      preDesc: "كافيهات مثل كافيهك زادت طلباتها 30% مع تقليل التكاليف التشغيلية.",
+      title: "خطط تناسب كل كافيه ☕",
+      desc: "بدون عقود • بدون تعقيد • إلغاء في أي وقت",
       cards: [
-        { name: "الأساسية", desc: "مثالية للمقاهي الصغيرة للبدء رقمياً.", price: "8 ر.ع", features: ["أكواد QR", "منيو رقمي", "حتى 50 صنف"], btn: "ابدأ مجاناً" },
-        { name: "برو", tag: "الأكثر شهرة", desc: "للمقاهي المزدحمة لطلبات الطاولات.", price: "12 ر.ع", features: ["كل المزايا الأساسية", "الطلب المباشر للطاولة", "الطلب للسيارة", "تحليلات أساسية"], btn: "ابدأ الآن" },
-        { name: "بريميوم", desc: "منصة كاملة للمقاهي المؤسسة.", price: "20 ر.ع", features: ["كل مزايا برو", "الدفع عبر الإنترنت", "نظام الولاء والمكافآت", "نظام التقييم"], btn: "ابدأ مجاناً" },
-        { name: "انتربرايز", desc: "لسلاسل الفروع المتعددة.", price: "مخصص", features: ["لوحة تحكم الفروع المتعددة", "ربط مع نظام نقاط البيع", "أولوية دعم العملاء", "تحليلات مدعمة بالذكاء الاصطناعي"], btn: "تواصل مع المبيعات" }
-      ]
+        { name: "Free", planId: "free", desc: "باقة مجانية", price: "0 ر.ع", priceSub: "مجاني للأبد", features: ["QR Menu", "حتى 20 منتج", "بدون ولاء", "بدون تقارير"], btn: "ابدأ مجانًا" },
+        { name: "Basic", planId: "starter", desc: "لبداية قوية", price: "5 ر.ع", priceSub: "أقل من 0.16 ر.ع يوميًا", features: ["منيو كامل", "طلبات QR", "إدارة طلبات"], btn: "ابدأ الآن" },
+        { name: "Popular ⭐", planId: "growth", tag: "⭐ الأكثر استخدامًا", desc: "للمقاهي النامية", price: "9 ر.ع", priceSub: "أقل من 0.3 ر.ع يوميًا", features: ["كل شيء في Basic", "نظام الولاء 🎁", "عروض وخصومات", "تقارير أساسية", "إشعارات"], btn: "ابدأ وطور كافيهك" },
+        { name: "Business", planId: "pro", desc: "احترافي / سلاسل", price: "15 ر.ع", priceSub: "أقل من 0.5 ر.ع يوميًا", features: ["فروع متعددة", "تقارير متقدمة", "دعم سريع", "Branding مخصص"], btn: "ابدأ برو" }
+      ],
+      offerTitle: "🎉 عرض الإطلاق",
+      offerDesc: "🔥 أول 50 كافيه في عمان يحصلون على خصم 50% مدى الحياة",
+      offerExample: "خطة Popular بسعر 4.5 ر.ع فقط (بدل 9 ر.ع)",
+      offerBtn: "احجز مكانك الآن",
+      spotsLeft: "متبقي 17 مقعداً",
+      compareTitle: "مقارنة بسيطة وواضحة",
+      compareHeaders: ["الميزة", "Free", "Basic", "Popular ⭐", "Business"],
+      compareRows: [
+        { name: "QR Menu", values: ["✅", "✅", "✅", "✅"] },
+        { name: "برنامج الولاء", values: ["❌", "❌", "✅", "✅"] },
+        { name: "التقارير الذكية", values: ["❌", "❌", "✅", "✅"] },
+        { name: "فروع متعددة", values: ["❌", "❌", "❌", "✅"] }
+      ],
+      microcopy1: "بدون بطاقة بنكية",
+      microcopy2: "تجربة فورية",
+      footerNote: "كل خطة مصممة لتساعدك في بناء قاعدة عملاء وزيادة زياراتهم ☕"
     },
     reviews: {
-      title: "محبوب من قبل أصحاب المقاهي"
+      title: "أراء حقيقية لأصحاب المقاهي",
+      list: [
+        { name: 'أحمد - مؤسس', city: 'Brew House', quote: 'قللنا وقت الانتظار 40%، وارتفعت مبيعاتنا بشكل ملحوظ', img: "https://i.pravatar.cc/150?u=awefd" },
+        { name: 'خالد - مالك', city: 'Urban Cafe', quote: 'ميزة الطلب من السيارة زادت طلبات التيك أواي 50%', img: "https://i.pravatar.cc/150?u=ssdf" },
+      ]
     },
     finalCta: {
-      title: "مستعد لتحويل مقهاك رقمياً؟",
-      desc: "انضم إلى أكثر من 50 مقهى مبتكر يوسّعون عملياتهم وأرباحهم مع CafeQR اليوم.",
-      btn: "ابدأ نظامك الذكي اليوم"
+      title: "أطلق المنيو الخاص بك في 5 دقائق",
+      desc: "بدون تعقيد، بدون بطاقة بنكية — فقط امسح وابدأ",
+      btn: "🚀 ابدأ باستقبال الطلبات اليوم"
+    },
+    bonus: {
+      title: "مصمم للطريقة التي تعمل بها المقاهي بالفعل",
+      list: [
+        "طلب بالـ QR من الطاولة",
+        "طلب من السيارة",
+        "طلبات السفري والتيك أواي",
+        "بدون تحميل تطبيقات",
+        "دعم كامل للعربية والإنجليزية"
+      ]
     },
     footer: {
-      copy: "© 2024 صُنع لحداثة الضيافة .CafeQR SaaS",
-      links: ["الشروط", "الخصوصية", "اتصل بنا"]
+      copy: "© 2024 نظام تشغيل مقاهي حديث .CafeQR SaaS",
+      links: ["الشروط", "الخصوصية", "اتصل بنا"],
+      devLogin: "دخول المطور"
     }
   }
 };

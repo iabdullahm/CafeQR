@@ -60,3 +60,9 @@
     @apply font-headline;
   }
 }
+
+@layer utilities {
+  .font-arabic {
+    font-family: 'Cairo', 'Inter', sans-serif;
+  }
+}

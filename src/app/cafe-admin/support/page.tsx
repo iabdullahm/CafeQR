@@ -67,44 +67,7 @@ import {
 } from "lucide-react";
 
 // Mock Data for Design Purposes
-const MOCK_TICKETS = [
-  {
-    id: "TCK-1049",
-    subject: "Menu sync failing with POS",
-    category: "Technical Issues",
-    priority: "High",
-    status: "Open",
-    lastUpdate: "Today, 10:15 AM",
-    messages: [
-      { sender: "cafe", text: "Our menu changes on the CafeQR dashboard are not reflecting on the POS system since the latest update. Please advise.", time: "Today, 09:42 AM" },
-      { sender: "support", text: "Hi there. We are currently looking into the POS sync delay issue affecting some users. Our engineers are on it.", time: "Today, 10:15 AM" }
-    ]
-  },
-  {
-    id: "TCK-1048",
-    subject: "Missing payout for last week",
-    category: "Billing",
-    priority: "Urgent",
-    status: "In Progress",
-    lastUpdate: "Yesterday, 04:20 PM",
-    messages: [
-      { sender: "cafe", text: "We have not received the weekly payout for the period ending on Friday. Can you please check the transfer status?", time: "Yesterday, 09:00 AM" },
-      { sender: "support", text: "Hello! Checking with our finance gateway. Withdrawals usually delay by 1 business day during holidays. Let me track the exact TXN.", time: "Yesterday, 04:20 PM" }
-    ]
-  },
-  {
-    id: "TCK-1047",
-    subject: "How to add multiple branches?",
-    category: "General",
-    priority: "Low",
-    status: "Resolved",
-    lastUpdate: "Oct 24, 02:15 PM",
-    messages: [
-      { sender: "cafe", text: "We are opening a new branch next month. What is the process to add it under our current Pro plan?", time: "Oct 24, 11:00 AM" },
-      { sender: "support", text: "Congratulations on the expansion! You can easily add a new branch by going to Settings -> Branches -> Add New. Since you are on the Pro plan, branch additions are already included at no extra cost.", time: "Oct 24, 02:15 PM" }
-    ]
-  },
-];
+const MOCK_TICKETS: any[] = [];
 
 const QUICK_HELP_TOPICS = [
   { title: "Billing & Subscriptions", desc: "Invoices, plans, and payouts.", icon: CreditCard, color: "text-blue-600", bg: "bg-blue-50" },

@@ -45,7 +45,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
 
       // 2. Enforce role-based access control
       if (allowedRoles && profile.role) {
-        if (!allowedRoles.includes(profile.role)) {
+        if (!allowedRoles.includes(profile.role.toUpperCase())) {
           router.push("/login?error=unauthorized");
           return;
         }
@@ -60,7 +60,9 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
         console.log("AuthGuard: Syncing platform token...");
         const demoCreds: Record<string, string> = {
           'admin@cafeqr.com': '123456',
-          'abdullah@urbanbrew.om': 'Admin@123'
+          'abdullah@urbanbrew.om': 'Admin@123',
+          'admin@admin.com': '123456',
+          'abdullah.j@creativetechno.net': '123456'
         };
         
         if (demoCreds[profile.email]) {

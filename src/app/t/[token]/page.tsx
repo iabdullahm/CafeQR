@@ -24,7 +24,7 @@ export default function SecureCustomerTokenPage({ params }: { params: Promise<{ 
   const token = resolvedParamsInput.token;
   const db = useFirestore();
   const [cafeData, setCafeData] = useState<any>(null);
-  const [resolvedParams, setResolvedParams] = useState<{ cafeId: string, branchId: string, tableId: string } | null>(null);
+  const [resolvedParams, setResolvedParams] = useState<{ cafeId: string, branchId: string, tableId: string, tableName?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -45,19 +45,33 @@ export default function SecureCustomerTokenPage({ params }: { params: Promise<{ 
 
         const tokenData = tokenSnap.data();
         const { cafeId, branchId, tableId } = tokenData;
-        setResolvedParams({ cafeId, branchId, tableId });
+        
+        let tableName = tableId;
+        const tableRef = doc(db, 'cafes', cafeId, 'tables', tableId);
+        const tableSnap = await getDoc(tableRef);
+        if (tableSnap.exists() && tableSnap.data().name) {
+          tableName = tableSnap.data().name;
+        }
+        
+        setResolvedParams({ cafeId, branchId, tableId, tableName });
 
         // 2. Fetch Cafe Details
         const cafeRef = doc(db, 'cafes', cafeId);
         const cafeSnap = await getDoc(cafeRef);
         
-        if (!cafeSnap.exists()) {
-          setError("Cafe not found");
-          setLoading(false);
-          return;
+        let cafeDoc: any = {};
+        if (cafeSnap.exists()) {
+          cafeDoc = cafeSnap.data();
+        } else {
+          console.warn(`Cafe document not found for ID: ${cafeId}. Proceeding with default data.`);
+          try {
+            const res = await fetch(`/api/public/cafes/${cafeId}`);
+            if (res.ok) {
+               const json = await res.json();
+               if (json.success && json.data) cafeDoc = json.data;
+            }
+          } catch(e) {}
         }
-        
-        const cafeDoc = cafeSnap.data();
 
         // 3. Fetch Products
         const productsSnap = await getDocs(collection(db, 'cafes', cafeId, 'products'));

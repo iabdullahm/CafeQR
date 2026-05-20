@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { 
   Card, 
   CardContent, 
@@ -59,8 +61,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-const SYSTEM_USERS: any[] = [];
-
 const ROLES_PERMISSIONS = [
   { 
     role: "Super Admin", 
@@ -100,6 +100,14 @@ const PERMISSION_LIST = [
 ];
 
 export default function UsersRolesManagement() {
+  const db = useFirestore();
+  const usersQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(100));
+  }, [db]);
+  const { data: usersData = [], isLoading } = useCollection(usersQuery);
+  const users = usersData || [];
+
   const [activeTab, setActiveTab] = useState("users");
 
   const getStatusBadge = (status: string) => {
@@ -197,7 +205,16 @@ export default function UsersRolesManagement() {
                        </TableRow>
                     </TableHeader>
                     <TableBody>
-                       {SYSTEM_USERS.length === 0 ? (
+                       {isLoading ? (
+                         <TableRow>
+                            <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
+                               <div className="flex flex-col items-center justify-center gap-2">
+                                  <RefreshCw className="h-8 w-8 text-muted-foreground/50 animate-spin" />
+                                  <p className="font-medium text-sm">Loading users...</p>
+                               </div>
+                            </TableCell>
+                         </TableRow>
+                       ) : users.length === 0 ? (
                          <TableRow>
                             <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
                                <div className="flex flex-col items-center justify-center gap-2">
@@ -208,35 +225,35 @@ export default function UsersRolesManagement() {
                             </TableCell>
                          </TableRow>
                        ) : (
-                         SYSTEM_USERS.map((user) => (
+                         users.map((user: any) => (
                            <TableRow key={user.id} className="hover:bg-muted/10 transition-colors">
                               <TableCell className="px-6 py-4">
                                  <div className="flex items-center gap-3">
                                     <div className="h-10 w-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold overflow-hidden">
-                                       {user.name.split(' ').map((n: string) => n[0]).join('')}
+                                       {(user.name || user.email || 'U').charAt(0).toUpperCase()}
                                     </div>
                                     <div className="flex flex-col">
-                                       <span className="font-bold text-foreground leading-tight">{user.name}</span>
+                                       <span className="font-bold text-foreground leading-tight">{user.name || 'Unknown User'}</span>
                                        <span className="text-[10px] text-muted-foreground uppercase font-mono tracking-tighter mt-0.5">{user.id}</span>
                                     </div>
                                  </div>
                               </TableCell>
                               <TableCell>
                                  <div className="flex flex-col text-sm">
-                                    <span className="text-muted-foreground flex items-center gap-1.5"><Mail className="h-3 w-3" /> {user.email}</span>
-                                    <span className="text-muted-foreground text-[11px] flex items-center gap-1.5 mt-1"><Phone className="h-3 w-3" /> {user.phone}</span>
+                                    <span className="text-muted-foreground flex items-center gap-1.5"><Mail className="h-3 w-3" /> {user.email || 'No email'}</span>
+                                    <span className="text-muted-foreground text-[11px] flex items-center gap-1.5 mt-1"><Phone className="h-3 w-3" /> {user.phone || 'No phone'}</span>
                                  </div>
                               </TableCell>
                               <TableCell>
-                                 {getRoleBadge(user.role)}
+                                 {getRoleBadge(user.role || 'Cafe Owner')}
                               </TableCell>
                               <TableCell>
-                                 {getStatusBadge(user.status)}
+                                 {getStatusBadge(user.status || 'pending')}
                               </TableCell>
                               <TableCell>
                                  <div className="flex flex-col text-sm">
-                                    <span className="text-muted-foreground flex items-center gap-1.5"><Clock className="h-3 w-3" /> Last login: {user.lastLogin}</span>
-                                    <span className="text-muted-foreground text-[11px] flex items-center gap-1.5 mt-1"><Calendar className="h-3 w-3" /> Created: {user.created}</span>
+                                    <span className="text-muted-foreground flex items-center gap-1.5"><Clock className="h-3 w-3" /> Last login: {user.lastLogin || 'Never'}</span>
+                                    <span className="text-muted-foreground text-[11px] flex items-center gap-1.5 mt-1"><Calendar className="h-3 w-3" /> Created: {user.created || (user.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A')}</span>
                                  </div>
                               </TableCell>
                               <TableCell className="text-right pr-6">

@@ -22,7 +22,7 @@ interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
   isLoading?: boolean;
-  emptyMessage?: string;
+  emptyMessage?: ReactNode;
   onRowClick?: (row: T) => void;
   className?: string;
 }

@@ -11,9 +11,10 @@ import { DataTableReusable } from "@/components/tables/data-table-reusable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Coffee, Users, Gift, TrendingUp, History, Save, Edit3, Plus, Settings, Target, CheckCircle2, Ticket } from "lucide-react";
-import { useState } from "react";
-import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useState, useEffect } from "react";
+import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
+import { doc, setDoc, collection, query, where } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LoyaltyManagement() {
   const [cupsReq, setCupsReq] = useState(5);
@@ -28,6 +29,56 @@ export default function LoyaltyManagement() {
   const userRole = profile?.role || "STAFF";
   const isManagerOrAbove = ["OWNER", "SUPER_ADMIN", "MANAGER"].includes(userRole);
   const isOwnerOrSuperAdmin = ["OWNER", "SUPER_ADMIN"].includes(userRole);
+  
+  const cafeId = profile?.cafeId || (user ? localStorage.getItem('cafe_id_fallback') : null);
+  const loyaltyConfigRef = useMemoFirebase(() => db && cafeId ? doc(db, 'loyaltySettings', cafeId) : null, [db, cafeId]);
+  const { data: loyaltyConfig } = useDoc(loyaltyConfigRef);
+
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (loyaltyConfig?.cupsRequired) {
+      setCupsReq(loyaltyConfig.cupsRequired);
+    }
+  }, [loyaltyConfig]);
+
+  const handleSaveConfig = async () => {
+    if (!db || !cafeId) return;
+    try {
+      await setDoc(doc(db, 'loyaltySettings', cafeId), { 
+        cupsRequired: cupsReq,
+        active: true,
+        autoReset: true
+      }, { merge: true });
+      toast({ title: "Settings Saved", description: "Loyalty configuration has been updated successfully." });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const customersRef = useMemoFirebase(() => db && cafeId ? query(collection(db, 'customers'), where('cafeId', '==', cafeId)) : null, [db, cafeId]);
+  const { data: customers } = useCollection(customersRef);
+
+  // Compute metrics
+  let totalMembers = 0;
+  let cupsCollected = 0;
+  let rewardsEarned = 0;
+  let rewardsRedeemed = 0;
+  let nearReward = 0;
+
+  if (customers && customers.length > 0) {
+    totalMembers = customers.length;
+    customers.forEach(c => {
+      cupsCollected += (c.cups || 0);
+      rewardsEarned += (c.rewardsEarned || 0);
+      rewardsRedeemed += (c.rewardsRedeemed || 0);
+      if ((c.cups || 0) === cupsReq - 1) {
+        nearReward += 1;
+      }
+    });
+  }
+
+  const redemptionRate = rewardsEarned > 0 ? Math.round((rewardsRedeemed / rewardsEarned) * 100) : 0;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -41,7 +92,7 @@ export default function LoyaltyManagement() {
             )}
             <Button variant="outline" className="gap-2"><Plus className="h-4 w-4" /> Manual Adjustment</Button>
             {isManagerOrAbove && (
-               <Button className="bg-primary gap-2"><Save className="h-4 w-4" /> Save Settings</Button>
+               <Button onClick={handleSaveConfig} className="bg-primary gap-2"><Save className="h-4 w-4" /> Save Settings</Button>
             )}
           </div>
         }
@@ -54,7 +105,7 @@ export default function LoyaltyManagement() {
                  <Users className="h-5 w-5" />
               </div>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Members</p>
-              <p className="text-2xl font-black mt-1">0</p>
+              <p className="text-2xl font-black mt-1">{totalMembers}</p>
            </CardContent>
         </Card>
         <Card className="border-none shadow-sm bg-card">
@@ -63,7 +114,7 @@ export default function LoyaltyManagement() {
                  <Coffee className="h-5 w-5" />
               </div>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Cups Collected</p>
-              <p className="text-2xl font-black mt-1">0</p>
+              <p className="text-2xl font-black mt-1">{cupsCollected}</p>
            </CardContent>
         </Card>
         <Card className="border-none shadow-sm bg-card">
@@ -72,7 +123,7 @@ export default function LoyaltyManagement() {
                  <Gift className="h-5 w-5" />
               </div>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Rewards Earned</p>
-              <p className="text-2xl font-black mt-1">0</p>
+              <p className="text-2xl font-black mt-1">{rewardsEarned}</p>
            </CardContent>
         </Card>
         <Card className="border-none shadow-sm bg-card">
@@ -81,7 +132,7 @@ export default function LoyaltyManagement() {
                  <Ticket className="h-5 w-5" />
               </div>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Rewards Redeemed</p>
-              <p className="text-2xl font-black mt-1">0</p>
+              <p className="text-2xl font-black mt-1">{rewardsRedeemed}</p>
            </CardContent>
         </Card>
         <Card className="border-none shadow-sm bg-card">
@@ -90,7 +141,7 @@ export default function LoyaltyManagement() {
                  <Target className="h-5 w-5" />
               </div>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Near Reward (1 Left)</p>
-              <p className="text-2xl font-black mt-1">0</p>
+              <p className="text-2xl font-black mt-1">{nearReward}</p>
            </CardContent>
         </Card>
         <Card className="border-none shadow-sm bg-card">
@@ -99,7 +150,7 @@ export default function LoyaltyManagement() {
                  <TrendingUp className="h-5 w-5" />
               </div>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Redemption Rate</p>
-              <p className="text-2xl font-black mt-1">0%</p>
+              <p className="text-2xl font-black mt-1">{redemptionRate}%</p>
            </CardContent>
         </Card>
       </div>
@@ -299,7 +350,14 @@ export default function LoyaltyManagement() {
                         )
                      }
                   ]}
-                  data={[] as any[]}
+                  data={(customers || []).map(c => ({
+                     name: c.name || c.phone || 'Guest',
+                     cups: c.cups || 0,
+                     remaining: Math.max(0, cupsReq - (c.cups || 0)),
+                     earned: c.rewardsEarned || 0,
+                     redeemed: c.rewardsRedeemed || 0,
+                     lastVisit: new Date(c.lastVisit?.toDate() || c.createdAt?.toDate() || Date.now()).toLocaleDateString()
+                  }))}
                 />
              </TabsContent>
              <TabsContent value="transactions" className="m-0 border-none outline-none">

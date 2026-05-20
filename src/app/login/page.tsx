@@ -41,8 +41,11 @@ function LoginForm() {
     if (searchParams.get('error') && !hasManuallyLoggedIn) return;
 
     if (user && profile && !isProfileLoading) {
-      if (profile.role === 'SUPER_ADMIN') {
+      if (profile.role?.toUpperCase() === 'SUPER_ADMIN') {
         router.push('/super-admin');
+      } else if (profile.role?.toUpperCase() === 'USER') {
+        // Customers go to the public landing/menu page
+        router.push('/');
       } else {
         router.push('/cafe-admin');
       }
@@ -138,6 +141,7 @@ function LoginForm() {
       }
       
       setHasManuallyLoggedIn(true);
+
       toast({
         title: "Welcome back!",
         description: "Successfully authenticated.",

@@ -2,7 +2,7 @@
 import prisma from '../../config/prisma';
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, setDoc, doc } from 'firebase/firestore';
 
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -127,7 +127,7 @@ export const createCafe = async (payload: any) => {
       console.warn('Backend Firebase sign in failed, relying on Test Mode rules for write:', e);
     }
 
-    await addDoc(collection(db, 'cafes'), {
+    await setDoc(doc(db, 'cafes', newCafeId), {
       id: newCafeId,
       name: payload.name,
       slug: payload.slug,

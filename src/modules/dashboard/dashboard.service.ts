@@ -10,12 +10,12 @@ export const dashboardService = {
    */
   async getStats() {
     return {
-      totalCafes: 5,
-      activeSubscriptions: 3,
+      totalCafes: 0,
+      activeSubscriptions: 0,
       expiredSubscriptions: 0,
-      monthlyRevenue: 39.000,
-      ordersThisMonth: 128,
-      newRegistrations: 2
+      monthlyRevenue: 0,
+      ordersThisMonth: 0,
+      newRegistrations: 0
     };
   },
 
@@ -23,10 +23,7 @@ export const dashboardService = {
    * Fetches the most recently registered cafes.
    */
   async getRecentCafes() {
-    return [
-      { id: '1', name: 'Brew Corner', email: 'brew@example.com', createdAt: new Date().toISOString(), status: 'active' },
-      { id: '2', name: 'Qahwa House', email: 'qahwa@example.com', createdAt: new Date().toISOString(), status: 'active' },
-    ];
+    return [];
   },
 
   /**
@@ -40,13 +37,7 @@ export const dashboardService = {
    * Fetches revenue data formatted for charting.
    */
   async getRevenueData(period: string) {
-    return [
-      { name: 'Jan', revenue: 12000 },
-      { name: 'Feb', revenue: 15000 },
-      { name: 'Mar', revenue: 18000 },
-      { name: 'Apr', revenue: 22000 },
-      { name: 'May', revenue: 25000 },
-      { name: 'Jun', revenue: 39000 },
-    ];
+    return [];
   }
 };
+

@@ -1,80 +1,38 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { 
-  Clock, 
-  Car, 
-  Utensils, 
-  Search,
-  Download,
-  RefreshCcw,
-  MoreHorizontal,
-  Eye,
-  CheckCircle,
-  Timer,
-  Ban,
-  Receipt,
-  FileText,
-  MapPin,
-  CheckCircle2,
-  PackageOpen,
-  Printer,
-  Phone,
-  Banknote
+  Clock, Car, Utensils, CheckCircle, Timer, PackageOpen,
+  CheckCircle2, Ban, Receipt, Check, Printer
 } from "lucide-react";
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
-import { collection, query, doc, updateDoc, orderBy } from "firebase/firestore";
+import { collection, query, doc, updateDoc, orderBy, getDoc, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { SectionHeader } from "@/components/dashboard/section-header";
+import { useCafe } from "@/hooks/use-cafe";
+import { ToastAction } from "@/components/ui/toast";
+import { ManualOrderModal } from "@/components/orders/manual-order-modal";
 
 export default function OrderManagement() {
   const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [selectedOrderDetails, setSelectedOrderDetails] = useState<any | null>(null);
+  
+  // Audio reference for new orders
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const previousPendingCount = useRef<number>(0);
+  const previousReadyCount = useRef<number>(0);
 
-  // Filters State
-  const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [paymentFilter, setPaymentFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("today");
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { cafeId } = useCafe();
 
-  // Safely grab the corresponding cafe Profile doc string connected to this user.
-  const userProfileRef = useMemoFirebase(() => {
-    return (db && user) ? doc(db, 'users', user.uid) : null;
-  }, [db, user]);
-  const { data: userProfile } = useDoc(userProfileRef);
-  const cafeId = userProfile?.cafeId;
+  const configRef = useMemoFirebase(() => db && cafeId ? doc(db, 'cafes', cafeId, 'config', 'settings') : null, [db, cafeId]);
+  const { data: configDoc } = useDoc(configRef);
+  const isArabic = configDoc?.language === 'ar';
+  const t = (en: string, ar: string) => isArabic ? ar : en;
 
   // Retrieve matching cafe orders automatically 
   const ordersQuery = useMemoFirebase(() => {
@@ -83,538 +41,478 @@ export default function OrderManagement() {
   }, [db, cafeId]);
   const { data: orders, isLoading } = useCollection(ordersQuery);
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
-  };
+  const knownOrderIds = useRef<Set<string>>(new Set());
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'pending': return 'bg-yellow-500/10 text-yellow-700 border-yellow-200';
-      case 'confirmed': return 'bg-blue-500/10 text-blue-700 border-blue-200';
-      case 'preparing': return 'bg-orange-500/10 text-orange-700 border-orange-200';
-      case 'ready': return 'bg-green-500/10 text-green-700 border-green-300';
-      case 'completed': return 'bg-emerald-500/10 text-emerald-700 border-emerald-200';
-      case 'cancelled': return 'bg-red-500/10 text-red-700 border-red-200';
-      default: return 'bg-gray-500/10 text-gray-700 border-gray-200';
+  // Sound notifications for new orders & ready orders
+  useEffect(() => {
+    if (!orders) return;
+    
+    // Check for new pending orders
+    const pendingOrders = orders.filter(o => o.status === 'pending');
+    
+    if (knownOrderIds.current.size > 0) {
+        const newOrders = pendingOrders.filter(o => !knownOrderIds.current.has(o.id));
+        
+        if (newOrders.length > 0) {
+            playSound('new');
+            
+            newOrders.forEach(newOrder => {
+                const tableStr = newOrder.tableId ? `${t('Table', 'طاولة')} ${newOrder.tableId}` : newOrder.carPlateNumber ? `${t('Car', 'سيارة')} ${newOrder.carPlateNumber}` : t('Takeaway', 'سفري');
+                const itemsCount = newOrder.items?.reduce((acc: number, item: any) => acc + (item.quantity || item.qty || 1), 0) || 0;
+                
+                toast({ 
+                    title: `🔔 ${t("New Order!", "طلب جديد!")} - ${tableStr}`, 
+                    description: `${t("Items:", "المنتجات:")} ${itemsCount} | ${t("Total:", "المجموع:")} ${(newOrder.total || 0).toFixed(3)} OMR`,
+                    action: <ToastAction altText="View" onClick={() => {
+                       const el = document.getElementById(`order-card-${newOrder.id}`);
+                       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}>{t("View", "عرض")}</ToastAction>,
+                    duration: 10000,
+                });
+            });
+        }
     }
-  };
 
-  const getStatusLabel = (status: string) => {
-    switch(status?.toLowerCase()) {
-      case 'pending': return 'New';
-      default: return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown';
+    // Check for new ready orders
+    const readyCount = orders.filter(o => o.status === 'ready').length;
+    if (orders.length > 0 && readyCount > previousReadyCount.current) {
+        playSound('ready');
     }
-  };
+    previousReadyCount.current = readyCount;
+    
+    orders.forEach(o => knownOrderIds.current.add(o.id));
+  }, [orders, toast]);
 
-  const getOrderType = (order: any) => {
-    if (order.serviceType === 'CAR' || (order.tableId || '').toLowerCase().includes('car')) return 'From Car';
-    if (order.serviceType === 'TAKEAWAY' || order.tableId === 'takeaway') return 'Pickup';
-    return 'Dine-in';
-  };
+  const playSound = (type: 'new' | 'ready') => {
+    try {
+        if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        const ctx = audioContextRef.current;
+        if (ctx.state === 'suspended') ctx.resume();
+        
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        if (type === 'new') {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1200, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.3);
+            
+            gain.gain.setValueAtTime(0, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 1.5);
+            
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(1600, ctx.currentTime);
+            
+            gain2.gain.setValueAtTime(0, ctx.currentTime);
+            gain2.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.02);
+            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
+            
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(ctx.currentTime);
+            osc2.stop(ctx.currentTime + 1.5);
+            return;
+        } else {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(440, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3);
+        }
+        
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+        console.error("Audio play failed:", e);
+    }
+  }
 
-  const getPaymentStatus = (order: any) => {
-    return order.paymentStatus || 'Paid'; // Defaulting for simple mock logic if empty
+  const getOrderTypeInfo = (order: any) => {
+    if (order.serviceType === 'CAR' || order.type === 'CAR_SERVICE' || (order.tableId || '').toLowerCase().includes('car')) {
+        return { label: t('Car', 'سيارة'), icon: Car, color: 'text-amber-700 bg-amber-100 border-amber-300' };
+    }
+    if (order.serviceType === 'TAKEAWAY' || order.type === 'TAKEAWAY' || order.tableId === 'takeaway') {
+        return { label: t('Pickup', 'استلام'), icon: PackageOpen, color: 'text-purple-700 bg-purple-100 border-purple-300' };
+    }
+    return { label: t('Dine-in', 'محلي'), icon: Utensils, color: 'text-blue-700 bg-blue-100 border-blue-300' };
   };
 
   const getTimeAgo = (timestamp?: any) => {
-    if (!timestamp) return "Just now";
+    if (!timestamp) return t("Just now", "الآن");
     const dateValue = typeof timestamp.toDate === 'function' ? timestamp.toDate() : new Date(timestamp);
     const minDiff = Math.floor((Date.now() - dateValue.getTime()) / 60000);
     
-    if (minDiff < 1) return `Just now`;
-    if (minDiff < 60) return `${minDiff} min ago`;
+    if (minDiff < 1) return t("Just now", "الآن");
+    if (minDiff < 60) return isArabic ? `منذ ${minDiff} دقيقة` : `${minDiff}m ago`;
     const hrs = Math.floor(minDiff/60);
     const mins = minDiff % 60;
-    return `${hrs}h ${mins}m ago`;
+    return isArabic ? `${hrs} س ${mins} د` : `${hrs}h ${mins}m`;
   };
 
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
+  const handleStatusChange = async (order: any, newStatus: string) => {
     if (!db || !cafeId) return;
     try {
-       setUpdatingId(orderId);
-       const orderRef = doc(db, 'cafes', cafeId, 'orders', orderId);
-       await updateDoc(orderRef, { status: newStatus });
-       toast({ title: `Order ${newStatus}`, description: `Order status has been updated successfully.` });
+       setUpdatingId(order.id);
+       const { updateOrderStatusAtomic } = await import('@/lib/orders-logic');
+       await updateOrderStatusAtomic(order.id, cafeId, newStatus as any);
     } catch (e: any) {
-       toast({ title: "Error updating order", description: e.message, variant: "destructive" });
+       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
        setUpdatingId(null);
     }
   };
 
-  const handlePrint = (type: string) => {
-    toast({ title: `Printing ${type}...`, description: "Job sent to connected printer." });
-  };
+  const printReceipt = (order: any) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
 
-  const handleContactCustomer = (order: any) => {
-    if (order.customerPhone) {
-      window.open(`tel:${order.customerPhone}`, '_self');
-    } else {
-      toast({ title: "Cannot Contact", description: "No customer phone number available on this order.", variant: "destructive" });
+    const cafeName = configDoc?.name || "CafeQR";
+    const orderDate = order.createdAt ? (typeof order.createdAt.toDate === 'function' ? order.createdAt.toDate() : new Date(order.createdAt)) : new Date();
+    const dateStr = orderDate.toLocaleDateString();
+    const timeStr = orderDate.toLocaleTimeString();
+
+    const typeInfo = getOrderTypeInfo(order);
+    const locationStr = typeInfo.label === t('Car', 'سيارة') ? `${t('Car', 'سيارة')}: ${order.carPlateNumber} (${t('Spot', 'موقف')} ${order.parkingSpot})` : typeInfo.label === t('Pickup', 'استلام') ? t('Takeaway', 'سفري') : `${t('Table', 'طاولة')} ${order.table || order.tableId}`;
+
+    const itemsHtml = (order.items || []).map((item: any) => `
+      <tr>
+        <td style="padding: 2px 0;">${item.quantity || item.qty}x</td>
+        <td style="padding: 2px 0;">${item.nameEn || item.name}</td>
+        <td style="text-align: right; padding: 2px 0;">${((item.price || item.unitPrice || item.totalPrice / (item.quantity || item.qty) || 0) * (item.quantity || item.qty)).toFixed(3)}</td>
+      </tr>
+      ${item.notes ? `<tr><td></td><td colspan="2" style="font-size: 10px; color: #555;">Note: ${item.notes}</td></tr>` : ''}
+    `).join('');
+
+    const html = `
+      <html dir="${isArabic ? 'rtl' : 'ltr'}">
+        <head>
+          <style>
+            @media print {
+              @page { margin: 0; }
+              body { margin: 0.5cm; }
+            }
+            body {
+              font-family: 'Courier New', Courier, monospace;
+              width: 80mm;
+              margin: 0 auto;
+              font-size: 12px;
+              color: #000;
+            }
+            .text-center { text-align: center; }
+            .text-right { text-align: ${isArabic ? 'left' : 'right'}; }
+            .font-bold { font-weight: bold; }
+            .divider { border-top: 1px dashed #000; margin: 8px 0; }
+            .header { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
+            table { width: 100%; border-collapse: collapse; }
+          </style>
+        </head>
+        <body>
+          <div class="text-center header">${cafeName}</div>
+          <div class="text-center">${t('Receipt', 'فاتورة')}</div>
+          <div class="divider"></div>
+          <div>${t('Order', 'طلب')} #${order.orderNo || order.orderNumber || order.id.slice(-5).toUpperCase()}</div>
+          <div>${t('Date', 'التاريخ')}: ${dateStr} ${timeStr}</div>
+          <div>${t('Type', 'النوع')}: ${locationStr}</div>
+          <div class="divider"></div>
+          <table>
+            ${itemsHtml}
+          </table>
+          <div class="divider"></div>
+          <table>
+            <tr>
+              <td>${t('Subtotal', 'المجموع الفرعي')}</td>
+              <td class="text-right">${(order.subtotal || order.total || order.totalAmount).toFixed(3)} OMR</td>
+            </tr>
+            <tr>
+              <td>${t('Tax', 'الضريبة')}</td>
+              <td class="text-right">${(order.taxAmount || 0).toFixed(3)} OMR</td>
+            </tr>
+            <tr class="font-bold">
+              <td>${t('Total', 'الإجمالي')}</td>
+              <td class="text-right">${(order.total || order.totalAmount).toFixed(3)} OMR</td>
+            </tr>
+          </table>
+          <div class="divider"></div>
+          <div class="text-center" style="font-size: 10px;">
+            ${t('Thank you for your visit!', 'شكراً لزيارتكم!')}<br>
+            Powered by CafeQR
+          </div>
+        </body>
+      </html>
+    `;
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => document.body.removeChild(iframe), 500);
+      }, 250);
     }
   };
 
-  // KPIs & Stats
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Grouping orders for Kanban
+  const kanbanColumns = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  const stats = useMemo(() => {
-    let newOrd = 0, prep = 0, ready = 0, compToday = 0, canc = 0, revToday = 0;
-    orders?.forEach(o => {
-      const oDate = o.createdAt ? (typeof o.createdAt.toDate === 'function' ? o.createdAt.toDate() : new Date(o.createdAt)) : new Date();
-      const isToday = oDate >= today;
-      const stat = o.status?.toLowerCase() || 'pending';
-
-      if (stat === 'pending') newOrd++;
-      if (stat === 'preparing') prep++;
-      if (stat === 'ready') ready++;
-      if (stat === 'cancelled') canc++;
-      if (stat === 'completed' && isToday) {
-        compToday++;
-        revToday += (o.total || 0);
-      }
-    });
-
-    return {
-      newOrders: newOrd,
-      preparing: prep,
-      ready: ready,
-      completedToday: compToday,
-      cancelled: canc,
-      revenueToday: revToday
+    const cols = {
+      new: [] as any[],
+      preparing: [] as any[],
+      ready: [] as any[],
+      completed: [] as any[] // only today's
     };
+
+    if (orders) {
+      orders.forEach(o => {
+        const stat = o.status?.toLowerCase() || 'pending';
+        const oDate = o.createdAt ? (typeof o.createdAt.toDate === 'function' ? o.createdAt.toDate() : new Date(o.createdAt)) : new Date();
+        const isToday = oDate >= today;
+
+        if (stat === 'pending' || stat === 'confirmed') cols.new.push(o);
+        else if (stat === 'preparing') cols.preparing.push(o);
+        else if (stat === 'ready') cols.ready.push(o);
+        else if (stat === 'completed' && isToday) cols.completed.push(o);
+      });
+    }
+
+    return cols;
   }, [orders]);
 
-  // Filtering
-  const filteredOrders = useMemo(() => {
-    if (!orders) return [];
-    return orders.filter(o => {
-      // Status
-      if (statusFilter !== 'all' && (o.status?.toLowerCase() || 'pending') !== statusFilter) return false;
-      
-      // Type
-      const rType = getOrderType(o);
-      if (typeFilter !== 'all') {
-        if (typeFilter === 'dine-in' && rType !== 'Dine-in') return false;
-        if (typeFilter === 'car' && rType !== 'From Car') return false;
-        if (typeFilter === 'pickup' && rType !== 'Pickup') return false;
-      }
+  const renderOrderCard = (order: any, colType: string) => {
+    const typeInfo = getOrderTypeInfo(order);
+    const isNew = order.status === 'pending' || !order.status;
+    const isUpdating = updatingId === order.id;
 
-      // Payment Status (naive implementation assuming field exists)
-      const pStatus = getPaymentStatus(o).toLowerCase();
-      if (paymentFilter !== 'all' && pStatus !== paymentFilter.toLowerCase()) return false;
+    return (
+      <Card id={`order-card-${order.id}`} key={order.id} className={`overflow-hidden transition-all shadow-sm ${isNew ? 'ring-2 ring-green-500 ring-offset-2 animate-in fade-in zoom-in-95 bg-green-50/50' : 'border'}`}>
+        <CardContent className="p-0">
+           {/* Card Header (Table / Type Info) */}
+           <div className={`p-3 border-b flex justify-between items-center ${typeInfo.color}`}>
+              <div className="flex items-center gap-2 font-black text-sm uppercase tracking-wide">
+                 <typeInfo.icon className="h-4 w-4" />
+                 {typeInfo.label === t('Car', 'سيارة') ? `${t('Car', 'سيارة')}: ${order.carPlateNumber} (${t('Spot', 'موقف')} ${order.parkingSpot})` : typeInfo.label === t('Pickup', 'استلام') ? t('Takeaway', 'سفري') : `${t('Table', 'طاولة')} ${order.table || order.tableId}`}
+              </div>
+              <div className="text-xs font-bold opacity-80 flex items-center gap-1">
+                 <Clock className="w-3 h-3" /> {getTimeAgo(order.createdAt)}
+              </div>
+           </div>
 
-      // Date Filter
-      const oDate = o.createdAt ? (typeof o.createdAt.toDate === 'function' ? o.createdAt.toDate() : new Date(o.createdAt)) : new Date();
-      const isToday = oDate >= today;
-      if (dateFilter === 'today' && !isToday) return false;
+           {/* Order Items */}
+           <div className="p-3 bg-card min-h-[80px]">
+              <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex justify-between">
+                <span>#{order.orderNo || order.orderNumber || order.id.slice(-5).toUpperCase()}</span>
+                <span className="text-primary">{(order.total || 0).toFixed(3)} OMR</span>
+              </div>
+              
+              <div className="space-y-2">
+                 {order.items?.map((item: any, idx: number) => (
+                    <div key={idx} className="text-sm font-bold flex flex-col leading-tight">
+                       <div className="flex gap-2">
+                          <span className="text-primary">{item.quantity || item.qty}x</span>
+                          <span>{item.nameEn || item.name}</span>
+                       </div>
+                       {item.notes && <span className="text-xs text-red-500 ml-6 italic">{t("Note", "ملاحظة")}: {item.notes}</span>}
+                    </div>
+                 ))}
+                 {order.carNotes && (
+                   <div className="text-xs text-amber-700 bg-amber-50 p-1.5 rounded mt-2 italic font-medium">
+                     {t("Car Note", "ملاحظة السيارة")}: {order.carNotes}
+                   </div>
+                 )}
+              </div>
+           </div>
 
-      // Search (id, plate, notes, customer name)
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesId = o.id.toLowerCase().includes(query);
-        const matchesPlate = o.carPlateNumber?.toLowerCase().includes(query);
-        return matchesId || matchesPlate;
-      }
+           {/* Card Actions */}
+           <div className="p-2 border-t flex flex-wrap gap-2 bg-muted/20">
+              <Button variant="ghost" className="px-3 border hover:bg-muted" onClick={() => printReceipt(order)}>
+                 <Printer className="w-4 h-4 text-muted-foreground" />
+              </Button>
+              {colType === 'new' && (
+                 <>
+                   {isNew ? (
+                     <Button 
+                       className="flex-1 bg-primary font-bold text-primary-foreground shadow-sm" 
+                       onClick={() => handleStatusChange(order, 'confirmed')} 
+                       disabled={isUpdating}
+                     >
+                       <CheckCircle2 className="w-4 h-4 mr-1.5" /> {t("Accept", "قبول")}
+                     </Button>
+                   ) : (
+                     <Button 
+                       className="flex-1 bg-orange-500 hover:bg-orange-600 font-bold shadow-sm text-white" 
+                       onClick={() => handleStatusChange(order, 'preparing')} 
+                       disabled={isUpdating}
+                     >
+                       <Timer className="w-4 h-4 mr-1.5" /> {t("Prepare", "تجهيز")}
+                     </Button>
+                   )}
+                   <Button variant="ghost" className="px-2 text-destructive hover:bg-destructive/10" onClick={() => handleStatusChange(order, 'cancelled')} disabled={isUpdating}>
+                     <Ban className="w-4 h-4" />
+                   </Button>
+                 </>
+              )}
 
-      return true;
-    });
-  }, [orders, statusFilter, typeFilter, paymentFilter, dateFilter, searchQuery]);
+              {colType === 'preparing' && (
+                 <Button 
+                   className="flex-1 bg-green-500 hover:bg-green-600 font-bold shadow-sm text-white" 
+                   onClick={() => handleStatusChange(order, 'ready')} 
+                   disabled={isUpdating}
+                 >
+                   <CheckCircle className="w-4 h-4 mr-1.5" /> {t("Mark Ready", "جاهز للتقديم")}
+                 </Button>
+              )}
 
+              {colType === 'ready' && (
+                 <Button 
+                   className="flex-1 border-emerald-500 text-emerald-700 hover:bg-emerald-50 font-bold shadow-sm" 
+                   variant="outline"
+                   onClick={() => handleStatusChange(order, 'completed')} 
+                   disabled={isUpdating}
+                 >
+                   <Check className="w-4 h-4 mr-1.5" /> {t("Complete", "إنهاء")}
+                 </Button>
+              )}
 
-  return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      {/* 1. Top Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-headline font-black text-primary flex items-center gap-3">
-            Orders Management
-            {isRefreshing && <RefreshCcw className="h-5 w-5 animate-spin text-muted-foreground" />}
-          </h1>
-          <p className="text-muted-foreground">Track live, scheduled, and completed orders across your cafe.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="gap-2 font-bold" onClick={handleRefresh}>
-            <RefreshCcw className="h-4 w-4" /> Refresh
-          </Button>
-          <Button className="gap-2 font-bold bg-primary text-primary-foreground">
-            <Download className="h-4 w-4" /> Export CSV
-          </Button>
-        </div>
-      </div>
-
-      {/* 2. Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card className="bg-amber-500/10 border-amber-500/20 shadow-none cursor-pointer hover:bg-amber-500/20 transition-colors" onClick={() => setStatusFilter('pending')}>
-          <CardContent className="p-4 flex flex-col justify-center items-center text-center h-full">
-            <p className="text-amber-800 text-xs font-bold uppercase tracking-wider mb-1">New Orders</p>
-            <h3 className="text-3xl font-black text-amber-900">{stats.newOrders}</h3>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-orange-500/10 border-orange-500/20 shadow-none cursor-pointer hover:bg-orange-500/20 transition-colors" onClick={() => setStatusFilter('preparing')}>
-          <CardContent className="p-4 flex flex-col justify-center items-center text-center h-full">
-            <p className="text-orange-800 text-xs font-bold uppercase tracking-wider mb-1">Preparing</p>
-            <h3 className="text-3xl font-black text-orange-900">{stats.preparing}</h3>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-green-500/10 border-green-500/20 shadow-none cursor-pointer hover:bg-green-500/20 transition-colors" onClick={() => setStatusFilter('ready')}>
-          <CardContent className="p-4 flex flex-col justify-center items-center text-center h-full">
-            <p className="text-green-800 text-xs font-bold uppercase tracking-wider mb-1">Ready</p>
-            <h3 className="text-3xl font-black text-green-900">{stats.ready}</h3>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-emerald-500/10 border-emerald-500/20 shadow-none cursor-pointer hover:bg-emerald-500/20 transition-colors" onClick={() => setStatusFilter('completed')}>
-          <CardContent className="p-4 flex flex-col justify-center items-center text-center h-full">
-            <p className="text-emerald-800 text-xs font-bold uppercase tracking-wider mb-1">Completed Today</p>
-            <h3 className="text-3xl font-black text-emerald-900">{stats.completedToday}</h3>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-red-500/10 border-red-500/20 shadow-none cursor-pointer hover:bg-red-500/20 transition-colors" onClick={() => setStatusFilter('cancelled')}>
-          <CardContent className="p-4 flex flex-col justify-center items-center text-center h-full">
-            <p className="text-red-800 text-xs font-bold uppercase tracking-wider mb-1">Cancelled</p>
-            <h3 className="text-3xl font-black text-red-900">{stats.cancelled}</h3>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-primary/10 border-primary/20 shadow-none">
-          <CardContent className="p-4 flex flex-col justify-center items-center text-center h-full">
-            <p className="text-primary text-xs font-bold uppercase tracking-wider mb-1">Revenue Today</p>
-            <h3 className="text-xl md:text-2xl font-black text-primary">{stats.revenueToday.toFixed(3)} <span className="text-sm">OMR</span></h3>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 3. Filter Bar */}
-      <Card className="shadow-sm border-muted">
-        <CardContent className="p-4 flex flex-col md:flex-row gap-4 flex-wrap items-center">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search by Order ID or Car Plate..." 
-              className="pl-9 font-medium" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[140px] font-medium">
-              <SelectValue placeholder="Order Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="dine-in">Dine-in</SelectItem>
-              <SelectItem value="car">From Car</SelectItem>
-              <SelectItem value="pickup">Pickup</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px] font-medium">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="pending">New</SelectItem>
-              <SelectItem value="confirmed">Confirmed</SelectItem>
-              <SelectItem value="preparing">Preparing</SelectItem>
-              <SelectItem value="ready">Ready</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={dateFilter} onValueChange={setDateFilter}>
-            <SelectTrigger className="w-[140px] font-medium">
-              <SelectValue placeholder="Time Range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="today">Today</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button 
-            variant="ghost" 
-            className="font-bold text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              setSearchQuery("");
-              setTypeFilter("all");
-              setStatusFilter("all");
-              setPaymentFilter("all");
-              setDateFilter("today");
-            }}
-          >
-            Reset
-          </Button>
+              {colType === 'completed' && (
+                <div className="flex-1 text-center py-1.5 text-xs font-bold text-emerald-700 flex items-center justify-center gap-1">
+                  <CheckCircle2 className="w-4 h-4" /> {t("Order Completed", "مكتمل")}
+                </div>
+              )}
+           </div>
         </CardContent>
       </Card>
+    );
+  };
 
-      {/* 4. Main Content Area - Table */}
-      <Card className="shadow-sm border-muted overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="font-bold text-xs uppercase tracking-wider whitespace-nowrap">Order ID</TableHead>
-                <TableHead className="font-bold text-xs uppercase tracking-wider whitespace-nowrap">Time / Ago</TableHead>
-                <TableHead className="font-bold text-xs uppercase tracking-wider whitespace-nowrap min-w-[150px]">Customer / Source</TableHead>
-                <TableHead className="font-bold text-xs uppercase tracking-wider whitespace-nowrap">Type</TableHead>
-                <TableHead className="font-bold text-xs uppercase tracking-wider whitespace-nowrap text-right">Total</TableHead>
-                <TableHead className="font-bold text-xs uppercase tracking-wider whitespace-nowrap">Status</TableHead>
-                <TableHead className="font-bold text-xs uppercase tracking-wider whitespace-nowrap">Payment</TableHead>
-                <TableHead className="font-bold text-xs uppercase tracking-wider whitespace-nowrap text-right min-w-[120px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({length: 5}).map((_, i) => (
-                  <TableRow key={i}>
-                     <TableCell colSpan={8} className="py-6">
-                        <div className="flex animate-pulse items-center space-x-4">
-                          <div className="h-6 w-full bg-muted rounded-md" />
-                        </div>
-                     </TableCell>
-                  </TableRow>
-                ))
-              ) : filteredOrders.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-48 text-center">
-                    <div className="flex flex-col items-center justify-center text-muted-foreground space-y-3">
-                       <PackageOpen className="h-10 w-10 opacity-30" />
-                       <span className="font-medium text-lg">No orders found matching filters</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredOrders.map(order => {
-                  const oDate = order.createdAt ? (typeof order.createdAt.toDate === 'function' ? order.createdAt.toDate() : new Date(order.createdAt)) : new Date();
-                  const timeStr = oDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                  const oType = getOrderType(order);
-                  
-                  return (
-                    <TableRow key={order.id} className="hover:bg-muted/40 transition-colors group">
-                      <TableCell className="font-bold whitespace-nowrap text-emerald-700">
-                        #{order.id.slice(-6).toUpperCase()}
-                      </TableCell>
-                      
-                      <TableCell className="whitespace-nowrap">
-                        <div className="font-bold text-sm">{timeStr}</div>
-                        <div className="text-xs text-muted-foreground flex items-center gap-1 font-medium mt-0.5">
-                          <Clock className="w-3 h-3" /> {getTimeAgo(order.createdAt)}
-                        </div>
-                      </TableCell>
-
-                      <TableCell>
-                         <div className="font-bold text-sm">Guest Customer</div>
-                         {oType === 'From Car' ? (
-                            <div className="flex items-center gap-1 text-xs text-amber-700 font-bold bg-amber-50 rounded-sm w-fit px-1.5 py-0.5 mt-1 border border-amber-200">
-                              <Car className="w-3 h-3" /> 
-                              {order.carPlateNumber || order.tableId || 'N/A'} - Spot {order.parkingSpot}
-                            </div>
-                         ) : (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground font-medium bg-muted/50 rounded-sm w-fit px-1.5 py-0.5 mt-1">
-                              {oType === 'Dine-in' ? <Utensils className="w-3 h-3" /> : <PackageOpen className="w-3 h-3" />}
-                              Table {order.table || order.tableId || 'Takeaway'}
-                            </div>
-                         )}
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        <span className="text-sm font-semibold">{oType}</span>
-                        <div className="text-xs text-muted-foreground mt-0.5">{order.items?.length || 0} items</div>
-                      </TableCell>
-
-                      <TableCell className="text-right whitespace-nowrap">
-                        <span className="font-black text-primary">{(order.total || 0).toFixed(3)} OMR</span>
-                      </TableCell>
-
-                      <TableCell>
-                        <Badge variant="outline" className={`font-bold uppercase tracking-wider px-2.5 py-1 ${getStatusColor(order.status)}`}>
-                          {getStatusLabel(order.status)}
-                        </Badge>
-                      </TableCell>
-
-                      <TableCell>
-                        <div className="flex items-center gap-1.5 font-bold text-xs">
-                          {getPaymentStatus(order) === 'Paid' ? (
-                            <div className="flex items-center gap-1.5 text-emerald-700"><CheckCircle2 className="w-3.5 h-3.5" /> Paid</div>
-                          ) : (
-                             <span className="text-muted-foreground">Unpaid</span>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0" disabled={updatingId === order.id}>
-                              {updatingId === order.id ? <RefreshCcw className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-56 font-medium">
-                            <DropdownMenuLabel className="text-xs uppercase text-muted-foreground tracking-wider font-bold">Manage Order</DropdownMenuLabel>
-                            
-                            <DropdownMenuItem onClick={() => setSelectedOrderDetails(order)} className="cursor-pointer gap-2 font-bold focus:bg-muted">
-                              <Eye className="w-4 h-4 text-muted-foreground" /> View Details
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator />
-
-                            {(order.status === 'pending' || !order.status) && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'confirmed')} className="text-emerald-600 font-bold cursor-pointer gap-2 focus:bg-emerald-50 focus:text-emerald-700">
-                                <CheckCircle2 className="w-4 h-4" /> Accept Order
-                              </DropdownMenuItem>
-                            )}
-                            {order.status === 'confirmed' && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'preparing')} className="text-orange-600 font-bold cursor-pointer gap-2 focus:bg-orange-50 focus:text-orange-700">
-                                <Timer className="w-4 h-4" /> Start Preparing
-                              </DropdownMenuItem>
-                            )}
-                            {order.status === 'preparing' && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'ready')} className="text-blue-600 font-bold cursor-pointer gap-2 focus:bg-blue-50 focus:text-blue-700">
-                                <CheckCircle className="w-4 h-4" /> Mark as Ready
-                              </DropdownMenuItem>
-                            )}
-                            {order.status === 'ready' && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'completed')} className="text-emerald-600 font-bold cursor-pointer gap-2 focus:bg-emerald-50 focus:text-emerald-700">
-                                <CheckCircle2 className="w-4 h-4" /> Complete Order
-                              </DropdownMenuItem>
-                            )}
-
-                            <DropdownMenuSeparator />
-
-                            <DropdownMenuItem onClick={() => handlePrint('Receipt')} className="cursor-pointer gap-2">
-                              <Receipt className="w-4 h-4 text-muted-foreground" /> Print Receipt
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handlePrint('Kitchen Ticket')} className="cursor-pointer gap-2">
-                              <Printer className="w-4 h-4 text-muted-foreground" /> Print Kitchen Ticket
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator />
-
-                            <DropdownMenuItem onClick={() => handleContactCustomer(order)} className="cursor-pointer gap-2">
-                              <Phone className="w-4 h-4 text-blue-500" /> Contact Customer
-                            </DropdownMenuItem>
-                            
-                            <DropdownMenuSeparator />
-                            
-                            {order.status !== 'completed' && order.status !== 'cancelled' && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'cancelled')} className="text-red-600 font-bold cursor-pointer gap-2 focus:bg-red-50 focus:text-red-700">
-                                <Ban className="w-4 h-4" /> Cancel Order
-                              </DropdownMenuItem>
-                            )}
-                            {(order.status === 'completed' || order.status === 'cancelled') && (
-                              <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'refunded')} className="text-red-600 font-bold cursor-pointer gap-2 focus:bg-red-50 focus:text-red-700">
-                                <Banknote className="w-4 h-4" /> Refund
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
-
-      {/* 5. Order Details Dialog */}
-      <Dialog open={!!selectedOrderDetails} onOpenChange={(open) => !open && setSelectedOrderDetails(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Order Details #{selectedOrderDetails?.id?.slice(-6).toUpperCase()}</DialogTitle>
-            <DialogDescription>
-              Placed {selectedOrderDetails && getTimeAgo(selectedOrderDetails.createdAt)}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedOrderDetails && (
-             <div className="space-y-4 pt-4">
-                <div className="flex items-center justify-between border-b pb-4">
-                   <div>
-                      <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Type</p>
-                      <Badge variant="outline" className="font-bold">{getOrderType(selectedOrderDetails)}</Badge>
-                   </div>
-                   <div className="text-right">
-                      <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Status</p>
-                      <Badge variant="outline" className={`font-bold ${getStatusColor(selectedOrderDetails.status)}`}>{getStatusLabel(selectedOrderDetails.status)}</Badge>
-                   </div>
-                </div>
-
-                {getOrderType(selectedOrderDetails) === 'From Car' && (
-                  <div className="bg-amber-50/50 p-3 rounded-xl border border-amber-200/50 space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-amber-900 pb-1 border-b border-amber-200/50">
-                      <Car className="h-4 w-4" />
-                      <span className="text-xs font-black uppercase tracking-widest">Car Details</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm pt-1">
-                      <div><span className="text-muted-foreground text-xs font-bold uppercase">Plate:</span> <span className="font-bold">{selectedOrderDetails.carPlateNumber}</span></div>
-                      <div><span className="text-muted-foreground text-xs font-bold uppercase">Spot:</span> <span className="font-bold text-amber-700">{selectedOrderDetails.parkingSpot}</span></div>
-                      {(selectedOrderDetails.carModel || selectedOrderDetails.carColor) && (
-                        <div className="col-span-2"><span className="text-muted-foreground text-xs font-bold uppercase">Vehicle:</span> <span className="font-medium text-xs">{selectedOrderDetails.carColor} {selectedOrderDetails.carModel}</span></div>
-                      )}
-                    </div>
-                    {selectedOrderDetails.carNotes && (
-                      <div className="pt-1 text-xs font-medium text-amber-800 italic border-t border-amber-200/30 mt-1">
-                        "{selectedOrderDetails.carNotes}"
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div>
-                   <h4 className="font-bold mb-3 text-sm border-b pb-2">Order Items</h4>
-                   <div className="space-y-3">
-                     {selectedOrderDetails.items?.map((item: any, i: number) => (
-                       <div key={i} className="flex justify-between items-start text-sm">
-                          <div className="flex-1">
-                             <span className="font-bold">{item.quantity || item.qty}x {item.nameEn || item.name}</span>
-                             {item.notes && <p className="text-xs text-amber-600 mt-0.5">Note: {item.notes}</p>}
-                          </div>
-                          <span className="font-medium font-bold text-primary">{(item.price * (item.quantity || item.qty)).toFixed(3)} OMR</span>
-                       </div>
-                     ))}
-                   </div>
-                </div>
-
-                <div className="space-y-1.5 pt-4 border-t">
-                   <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground font-medium">Subtotal</span>
-                      <span className="font-bold">{(selectedOrderDetails.subtotal || selectedOrderDetails.total || 0).toFixed(3)} OMR</span>
-                   </div>
-                   {(selectedOrderDetails.tax > 0) && (
-                     <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground font-medium">Tax</span>
-                        <span className="font-bold">{(selectedOrderDetails.tax || 0).toFixed(3)} OMR</span>
-                     </div>
-                   )}
-                   <div className="flex justify-between text-lg font-black pt-2 border-t mt-2">
-                      <span>Total</span>
-                      <span className="text-primary">{selectedOrderDetails.total?.toFixed(3)} OMR</span>
-                   </div>
-                </div>
-
-                <div className="pt-4 flex gap-3 w-full border-t">
-                   <Button variant="outline" className="flex-1 font-bold" onClick={() => handlePrint('Receipt')}>
-                      <Receipt className="w-4 h-4 mr-2" /> Print
-                   </Button>
-                   <Button className="flex-1 font-bold bg-zinc-900 border-zinc-900 shadow-none text-white hover:bg-zinc-800" onClick={() => setSelectedOrderDetails(null)}>
-                      Close
-                   </Button>
-                </div>
+  return (
+    <div className="space-y-6 animate-in fade-in mx-auto max-w-[1600px] h-screen flex flex-col pt-2 pb-6" dir={isArabic ? 'rtl' : 'ltr'}>
+      
+      <SectionHeader 
+        title={t("Live Operations", "العمليات الحية")}
+        description={t("Real-time kitchen display and operational workflow.", "شاشة العرض وتدفق العمل المباشر.")}
+        actions={
+          <div className="flex gap-2">
+             <ManualOrderModal />
+             <div className="px-4 py-2 bg-blue-50 text-blue-800 rounded-lg text-sm font-bold border border-blue-200 flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                </span>
+                LIVE SYNC
              </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        }
+      />
+
+      {/* Kanban Board Layout */}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-6 min-h-0 overflow-hidden">
+         
+         {/* Column: NEW */}
+         <div className="flex flex-col h-full bg-muted/30 rounded-2xl border p-4 shadow-inner">
+            <div className="mb-4 flex justify-between items-center px-1">
+               <h3 className="font-black text-lg text-amber-600 flex items-center gap-2">
+                  {t("New & Pending", "جديد ومعلق")}
+                  <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-none">{kanbanColumns.new.length}</Badge>
+               </h3>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-10">
+               {kanbanColumns.new.length === 0 && !isLoading && (
+                 <div className="h-40 flex flex-col items-center justify-center text-muted-foreground/50 border-2 border-dashed border-muted-foreground/20 rounded-xl p-4 text-center">
+                    <Receipt className="h-8 w-8 mb-2" />
+                    <p className="font-bold text-sm">{t("No new orders", "لا يوجد طلبات جديدة")}</p>
+                    <p className="text-xs">{t("Incoming orders will blink here automatically.", "ستظهر الطلبات الجديدة هنا تلقائياً.")}</p>
+                 </div>
+               )}
+               {kanbanColumns.new.map(o => renderOrderCard(o, 'new'))}
+            </div>
+         </div>
+
+         {/* Column: PREPARING */}
+         <div className="flex flex-col h-full bg-muted/30 rounded-2xl border p-4 shadow-inner">
+            <div className="mb-4 flex justify-between items-center px-1">
+               <h3 className="font-black text-lg text-orange-600 flex items-center gap-2">
+                  {t("Preparing", "قيد التجهيز")}
+                  <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-none">{kanbanColumns.preparing.length}</Badge>
+               </h3>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-10">
+               {kanbanColumns.preparing.length === 0 && !isLoading && (
+                 <div className="h-40 flex flex-col items-center justify-center text-muted-foreground/50 border-2 border-dashed border-muted-foreground/20 rounded-xl p-4 text-center">
+                    <Timer className="h-8 w-8 mb-2 opacity-50" />
+                    <p className="font-bold text-sm">{t("Empty station", "المحطة فارغة")}</p>
+                 </div>
+               )}
+               {kanbanColumns.preparing.map(o => renderOrderCard(o, 'preparing'))}
+            </div>
+         </div>
+
+         {/* Column: READY */}
+         <div className="flex flex-col h-full bg-muted/30 rounded-2xl border p-4 shadow-inner">
+            <div className="mb-4 flex justify-between items-center px-1">
+               <h3 className="font-black text-lg text-green-600 flex items-center gap-2">
+                  {t("Ready to Serve", "جاهز للتقديم")}
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 border-none">{kanbanColumns.ready.length}</Badge>
+               </h3>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-10">
+               {kanbanColumns.ready.length === 0 && !isLoading && (
+                 <div className="h-40 flex flex-col items-center justify-center text-muted-foreground/50 border-2 border-dashed border-muted-foreground/20 rounded-xl p-4 text-center">
+                    <CheckCircle className="h-8 w-8 mb-2 opacity-50" />
+                    <p className="font-bold text-sm">{t("No pending serves", "لا يوجد طلبات للتقديم")}</p>
+                 </div>
+               )}
+               {kanbanColumns.ready.map(o => renderOrderCard(o, 'ready'))}
+            </div>
+         </div>
+
+         {/* Column: COMPLETED (Today) */}
+         <div className="flex flex-col h-full bg-muted/10 rounded-2xl border p-4 shadow-inner opacity-80">
+            <div className="mb-4 flex justify-between items-center px-1">
+               <h3 className="font-black text-lg text-emerald-800 flex items-center gap-2">
+                  {t("Completed (Today)", "المكتملة (اليوم)")}
+                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-none">{kanbanColumns.completed.length}</Badge>
+               </h3>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-10">
+               {kanbanColumns.completed.length === 0 && !isLoading && (
+                 <div className="h-40 flex flex-col items-center justify-center text-muted-foreground/50 border-2 border-dashed border-muted-foreground/20 rounded-xl p-4 text-center">
+                    <CheckCircle2 className="h-8 w-8 mb-2 opacity-50" />
+                    <p className="font-bold text-sm">{t("No completed orders yet", "لا توجد طلبات مكتملة")}</p>
+                 </div>
+               )}
+               {kanbanColumns.completed.map(o => renderOrderCard(o, 'completed'))}
+            </div>
+         </div>
+
+      </div>
+
     </div>
   );
 }
