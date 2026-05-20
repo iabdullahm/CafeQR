@@ -61,7 +61,7 @@ export default function ReportsPage() {
     if (!ordersData || !customersData) return null;
 
     const now = new Date();
-    let startDate = new Date();
+    const startDate = new Date();
     if (dateRange === 'today') startDate.setHours(0,0,0,0);
     else if (dateRange === 'week') startDate.setDate(now.getDate() - 7);
     else if (dateRange === 'month') startDate.setMonth(now.getMonth() - 1);
@@ -145,7 +145,7 @@ export default function ReportsPage() {
     if (!ordersData) return;
     
     const now = new Date();
-    let startDate = new Date();
+    const startDate = new Date();
     if (dateRange === 'today') startDate.setHours(0,0,0,0);
     else if (dateRange === 'week') startDate.setDate(now.getDate() - 7);
     else if (dateRange === 'month') startDate.setMonth(now.getMonth() - 1);

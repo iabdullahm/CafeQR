@@ -124,7 +124,7 @@ export async function placeOrderAtomic(input: PlaceOrderInput) {
     }
     
     // Loyalty: Initial Creation & Reward Usage
-    let earnedCups = 0; // Earned when completed, not here
+    const earnedCups = 0; // Earned when completed, not here
     if (customerPhone && loyaltyEligible) {
         const customerRef = doc(db, 'customers', `${cafeId}_${customerPhone}`);
         const customerSnap = await tx.get(customerRef);
@@ -245,7 +245,7 @@ export async function updateOrderStatusAtomic(orderId: string, cafeId: string, n
       }
 
       if (isActive && customerSnap.exists()) {
-          let isValid = true;
+          const isValid = true;
           if (countOnlyCoffee) {
               // Simple check: does the order have items in "hot" or "cold" or "coffee" categories?
               // Assuming you'd have category check logic here if needed.

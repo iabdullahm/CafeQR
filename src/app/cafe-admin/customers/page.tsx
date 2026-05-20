@@ -232,7 +232,7 @@ export default function CustomersPage() {
       label: "Last Activity",
       render: (row: any) => {
         const diffDays = Math.floor((new Date().getTime() - new Date(row.lastOrderDate).getTime()) / (1000 * 3600 * 24));
-        let timeStr = diffDays === 0 ? "Today" : diffDays === 1 ? "Yesterday" : `${diffDays} days ago`;
+        const timeStr = diffDays === 0 ? "Today" : diffDays === 1 ? "Yesterday" : `${diffDays} days ago`;
         
         return (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">

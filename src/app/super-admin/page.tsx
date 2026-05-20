@@ -107,7 +107,7 @@ export default function SuperAdminDashboard() {
     // Get last 6 months
     const last6Months: Array<{ name: string, new: number, churned: number, year: number, month: number }> = [];
     for (let i = 5; i >= 0; i--) {
-      let d = new Date();
+      const d = new Date();
       d.setMonth(currentMonth - i);
       last6Months.push({ name: months[d.getMonth()], new: 0, churned: 0, year: d.getFullYear(), month: d.getMonth() });
     }

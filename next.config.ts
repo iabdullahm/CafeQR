@@ -8,9 +8,10 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   eslint: {
-    // TODO: migrate .eslintrc.json -> eslint.config.js (ESLint v9 flat config)
-    // then flip this to false so lint errors also fail the build.
-    ignoreDuringBuilds: true,
+    // Fail the build on lint errors. Existing `any`/unused-vars/unescaped-quote
+    // issues were demoted to warnings in eslint.config.mjs; new real errors
+    // (e.g. missing imports) will block the build.
+    ignoreDuringBuilds: false,
   },
   images: {
     remotePatterns: [
