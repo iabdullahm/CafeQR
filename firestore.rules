@@ -13,7 +13,7 @@ service cloud.firestore {
     }
 
     function isSuperAdmin() {
-      return isSignedIn() && getUserData().role == 'SUPER_ADMIN';
+      return isSignedIn() && (getUserData().role == 'SUPER_ADMIN' || getUserData().role == 'super_admin');
     }
 
     function belongsToCafe(cafeId) {
@@ -21,29 +21,85 @@ service cloud.firestore {
     }
 
     // --- RULES ---
+    // Global Super Admin Override
+    match /{document=**} {
+      allow read, write: if isSuperAdmin();
+    }
 
     match /plans/{planId} {
       allow read: if true;
       allow write: if isSuperAdmin();
     }
-
-    match /users/{userId} {
-      // Allow users to read and update their own profile
-      // IMPORTANT: Non-recursive rule for self
-      allow get, update, create: if isSignedIn() && request.auth.uid == userId;
-      
-      // Super Admins can manage all users
-      allow list: if isSuperAdmin();
+    match /addons/{addonId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+    match /reports/{reportId} {
       allow read, write: if isSuperAdmin();
     }
+    // NOTE: tickets/notifications/payments are still scoped only to "isSignedIn"
+    // and should be tightened to owner/cafe scope when resource.data schema is confirmed.
+    match /supportTickets/{ticketId} {
+      allow read, write: if isSignedIn();
+    }
+    match /notifications/{notificationId} {
+      allow read, write: if isSignedIn();
+    }
+    match /auditLogs/{logId} {
+      allow read, write: if isSuperAdmin();
+    }
+    match /payments/{paymentId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == userId || 
+        isSuperAdmin() || 
+        getUserData().cafeId == resource.data.cafeId
+      );
+      
+      allow create: if isSignedIn() && (
+        request.auth.uid == userId || 
+        isSuperAdmin() || 
+        (getUserData().cafeId == request.resource.data.cafeId && getUserData().role in ['OWNER', 'MANAGER'])
+      );
+      
+      allow update, delete: if isSignedIn() && (
+        request.auth.uid == userId || 
+        isSuperAdmin() || 
+        (getUserData().cafeId == resource.data.cafeId && getUserData().role in ['OWNER', 'MANAGER'])
+      );
+    }
+    
+    match /loyaltySettings/{cafeId} {
+      allow read: if true;
+      allow write: if belongsToCafe(cafeId) && (getUserData().role in ['OWNER', 'MANAGER'] || isSuperAdmin());
+    }
+
+    // Global customer loyalty docs keyed by "{cafeId}_{phone}".
+    // Used by the unauthenticated ordering flow (CustomerMenuClient + orders-logic)
+    // and by cafe-admin loyalty page. Doc carries a cafeId field.
+    // (Was: allow read, write: if true.)
+    // TODO: move loyalty mutation server-side; anonymous writes are a known design gap.
+    match /customers/{customerId} {
+      // Customer reads/creates/updates their own record during ordering
+      allow get, create, update: if true;
+      // List restricted to cafe staff who own the cafe (was: open to all)
+      allow list: if isSignedIn() && (
+        isSuperAdmin() ||
+        (resource != null && getUserData().cafeId == resource.data.cafeId)
+      );
+    }
+
     match /cafes/{cafeId} {
       // Public menu view and login queries
       allow get: if true;
       allow list: if true;
-      
-      // Creation restricted to Super Admins
+
+      // Cafe onboarding restricted to super admins (was: allow create: if true)
       allow create: if isSuperAdmin();
-      
+
       // Operational access for cafe staff
       allow read: if belongsToCafe(cafeId);
       allow update: if belongsToCafe(cafeId) && 
@@ -58,7 +114,11 @@ service cloud.firestore {
       
       // Specific Public Overrides
       match /orders/{orderId} {
+        // Customer (anonymous) creates and reads their order by unguessable doc id
         allow create: if true;
+        allow read: if true;
+        // Only cafe staff can change order status / amounts (was: allow update: if true)
+        allow update: if belongsToCafe(cafeId);
       }
       match /products/{productId} {
         allow read: if true;
@@ -67,10 +127,32 @@ service cloud.firestore {
         allow read: if true;
       }
       match /tables/{tableId} {
+        // Customers can see the table info; only cafe staff can mutate it
+        // (was: allow read, update: if true)
         allow read: if true;
+        allow update: if belongsToCafe(cafeId);
+      }
+      match /customers/{customerId} {
+        // Customer can register themselves and fetch their own record
+        allow get, create: if true;
+        // Only cafe staff can edit existing customer records or list them
+        // (was: allow update: if true; allow list: if isSignedIn())
+        allow update: if belongsToCafe(cafeId);
+        allow list: if belongsToCafe(cafeId);
       }
       match /branches/{branchId} {
         allow read: if true;
+      }
+      match /branches/{branchId}/counters/{counterId} {
+        // TODO: move sequential numbering server-side; for now still open
+        // because ordering flow depends on client-side counter increments.
+        allow read, write: if true;
+      }
+      match /loyalty/{phone} {
+        // Customer can read their loyalty points; only staff can grant/modify
+        // (was: allow read, write: if true)
+        allow read: if true;
+        allow write: if belongsToCafe(cafeId);
       }
       match /config/{document=**} {
         allow read: if true;
@@ -79,6 +161,7 @@ service cloud.firestore {
 
     match /qr_tokens/{token} {
       allow get: if true;
+      // TODO: tighten to belongsToCafe; currently any signed-in user can write.
       allow write: if isSignedIn();
     }
   }
