@@ -119,8 +119,15 @@ export default function KDSManagement() {
     if (!db || !cafeId) return;
     try {
        setUpdatingId(order.id);
-       const { updateOrderStatusAtomic } = await import('@/lib/orders-logic');
-       await updateOrderStatusAtomic(order.id, cafeId, newStatus as any);
+       const res = await fetch(`/api/orders/${order.id}/status`, {
+         method: 'PATCH',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ cafeId, status: newStatus })
+       });
+       const payload = await res.json();
+       if (!res.ok || !payload.success) {
+         throw new Error(payload.message || 'Failed to update order status');
+       }
     } catch (e: any) {
        toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
