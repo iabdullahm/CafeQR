@@ -107,18 +107,20 @@ service cloud.firestore {
     }
 
     // Global customer loyalty docs keyed by "{cafeId}_{phone}".
-    // Used by the unauthenticated ordering flow (CustomerMenuClient + orders-logic)
-    // and by cafe-admin loyalty page. Doc carries a cafeId field.
-    // (Was: allow read, write: if true.)
-    // TODO: move loyalty mutation server-side; anonymous writes are a known design gap.
+    // All writes now go through /api/orders/place and /api/orders/[id]/status
+    // using firebase-admin (which bypasses these rules), so we can close client
+    // mutation entirely. Customers still need to read their own record from
+    // the QR menu to show loyalty progress.
     match /customers/{customerId} {
-      // Customer reads/creates/updates their own record during ordering
-      allow get, create, update: if true;
-      // List restricted to cafe staff who own the cafe (was: open to all)
+      // Anyone can read their own record (doc id encodes phone, hard to enumerate)
+      allow get: if true;
+      // List restricted to cafe staff who own the cafe
       allow list: if isSignedIn() && (
         isSuperAdmin() ||
         (resource != null && getUserData().cafeId == resource.data.cafeId)
       );
+      // No client writes — only the Admin SDK (which bypasses rules) writes here.
+      allow create, update, delete: if false;
     }
 
     match /cafes/{cafeId} {
@@ -143,11 +145,16 @@ service cloud.firestore {
       
       // Specific Public Overrides
       match /orders/{orderId} {
-        // Customer (anonymous) creates and reads their order by unguessable doc id
-        allow create: if true;
+        // Orders are now created server-side via /api/orders/place (Admin SDK
+        // bypasses rules). Reads remain public so the customer can poll their
+        // own order id for status.
+        allow create: if false;
         allow read: if true;
-        // Only cafe staff can change order status / amounts (was: allow update: if true)
+        // Status changes go through /api/orders/[id]/status (also Admin SDK).
+        // We still allow staff client-side updates for ad-hoc fixes from admin
+        // dashboards that haven't been migrated.
         allow update: if belongsToCafe(cafeId);
+        allow delete: if false;
       }
       match /products/{productId} {
         allow read: if true;
@@ -173,9 +180,12 @@ service cloud.firestore {
         allow read: if true;
       }
       match /branches/{branchId}/counters/{counterId} {
-        // TODO: move sequential numbering server-side; for now still open
-        // because ordering flow depends on client-side counter increments.
-        allow read, write: if true;
+        // Counters are bumped server-side inside /api/orders/place's
+        // firebase-admin transaction (which bypasses these rules). The Web SDK
+        // never needs to mutate them. Keep read open in case any dashboard
+        // wants to display the next order number.
+        allow read: if true;
+        allow write: if false;
       }
       match /loyalty/{phone} {
         // Customer can read their loyalty points; only staff can grant/modify
