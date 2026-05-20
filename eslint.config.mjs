@@ -17,7 +17,12 @@ const eslintConfig = [
       // Keep as warning so the build doesn't break, but new code is still flagged.
       "@typescript-eslint/no-explicit-any": "warn",
       // Same for unused vars — useful signal, but not a build blocker today.
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": ["warn", {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        "destructuredArrayIgnorePattern": "^_"
+      }],
       // Empty interfaces / object types are common in shadcn templates.
       "@typescript-eslint/no-empty-object-type": "warn",
       // <img> usage on customer menu pages is intentional (dynamic Firebase URLs).
