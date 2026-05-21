@@ -63,7 +63,7 @@ export function getSmartBoxScriptUrl(env: AmwalEnv): string {
 export function generateSecureHash(
   params: Record<string, string | number | undefined | null>,
   hexKey: string
-): string {
+): { hash: string; dataString: string } {
   // 1. Sort keys A→Z, skip undefined/null, coerce values to string
   const sortedKeys = Object.keys(params).sort();
   const dataString = sortedKeys
@@ -73,11 +73,12 @@ export function generateSecureHash(
 
   // 2. HMAC-SHA256(hexKey-as-bytes, dataString-utf8) → upper hex
   const keyBytes = Buffer.from(hexKey, "hex");
-  return crypto
+  const hash = crypto
     .createHmac("sha256", keyBytes)
     .update(dataString, "utf8")
     .digest("hex")
     .toUpperCase();
+  return { hash, dataString };
 }
 
 /**
@@ -128,7 +129,18 @@ export function buildCheckoutConfig(
     TerminalId: cfg.tid,
   };
 
-  const secureHash = generateSecureHash(hashParams, cfg.secretKey);
+  const { hash: secureHash, dataString } = generateSecureHash(
+    hashParams,
+    cfg.secretKey
+  );
+
+  // Diagnostics — visible in Vercel logs so we can compare with Amwal's
+  // expected values. Remove or gate behind a debug flag once integration
+  // is verified.
+  // eslint-disable-next-line no-console
+  console.log("[amwal-pay] hash dataString:", dataString);
+  // eslint-disable-next-line no-console
+  console.log("[amwal-pay] secureHash:", secureHash);
 
   return {
     scriptUrl: getSmartBoxScriptUrl(cfg.env),
@@ -172,7 +184,7 @@ export function verifyResponseHash(
     if (v === undefined || v === null) continue;
     filtered[k] = v as string | number;
   }
-  const expected = generateSecureHash(filtered, cfg.secretKey);
+  const { hash: expected } = generateSecureHash(filtered, cfg.secretKey);
   // Constant-time compare to defend against timing attacks
   try {
     return crypto.timingSafeEqual(
