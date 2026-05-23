@@ -2,19 +2,19 @@ export const translations = {
   en: {
     nav: { works: "How It Works", features: "Features", pricing: "Pricing", login: "Owner Login", start: "Get Started" },
     hero: {
-      badge: "Transforms your cafe instantly",
-      title1: "Increase Your Cafe Revenue by 30% — ",
-      title2: "Without Hiring More Staff",
-      desc: "Let customers scan, order, and pay in seconds — while you manage everything in one place.",
+      badge: "Trusted by 50+ cafes in Oman",
+      title1: "Your cafe loses 200 OMR a week",
+      title2: " — and you don't see it",
+      desc: "Customers leave before ordering, staff make mistakes, and you have no idea which item sells. CafeQR fixes all three in 5 minutes.",
       bullets: [
-        "No waiting lines",
-        "Fewer staff interruptions",
-        "Faster table turnover",
-        "Works for dine-in, takeaway & cars"
+        "3× faster orders — without hiring more staff",
+        "Live data: who ordered what, when, and from where",
+        "Loyalty system that brings the customer back 5×",
+        "Drive-thru ordering — no extra hardware"
       ],
-      cta: "Start Getting Orders Today",
-      noCard: "No credit card required",
-      demo: "Try Demo Menu"
+      cta: "Start Free in 5 Minutes →",
+      noCard: "No card • Cancel anytime • Arabic 24/7 support",
+      demo: "Watch 90s Demo"
     },
     trusted: "Trusted by 50+ cafes in Oman",
     noAppNeeded: "Works on any phone — no app needed",
@@ -144,19 +144,19 @@ export const translations = {
   ar: {
     nav: { works: "كيف نعمل", features: "المميزات", pricing: "الأسعار", login: "تسجيل دخول الكافيه", start: "ابدأ الآن" },
     hero: {
-      badge: "نظام متكامل لمقهاك",
-      title1: "خلّي الطلبات تمشي بدون زحمة — ",
-      title2: "ولا انتظار",
-      desc: "دع عملاءك يطلبون ويدفعون مباشرة من الطاولة أو السيارة، بينما تدير كل شيء من لوحة تحكم واحدة.",
+      badge: "موثوق من +50 مقهى في عمان",
+      title1: "كافيهك يخسر 200 ر.ع كل أسبوع",
+      title2: " — وأنت لا تراها",
+      desc: "زبائن يغادرون قبل الطلب، أخطاء في الكاشير، ولا تعرف أي منتج يبيع. CafeQR يحل الثلاثة في 5 دقائق إعداد.",
       bullets: [
-        "تسريع الطلبات وتقليل الانتظار",
-        "تقليل ضغط العمل على الموظفين",
-        "زيادة قيمة الطلبات تلقائياً",
-        "يدعم الطلب من السيارة بدون أجهزة إضافية"
+        "طلبات أسرع 3× — بدون موظف إضافي",
+        "بيانات لحظية: من طلب، متى، وماذا",
+        "نظام ولاء يُعيد الزبون 5 مرات",
+        "طلب من السيارة بدون أجهزة إضافية"
       ],
-      cta: "🚀 ابدأ باستقبال الطلبات اليوم",
-      noCard: "بدون بطاقة ائتمانية • بدون تعقيد",
-      demo: "📱 جرب منيو الديمو"
+      cta: "🚀 ابدأ مجاناً في 5 دقائق ←",
+      noCard: "بدون بطاقة • إلغاء في ثانية • دعم عربي 24/7",
+      demo: "🎬 شاهد الديمو (90 ثانية)"
     },
     trusted: "يعمل مع +50 مقهى في عمان",
     noAppNeeded: "يعمل على أي هاتف — بدون الحاجة لتحميل تطبيق",

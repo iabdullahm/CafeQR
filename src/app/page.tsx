@@ -84,13 +84,14 @@ export default function Home() {
         <section className="relative w-full py-12 lg:py-24">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(217,119,6,0.1),transparent_40%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(22,163,74,0.05),transparent_40%)]" />
-          <div className="container px-6 lg:px-12 mx-auto relative z-10 flex flex-col lg:flex-row items-center gap-16">
-            <div className="flex-1 space-y-8 text-center lg:text-left">
+          <div className="container px-6 lg:px-12 mx-auto relative z-10 flex flex-col lg:flex-row items-center gap-12 lg:gap-8">
+            {/* Text column — capped + raised above visual to prevent overlap with the phone mockup. */}
+            <div className="relative z-20 w-full lg:max-w-[640px] lg:flex-1 min-w-0 space-y-8 text-center lg:text-start">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 text-amber-700 font-bold text-sm tracking-wide mb-8 animate-fade-in shadow-sm border border-amber-200">
                 <Coffee className="w-4 h-4" />
                 {t.hero.badge}
               </div>
-              <h1 className="text-5xl lg:text-7xl font-black text-zinc-900 tracking-tight leading-[1.1] mb-8 lg:leading-[1.1]">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black text-zinc-900 tracking-tight leading-[1.1] mb-8 lg:leading-[1.1] [text-wrap:balance]">
                 {t.hero.title1}
                 <span className="text-amber-600 relative inline-block">
                   {t.hero.title2}
@@ -125,9 +126,10 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            {/* Visuals - Phone and Dashboard Realistic Mockup */}
-            <div className="flex-1 w-full relative h-[500px] lg:h-[600px] flex items-center justify-center -rotate-2 hover:rotate-0 transition-transform duration-700">
-               <div className="absolute right-0 lg:-right-10 top-10 w-4/5 h-4/5 bg-white rounded-3xl shadow-2xl shadow-zinc-200/50 border border-zinc-100 p-4 transform translate-x-10 -z-10 flex flex-col">
+            {/* Visuals - Phone and Dashboard Realistic Mockup. Capped width + z-0
+                so it can't bleed into the text column on wide screens. */}
+            <div className="relative z-0 w-full lg:max-w-[560px] lg:flex-shrink-0 h-[500px] lg:h-[600px] flex items-center justify-center -rotate-2 hover:rotate-0 transition-transform duration-700">
+               <div className="absolute right-0 top-10 w-4/5 h-4/5 bg-white rounded-3xl shadow-2xl shadow-zinc-200/50 border border-zinc-100 p-4 -z-10 flex flex-col">
                   {/* Browser Mac dots */}
                   <div className="h-8 border-b border-zinc-100 flex items-center gap-2 mb-4">
                     <div className="w-3 h-3 rounded-full bg-red-400" />
@@ -178,7 +180,7 @@ export default function Home() {
                   </div>
                </div>
                
-               <div className="relative w-[280px] h-[580px] bg-zinc-900 rounded-[3rem] shadow-2xl border-[8px] border-zinc-900 overflow-hidden transform -translate-x-10 lg:-translate-x-20 rotate-6 hover:rotate-2 transition-transform duration-500 flex flex-col">
+               <div className="relative w-[260px] h-[540px] bg-zinc-900 rounded-[3rem] shadow-2xl border-[8px] border-zinc-900 overflow-hidden rotate-6 hover:rotate-2 transition-transform duration-500 flex flex-col">
                  <div className="absolute top-0 inset-x-0 h-6 bg-black z-20 flex justify-center">
                    <div className="w-1/3 h-4 bg-black rounded-b-xl" />
                  </div>
