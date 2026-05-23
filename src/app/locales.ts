@@ -135,6 +135,17 @@ export const translations = {
       alertTitle: "New Order Received!",
       alertDesc: "Table 4 • 12.50 OMR"
     },
+    priceAnchor: {
+      lossLabel: "What you're losing daily",
+      lossValue: "28 OMR",
+      lossDesc: "from slow orders, mistakes, and missed customers (industry average)",
+      planLabel: "What Popular plan costs",
+      planValue: "0.30 OMR / day",
+      planDesc: "less than a single espresso shot",
+      verdictLabel: "Net result",
+      verdictValue: "Stop a 28 OMR daily leak — for 0.30 OMR",
+      verdictDesc: "approx 93x return on your subscription"
+    },
     pricing: {
       preTitle: "How much are you losing without a smart system?",
       preDesc: "Cafes like yours increased orders by 30% while reducing operational costs.",
@@ -325,6 +336,17 @@ export const translations = {
       desc: "تابع الطلبات، الإيرادات، وحالة الطاولات لحظياً من لوحة تحكم بسيطة وسريعة.",
       alertTitle: "تم استلام طلب جديد!",
       alertDesc: "طاولة 4 • 12.50 ر.ع"
+    },
+    priceAnchor: {
+      lossLabel: "ما تخسره يومياً",
+      lossValue: "28 ر.ع",
+      lossDesc: "من بطء الطلبات، الأخطاء، وزبائن غادروا (متوسط الصناعة)",
+      planLabel: "ما تدفعه لخطة Popular",
+      planValue: "0.30 ر.ع / يوم",
+      planDesc: "أقل من كوب إسبريسو واحد",
+      verdictLabel: "النتيجة",
+      verdictValue: "أوقف خسارة 28 ر.ع يومياً — بـ 0.30 ر.ع فقط",
+      verdictDesc: "حوالي 93× عائد على اشتراكك"
     },
     pricing: {
       preTitle: "كم تخسر يوميًا بدون نظام ذكي؟",

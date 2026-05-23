@@ -581,12 +581,61 @@ export default function Home() {
           </div>
         </section>
 
-        {/* PRE-PRICING HOOK (Value/Loss Frame) */}
-        <section className="w-full py-16 bg-zinc-50 border-t border-zinc-100 text-center">
-           <div className="container px-6 lg:px-12 mx-auto max-w-4xl">
-              <h2 className="text-3xl md:text-4xl font-black text-zinc-900 mb-6 leading-tight">{t.pricing.preTitle}</h2>
-              <p className="text-lg md:text-xl font-bold text-amber-700 bg-amber-50 inline-block px-6 py-3 rounded-2xl border border-amber-200">{t.pricing.preDesc}</p>
-           </div>
+        {/* PRE-PRICING HOOK — anchor the subscription cost against the daily
+            money the cafe is currently leaking. Three-card layout:
+            (1) Daily loss  (2) Daily plan cost  (3) Verdict / ROI ratio. */}
+        <section className="w-full py-20 bg-gradient-to-b from-zinc-50 to-white border-t border-zinc-100">
+          <div className="container px-6 lg:px-12 mx-auto max-w-5xl">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-black text-zinc-900 mb-3 leading-tight [text-wrap:balance]">
+                {t.pricing.preTitle}
+              </h2>
+              <p className="text-base md:text-lg font-medium text-zinc-600 max-w-2xl mx-auto">
+                {t.pricing.preDesc}
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 items-stretch">
+              {/* Card 1 — DAILY LOSS (red, pain) */}
+              <div className="rounded-3xl bg-rose-50 border-2 border-rose-200 p-6 lg:p-8 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+                <p className="text-xs font-black uppercase tracking-wider text-rose-600 mb-3">
+                  {t.priceAnchor?.lossLabel}
+                </p>
+                <p className="text-5xl lg:text-6xl font-black text-rose-600 mb-3 font-mono">
+                  {t.priceAnchor?.lossValue}
+                </p>
+                <p className="text-sm font-medium text-rose-800/70 leading-relaxed">
+                  {t.priceAnchor?.lossDesc}
+                </p>
+              </div>
+
+              {/* Card 2 — DAILY PLAN COST (neutral, anchor) */}
+              <div className="rounded-3xl bg-white border-2 border-zinc-200 p-6 lg:p-8 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow">
+                <p className="text-xs font-black uppercase tracking-wider text-zinc-500 mb-3">
+                  {t.priceAnchor?.planLabel}
+                </p>
+                <p className="text-4xl lg:text-5xl font-black text-zinc-900 mb-3 font-mono">
+                  {t.priceAnchor?.planValue}
+                </p>
+                <p className="text-sm font-medium text-zinc-500 leading-relaxed">
+                  {t.priceAnchor?.planDesc}
+                </p>
+              </div>
+
+              {/* Card 3 — VERDICT (green, win) */}
+              <div className="rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 border-2 border-emerald-300 p-6 lg:p-8 flex flex-col justify-between shadow-md hover:shadow-lg transition-shadow">
+                <p className="text-xs font-black uppercase tracking-wider text-emerald-700 mb-3">
+                  {t.priceAnchor?.verdictLabel}
+                </p>
+                <p className="text-lg lg:text-xl font-black text-emerald-700 mb-3 leading-tight [text-wrap:balance]">
+                  {t.priceAnchor?.verdictValue}
+                </p>
+                <p className="text-sm font-bold text-emerald-700/80 leading-relaxed">
+                  {t.priceAnchor?.verdictDesc}
+                </p>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* PRICING */}
