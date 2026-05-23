@@ -55,7 +55,7 @@ import {
 import Link from "next/link";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
@@ -89,7 +89,8 @@ export default function CafeDetailsPage({ params }: { params: Promise<{ id: stri
   // Handle Next.js 15 async params or sync params depending on setup
   const resolvedParams = use(params);
   const { id } = resolvedParams;
-  
+  const { user } = useUser();
+
   const [activeTab, setActiveTab] = useState("overview");
   const [isSaving, setIsSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
@@ -146,19 +147,24 @@ export default function CafeDetailsPage({ params }: { params: Promise<{ id: stri
     try {
       toast({ title: `Impersonating ${cafeName}...` });
       const oldToken = localStorage.getItem("token");
-      if (oldToken) {
-        localStorage.setItem("superAdminToken", oldToken);
-      }
-      const response = await api.post(`/super-admin/impersonate/${cafeId}`);
-      if (response.data?.data?.token) {
-        localStorage.setItem("token", response.data.data.token);
-        window.dispatchEvent(new Event("storage"));
-        window.location.href = "/cafe-admin";
-      } else {
-        throw new Error(response.data?.message || "Failed to get impersonation token");
-      }
-    } catch (e: any) {
-      toast({ title: e.response?.data?.message || e.message || "Impersonation failed", variant: "destructive" });
+      if (oldToken) localStorage.setItem("superAdminToken", oldToken);
+      // Endpoint now uses Firebase ID token (fixes prod 401).
+      const idToken = user ? await user.getIdToken() : null;
+      if (!idToken) throw new Error("Not signed in to Firebase - please log in again.");
+      const res = await fetch(`/api/super-admin/impersonate/${cafeId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || `Impersonate failed (${res.status})`);
+      const newToken = json.data?.token;
+      if (!newToken) throw new Error("No token returned.");
+      localStorage.setItem("token", newToken);
+      window.dispatchEvent(new Event("storage"));
+      window.location.href = "/cafe-admin";
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Impersonation failed";
+      toast({ title: msg, variant: "destructive" });
     }
   };
 

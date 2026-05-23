@@ -1,70 +1,102 @@
+/**
+ * POST /api/super-admin/impersonate/[cafeId]
+ *
+ * Allows a SUPER_ADMIN (authenticated via Firebase Auth) to obtain a
+ * scoped JWT that "impersonates" a cafe owner — used by the super-admin
+ * dashboard to jump into a tenant's cafe-admin view without needing
+ * the owner's credentials.
+ *
+ * Auth flow:
+ *   1. Verify the caller's Firebase ID token (super-admin role from
+ *      Firestore /users/{uid}).
+ *   2. Look up the target cafe in Postgres (by numeric id or cafeCode).
+ *   3. Return a SHORT-LIVED legacy JWT scoped to that cafe — the
+ *      cafe-admin code still uses this token for its own API calls.
+ *      Token includes `impersonatedBy: <super-admin uid>` for audit.
+ *
+ * Migration note: this previously used the JWT-based `withAuth`, which
+ * left the endpoint failing with 401 in production because the
+ * super-admin pages were authenticating with Firebase. The route is now
+ * Firebase-first; the legacy JWT it ISSUES is only the impersonation
+ * artefact, not how the caller proves identity.
+ */
+
 import { NextResponse } from 'next/server';
-import { withAuth } from '@/middleware/auth-helpers';
+import { withFirebaseAuth } from '@/middleware/firebase-auth';
 import prisma from '@/config/prisma';
 import { signToken } from '@/utils/jwt';
 
-export async function POST(req: Request, { params }: { params: Promise<{ cafeId: string }> }) {
-  return withAuth(req, ['SUPER_ADMIN'], async (user) => {
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ cafeId: string }> }
+) {
+  return withFirebaseAuth(req, ['SUPER_ADMIN'], async (user) => {
     try {
       const { cafeId } = await params;
-      if (!cafeId) return NextResponse.json({ success: false, message: 'Missing cafeId' }, { status: 400 });
+      if (!cafeId) {
+        return NextResponse.json(
+          { success: false, message: 'Missing cafeId' },
+          { status: 400 }
+        );
+      }
 
-      // In Postgres, ID might be BigInt, requiring conversion. If they pass BigInt strings, wait, let's just see.
-      // Firebase cafes table uses `CAF-...` or numerical string.
-      // Let's find the cafe. First try checking if it parses as number, else search by cafeCode.
-      let cafe;
+      // Resolve the cafe row. The id we receive may be:
+      //  - numeric Postgres id   (e.g. "1")
+      //  - human-readable cafeCode (e.g. "DEMO001")
+      //  - Firebase document id  (e.g. "CAF-1716173400")
+      let cafe = null;
       if (!isNaN(Number(cafeId))) {
-        cafe = await prisma.cafe.findUnique({
-          where: { id: BigInt(cafeId) },
-        });
+        cafe = await prisma.cafe.findUnique({ where: { id: BigInt(cafeId) } });
       }
       if (!cafe) {
-        cafe = await prisma.cafe.findFirst({
-          where: { cafeCode: cafeId },
-        });
+        cafe = await prisma.cafe.findFirst({ where: { cafeCode: cafeId } });
       }
 
-      if (!cafe) {
-        // If not found in Prisma, it might be a Firebase ID.
-        // We bypass the strict check and generate a token for the Firebase ID directly.
-        if (typeof cafeId === 'string' && cafeId.length > 10) {
-          const tokenPayload = {
-            sub: "CAFE_DEFAULT_OWNER",
-            email: `impersonated@cafeqr.com`,
-            roles: ["OWNER"],
-            cafeId: cafeId,
-            impersonatedBy: user.sub
+      // Build the impersonation JWT payload.
+      const tokenPayload = (() => {
+        if (cafe) {
+          return {
+            sub: cafe.ownerUserId ? String(cafe.ownerUserId) : 'CAFE_DEFAULT_OWNER',
+            email: 'impersonated@cafeqr.com',
+            roles: ['OWNER'],
+            cafeId: String(cafe.id),
+            impersonatedBy: user.uid,
           };
-          const newToken = signToken(tokenPayload);
-          return NextResponse.json({
-            success: true,
-            data: { token: newToken }
-          });
         }
-        
-        return NextResponse.json({ success: false, message: 'Cafe not found in DB' }, { status: 404 });
+        // Cafe not found in Postgres — fall back to a Firebase-only cafe
+        // id. The legacy cafe-admin code accepts this shape.
+        if (typeof cafeId === 'string' && cafeId.length > 0) {
+          return {
+            sub: 'CAFE_DEFAULT_OWNER',
+            email: 'impersonated@cafeqr.com',
+            roles: ['OWNER'],
+            cafeId,
+            impersonatedBy: user.uid,
+          };
+        }
+        return null;
+      })();
+
+      if (!tokenPayload) {
+        return NextResponse.json(
+          { success: false, message: 'Cafe not found' },
+          { status: 404 }
+        );
       }
-
-      // Identify the owner or default user to impersonate as.
-      const targetUserId = cafe.ownerUserId ? String(cafe.ownerUserId) : "CAFE_DEFAULT_OWNER";
-
-      const tokenPayload = {
-        sub: targetUserId,
-        email: `impersonated@cafeqr.com`, // Avoid messing with real user's email matching
-        roles: ["OWNER"],
-        cafeId: String(cafe.id),
-        impersonatedBy: user.sub
-      };
 
       const newToken = signToken(tokenPayload);
 
       return NextResponse.json({
         success: true,
-        data: { token: newToken }
+        data: { token: newToken },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
       console.error('Impersonation Error:', error);
-      return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+      return NextResponse.json(
+        { success: false, message: msg },
+        { status: 500 }
+      );
     }
   });
 }
