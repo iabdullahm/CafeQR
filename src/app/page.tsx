@@ -120,7 +120,7 @@ export default function Home() {
                 </Button>
                 <div className="flex flex-col items-center sm:items-start gap-1">
                   <Button asChild className="h-16 px-8 rounded-full font-bold text-lg bg-white border-2 border-zinc-200 text-zinc-700 hover:border-amber-500 hover:text-amber-600 hover:bg-amber-50 shadow-sm w-full sm:w-auto transition-all">
-                    <Link href="/demo/menu">{t.hero.demo}</Link>
+                    <Link href="/calculator">{t.hero.demo}</Link>
                   </Button>
                   <p className="text-xs text-zinc-400 font-medium px-4 opacity-80 mt-1">{t.hero.noCard}</p>
                 </div>

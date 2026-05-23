@@ -14,7 +14,7 @@ export const translations = {
       ],
       cta: "Start Free in 5 Minutes →",
       noCard: "No card • Cancel anytime • Arabic 24/7 support",
-      demo: "Watch 90s Demo"
+      demo: "💰 Calculate Your Daily Loss"
     },
     trusted: "Trusted by 50+ cafes in Oman",
     noAppNeeded: "Works on any phone — no app needed",
@@ -217,7 +217,7 @@ export const translations = {
       ],
       cta: "🚀 ابدأ مجاناً في 5 دقائق ←",
       noCard: "بدون بطاقة • إلغاء في ثانية • دعم عربي 24/7",
-      demo: "🎬 شاهد الديمو (90 ثانية)"
+      demo: "💰 احسب خسارتك اليومية"
     },
     trusted: "يعمل مع +50 مقهى في عمان",
     noAppNeeded: "يعمل على أي هاتف — بدون الحاجة لتحميل تطبيق",
@@ -400,7 +400,6 @@ export const translations = {
     },
     footer: {
       copy: "© 2024 نظام تشغيل مقاهي حديث .CafeQR SaaS",
-      links: ["الشروط", "الخصوصية", "اتصل بنا"],
       devLogin: "دخول المطور"
     }
   }
