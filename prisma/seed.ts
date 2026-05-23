@@ -17,6 +17,10 @@
  *   SEED_ADMIN_PASSWORD=ChooseAStrongPassword
  */
 
+// Prisma 6 skips its own .env autoload when a prisma.config.ts exists, and
+// `npx prisma db seed` launches this file as a subprocess — so DATABASE_URL
+// isn't inherited unless we load it ourselves.
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import bcrypt from "bcryptjs";
@@ -239,6 +243,7 @@ async function main() {
   }
   console.log(`Menu items seeded: ${items.length}`);
 
+  console.log("");
   console.log("");
   console.log("Seed complete. Test with:");
   console.log(`  curl https://www.cafe-qr.com/api/public/cafes/${cafe.id}`);
