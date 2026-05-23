@@ -83,18 +83,10 @@ function LoginForm() {
         let shouldProvision = false;
         let provisionData: any = null;
 
-        // Auto-provision Super Admin for the new project
-        if (normalizedEmail === 'admin@admin.com' || normalizedEmail === 'abdullah.j@creativetechno.net') {
-          shouldProvision = true;
-          provisionData = {
-            email: normalizedEmail,
-            password: password,
-            role: 'SUPER_ADMIN',
-            fullName: 'Platform Administrator',
-            cafeId: 'SUPER_ADMIN',
-            isDynamic: true
-          };
-        } else {
+        // Removed: hardcoded SUPER_ADMIN auto-provision for specific emails.
+        // That allowed anyone who knew the email to claim SUPER_ADMIN on
+        // first login. SUPER_ADMIN must now be granted manually via DB.
+        {
           // Standard Owner Provisioning
           const q = query(collection(db, 'cafes'), where('owner_email', '==', normalizedEmail));
           const snap = await getDocs(q);

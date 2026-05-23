@@ -8,28 +8,11 @@ import { type LoginInput } from '@/lib/validations/auth';
  */
 
 export class AuthService {
-  async login(input: LoginInput) {
-    const normalizedEmail = input.email.toLowerCase().trim();
-
-    // Sync with demo credentials provided in the UI
-    if (normalizedEmail === 'admin@cafeqr.com' && input.password === '123456') {
-      const user = {
-        id: '1',
-        email: 'admin@cafeqr.com',
-        role: 'SUPER_ADMIN',
-        full_name: 'Demo Admin'
-      };
-
-      const token = generateToken({
-        sub: user.id,
-        email: user.email,
-        roles: [user.role]
-      } as any);
-
-      return { user, token };
-    }
-
-    throw new Error('Invalid credentials');
+  async login(_input: LoginInput) {
+    // Demo credential bypass removed for security. The real login flow now
+    // goes through /api/auth/login, which validates against the database
+    // (or the env-gated dev seed account in non-production builds).
+    throw new Error('Use POST /api/auth/login — direct client login disabled.');
   }
 
   async getCurrentUser(payload: TokenPayload) {

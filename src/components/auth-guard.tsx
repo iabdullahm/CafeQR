@@ -57,24 +57,12 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
       const tokenVersion = localStorage.getItem('token_version');
       
       if ((!currentToken || tokenVersion !== '1.1') && profile.email) {
-        console.log("AuthGuard: Syncing platform token...");
-        const demoCreds: Record<string, string> = {
-          'admin@cafeqr.com': '123456',
-          'abdullah@urbanbrew.om': 'Admin@123',
-          'admin@admin.com': '123456',
-          'abdullah.j@creativetechno.net': '123456'
-        };
-        
-        if (demoCreds[profile.email]) {
-           axios.post('/api/auth/login', { email: profile.email, password: demoCreds[profile.email] })
-            .then(res => {
-              if (res.data.success) {
-                localStorage.setItem('token', res.data.data.token);
-                localStorage.setItem('token_version', '1.1');
-                console.log("AuthGuard: Platform token synchronized.");
-              }
-            }).catch(e => console.error("Sync failed", e));
-        }
+        // Token resync used to be done by re-posting hardcoded demo
+        // credentials. That was a credential-leak vector and is removed.
+        // The user must log in again via /login to refresh their JWT.
+        console.warn(
+          "AuthGuard: token missing or stale. User should re-authenticate via /login."
+        );
       }
     }
   }, [profile, isProfileLoading, user, allowedRoles, router]);

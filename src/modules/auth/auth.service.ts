@@ -7,32 +7,54 @@ import bcrypt from 'bcryptjs';
  * @fileOverview Auth Service handles the logic for user login and retrieval.
  */
 
+/**
+ * Optional dev-only seed accounts.
+ *
+ * Reads SEED_ADMIN_EMAIL + SEED_ADMIN_PASSWORD_HASH from env. Both must be set,
+ * and NODE_ENV must NOT be 'production'. The hash must be a bcrypt hash —
+ * never a plaintext password — so the secret value is never compared as a
+ * string literal and can't leak via a code search.
+ *
+ * To use locally:
+ *   node -e "console.log(require('bcryptjs').hashSync('YourStrongPassword', 10))"
+ *   then add to .env (NEVER commit):
+ *     SEED_ADMIN_EMAIL=you@example.com
+ *     SEED_ADMIN_PASSWORD_HASH=$2a$10$...
+ */
+async function tryDevSeedLogin(
+  normalizedEmail: string,
+  password: string
+): Promise<{ token: string; user: any } | null> {
+  if (process.env.NODE_ENV === 'production') return null;
+
+  const seedEmail = (process.env.SEED_ADMIN_EMAIL ?? '').toLowerCase().trim();
+  const seedHash = process.env.SEED_ADMIN_PASSWORD_HASH ?? '';
+  if (!seedEmail || !seedHash) return null;
+  if (normalizedEmail !== seedEmail) return null;
+
+  const ok = await bcrypt.compare(password, seedHash);
+  if (!ok) return null;
+
+  // Use a sentinel ID that cannot collide with a real DB row.
+  const user = {
+    id: DEV_SEED_USER_ID,
+    full_name: 'Dev Seed Admin',
+    email: normalizedEmail,
+    roles: ['SUPER_ADMIN'],
+  };
+  const token = signToken({ sub: user.id, email: user.email, roles: user.roles });
+  return { token, user };
+}
+
+const DEV_SEED_USER_ID = '__dev_seed_admin__';
+
 export const loginUser = async ({ email, password, isFirebaseSynced }: any) => {
   const normalizedEmail = email.toLowerCase().trim();
 
-  // 1. Credentials Bypass (For Prototyping, Initial Access, and new Super Admins)
-  // The frontend handles Firebase validation, we trust the incoming request from the login flow
-  if (
-    (normalizedEmail === 'admin@cafeqr.com' && password === '123456') ||
-    (normalizedEmail === 'abdullah@urbanbrew.om' && password === 'Admin@123') ||
-    normalizedEmail === 'admin@admin.com' ||
-    normalizedEmail === 'abdullah.j@creativetechno.net'
-  ) {
-    const demoUser = {
-      id: (normalizedEmail === 'admin@cafeqr.com' || normalizedEmail === 'admin@admin.com') ? '1' : '2',
-      full_name: (normalizedEmail === 'admin@cafeqr.com' || normalizedEmail === 'admin@admin.com') ? 'Demo Admin' : 'Abdullah Al Jahwari',
-      email: normalizedEmail,
-      roles: ['SUPER_ADMIN']
-    };
-
-    const token = signToken({
-      sub: demoUser.id,
-      email: demoUser.email,
-      roles: demoUser.roles
-    });
-
-    return { token, user: demoUser };
-  }
+  // 1. Dev-only seed account (gated by NODE_ENV + env vars).
+  //    Production builds never reach this branch.
+  const seed = await tryDevSeedLogin(normalizedEmail, password);
+  if (seed) return seed;
 
   // 2. Real Database Authentication
   try {
@@ -120,13 +142,18 @@ export const loginUser = async ({ email, password, isFirebaseSynced }: any) => {
 };
 
 export const getCurrentUser = async (userId: string) => {
-  // Handle demo user ID
-  if (userId === '1' || userId === '2') {
+  // Dev-only seed admin (matches the sentinel ID issued by tryDevSeedLogin).
+  // Production builds never reach this branch because tryDevSeedLogin is gated.
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    userId === DEV_SEED_USER_ID &&
+    process.env.SEED_ADMIN_EMAIL
+  ) {
     return {
       id: userId,
-      full_name: userId === '1' ? 'Demo Admin' : 'Abdullah Al Jahwari',
-      email: userId === '1' ? 'admin@cafeqr.com' : 'abdullah@urbanbrew.om',
-      roles: ['SUPER_ADMIN']
+      full_name: 'Dev Seed Admin',
+      email: process.env.SEED_ADMIN_EMAIL,
+      roles: ['SUPER_ADMIN'],
     };
   }
 

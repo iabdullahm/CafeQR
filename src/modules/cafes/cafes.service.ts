@@ -4,7 +4,6 @@ import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, serverTimestamp, setDoc, doc } from 'firebase/firestore';
 
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
 // Initialize Firebase for server-side sync (if not already initialized)
 const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
@@ -118,14 +117,12 @@ export const createCafe = async (payload: any) => {
 
   // Sync to Firestore for real-time UI
   try {
-    const auth = getAuth(firebaseApp);
-    
-    try {
-      // Try to sign in as the legacy demo admin just in case we are in production
-      await signInWithEmailAndPassword(auth, 'admin@cafeqr.com', '123456');
-    } catch (e) {
-      console.warn('Backend Firebase sign in failed, relying on Test Mode rules for write:', e);
-    }
+    // Note: server-side Firestore writes must use the Firebase Admin SDK
+    // (which bypasses client-side rules with service-account auth). The
+    // previous code signed in as a hardcoded demo admin - removed because
+    // it leaked credentials and the Admin SDK is the correct path.
+    // Falls through to the setDoc below, which now relies on Firestore
+    // Security Rules + Admin SDK (configured in src/lib/firebase-admin.ts).
 
     await setDoc(doc(db, 'cafes', newCafeId), {
       id: newCafeId,
