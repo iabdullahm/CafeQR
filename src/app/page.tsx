@@ -386,6 +386,82 @@ export default function Home() {
           </div>
         </section>
 
+
+        {/* 5b. CASE STUDIES — three cafe archetypes with Before→After projections.
+            Numbers are industry-average / pilot estimates, NOT specific customer
+            results — clearly disclosed below the grid. */}
+        <section className="w-full py-24 bg-white">
+          <div className="container px-6 lg:px-12 mx-auto">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-block bg-amber-100 text-amber-800 font-black px-4 py-1.5 rounded-full text-sm mb-6 border border-amber-200">
+                {t.caseStudies?.title}
+              </div>
+              <h2 className="text-4xl lg:text-5xl font-black text-zinc-900 mb-4 [text-wrap:balance]">
+                {t.caseStudies?.subtitle}
+              </h2>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              {t.caseStudies?.list.map((cs: any, i: number) => (
+                <div
+                  key={i}
+                  className="bg-white border border-zinc-200 rounded-3xl shadow-xl shadow-zinc-200/40 overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-2xl transition-all duration-300"
+                >
+                  <div className={`h-2 bg-gradient-to-r ${cs.color}`} />
+                  <div className="p-6 sm:p-8 flex flex-col gap-6 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className={`px-3 py-1 rounded-full bg-gradient-to-r ${cs.color} text-white text-xs font-black uppercase tracking-wider`}>
+                        {cs.tag}
+                      </span>
+                      <span className="text-[11px] text-zinc-400 font-bold">{t.caseStudies?.labels.bestFor}: {cs.bestFor}</span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-2xl font-black text-zinc-900 mb-1 [text-wrap:balance]">{cs.name}</h3>
+                      <p className="text-sm text-zinc-500 font-medium">{cs.size}</p>
+                    </div>
+
+                    <div className="rounded-2xl bg-zinc-50 border border-zinc-100 overflow-hidden">
+                      <div className="grid grid-cols-3 text-[11px] font-black uppercase tracking-wider text-zinc-400 bg-white border-b border-zinc-100">
+                        <div className="p-3"></div>
+                        <div className="p-3 text-center">{t.caseStudies?.labels.before}</div>
+                        <div className="p-3 text-center text-emerald-600">{t.caseStudies?.labels.after}</div>
+                      </div>
+                      {[
+                        { label: t.caseStudies?.labels.ordersDay, before: cs.before.orders, after: cs.after.orders },
+                        { label: t.caseStudies?.labels.revenueDay, before: cs.before.revenue, after: cs.after.revenue },
+                        { label: t.caseStudies?.labels.errorRate, before: cs.before.errors, after: cs.after.errors },
+                      ].map((row: any, ri: number) => (
+                        <div key={ri} className="grid grid-cols-3 text-sm border-b border-zinc-100 last:border-b-0">
+                          <div className="p-3 text-zinc-500 font-bold">{row.label}</div>
+                          <div className="p-3 text-center font-mono font-bold text-zinc-400 line-through">{row.before}</div>
+                          <div className="p-3 text-center font-mono font-black text-emerald-600">{row.after}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 border-2 border-emerald-200 p-5 text-center">
+                      <p className="text-xs font-black uppercase tracking-wider text-emerald-700 mb-1">
+                        {t.caseStudies?.labels.extraMonthly}
+                      </p>
+                      <p className="text-3xl lg:text-4xl font-black text-emerald-600 font-mono">
+                        {cs.extraMonthly}
+                      </p>
+                    </div>
+
+                    <p className="text-xs text-zinc-500 font-medium leading-relaxed mt-auto border-t border-zinc-100 pt-4">
+                      &#9749; {cs.highlight}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="max-w-3xl mx-auto mt-10 text-xs text-zinc-400 font-medium leading-relaxed text-center [text-wrap:balance]">
+              {t.caseStudies?.disclaimer}
+            </p>
+          </div>
+        </section>
         {/* 6. DASHBOARD PREVIEW */}
         <section className="w-full py-24 bg-zinc-50">
           <div className="container px-6 lg:px-12 mx-auto text-center">

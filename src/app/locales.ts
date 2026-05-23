@@ -57,6 +57,56 @@ export const translations = {
         { stat: "2x", text: "Faster table turnover" }
       ]
     },
+    caseStudies: {
+      title: "Three cafe profiles — and how much they earn extra",
+      subtitle: "30-day projections based on industry averages and CafeQR pilot data",
+      disclaimer: "* Figures are projections based on industry averages and early pilot data, not the actual results of a specific customer. Your numbers will vary by location, menu price, and traffic.",
+      labels: {
+        before: "Before",
+        after: "After 30 days",
+        ordersDay: "orders / day",
+        revenueDay: "OMR / day",
+        errorRate: "error rate",
+        extraMonthly: "Extra income / month",
+        size: "Size",
+        bestFor: "Best for"
+      },
+      list: [
+        {
+          tag: "Small",
+          name: "Solo / Specialty Café",
+          size: "8 tables • 3 staff",
+          bestFor: "Owner-operators",
+          color: "from-amber-400 to-orange-500",
+          before: { orders: 35, revenue: 130, errors: "8%" },
+          after:  { orders: 52, revenue: 195, errors: "1%" },
+          extraMonthly: "+1,950 OMR",
+          highlight: "Recovers a Popular plan in 6 days"
+        },
+        {
+          tag: "Mid",
+          name: "Neighbourhood Café",
+          size: "12 tables • 5 staff",
+          bestFor: "Mid-size cafés",
+          color: "from-emerald-500 to-teal-600",
+          before: { orders: 60, revenue: 230, errors: "9%" },
+          after:  { orders: 88, revenue: 340, errors: "2%" },
+          extraMonthly: "+3,300 OMR",
+          highlight: "Most cafés in our pilot fit this profile"
+        },
+        {
+          tag: "Drive-thru",
+          name: "Drive-thru + Dine-in",
+          size: "15 tables + drive-thru lane",
+          bestFor: "Cafés with parking + dine-in",
+          color: "from-blue-500 to-indigo-600",
+          before: { orders: 70, revenue: 280, errors: "11%" },
+          after:  { orders: 105, revenue: 420, errors: "2%" },
+          extraMonthly: "+4,200 OMR",
+          highlight: "Adds drive-thru without buying hardware"
+        }
+      ]
+    },
     usecases: {
       title: "Let Customers Order From Their Cars",
       subtitle: "No Waiting, No Parking Stress",
@@ -199,6 +249,56 @@ export const translations = {
         { stat: "2x", text: "دوران أسرع للطاولات" }
       ]
     },
+    caseStudies: {
+      title: "ثلاثة أنماط من المقاهي — وكم يكسبون إضافياً",
+      subtitle: "توقعات 30 يوم مبنية على متوسطات الصناعة وبيانات المرحلة التجريبية لـ CafeQR",
+      disclaimer: "* الأرقام توقعات مبنية على متوسطات الصناعة وبيانات تجريبية، وليست نتائج عميل بعينه. الأرقام الفعلية تختلف حسب الموقع والأسعار وعدد الزبائن.",
+      labels: {
+        before: "قبل",
+        after: "بعد 30 يوماً",
+        ordersDay: "طلب/يوم",
+        revenueDay: "ر.ع/يوم",
+        errorRate: "نسبة الأخطاء",
+        extraMonthly: "دخل إضافي/شهر",
+        size: "الحجم",
+        bestFor: "مناسب لـ"
+      },
+      list: [
+        {
+          tag: "صغير",
+          name: "مقهى Specialty / مالك واحد",
+          size: "8 طاولات • 3 موظفين",
+          bestFor: "أصحاب المقاهي الصغيرة",
+          color: "from-amber-400 to-orange-500",
+          before: { orders: 35, revenue: 130, errors: "8%" },
+          after:  { orders: 52, revenue: 195, errors: "1%" },
+          extraMonthly: "+1,950 ر.ع",
+          highlight: "يسترد تكلفة باقة Popular في 6 أيام"
+        },
+        {
+          tag: "متوسط",
+          name: "مقهى الحي",
+          size: "12 طاولة • 5 موظفين",
+          bestFor: "المقاهي متوسطة الحجم",
+          color: "from-emerald-500 to-teal-600",
+          before: { orders: 60, revenue: 230, errors: "9%" },
+          after:  { orders: 88, revenue: 340, errors: "2%" },
+          extraMonthly: "+3,300 ر.ع",
+          highlight: "أغلب مقاهي المرحلة التجريبية بهذا الحجم"
+        },
+        {
+          tag: "Drive-thru",
+          name: "مقهى مع طلب من السيارة",
+          size: "15 طاولة + ممر سيارات",
+          bestFor: "المقاهي ذات المواقف + الجلوس",
+          color: "from-blue-500 to-indigo-600",
+          before: { orders: 70, revenue: 280, errors: "11%" },
+          after:  { orders: 105, revenue: 420, errors: "2%" },
+          extraMonthly: "+4,200 ر.ع",
+          highlight: "يضيف Drive-thru بدون شراء أجهزة"
+        }
+      ]
+    },
     usecases: {
       title: "دع عملائك يطلبون من سياراتهم",
       subtitle: "بدون انتظار، بدون إزعاج المواقف",
@@ -217,7 +317,6 @@ export const translations = {
         { title: "اعرف أكثر المنتجات مبيعًا", desc: "تقارير ذكية تساعدك تضاعف أرباحك." },
         { title: "تجربة أسرع لعملائك", desc: "لا انتظار بعد اليوم، المطبخ يرى الطلبات فوراً." },
         { title: "تنظيم ممتاز للطاولات", desc: "تابع كل طاولة وقدم خدمة مميزة لكل ضيف." },
-        { title: "حافظ على ولاء عملائك", desc: "نظام نقاط يضمن عودة العميل لك مرة أخرى." },
         { title: "إدارة الفروع بسهولة", desc: "تابع أداء كل فروعك من شاشة واحدة فقط." }
       ]
     },
@@ -259,7 +358,7 @@ export const translations = {
       title: "أراء حقيقية لأصحاب المقاهي",
       list: [
         { name: 'أحمد - مؤسس', city: 'Brew House', quote: 'قللنا وقت الانتظار 40%، وارتفعت مبيعاتنا بشكل ملحوظ', img: "https://i.pravatar.cc/150?u=awefd" },
-        { name: 'خالد - مالك', city: 'Urban Cafe', quote: 'ميزة الطلب من السيارة زادت طلبات التيك أواي 50%', img: "https://i.pravatar.cc/150?u=ssdf" },
+        { name: 'خالد - مالك', city: 'Urban Cafe', quote: 'ميزة الطلب من السيارة زادت طلبات التيك أواي 50%', img: "https://i.pravatar.cc/150?u=ssdf" }
       ]
     },
     finalCta: {
