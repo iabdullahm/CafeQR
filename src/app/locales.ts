@@ -152,15 +152,15 @@ export const translations = {
       title: "Plans that fit every Cafe ☕",
       desc: "No contracts • No complexity • Cancel anytime",
       cards: [
-        { name: "Free", planId: "free", desc: "Basic digital menu", price: "0 OMR", priceSub: "Free forever", features: ["QR Menu", "Up to 20 items", "No loyalty", "No analytics"], btn: "Start Free" },
-        { name: "Basic", planId: "starter", desc: "For solid beginnings", price: "5 OMR", priceSub: "Less than 0.16 OMR/day", features: ["Full Menu", "QR Ordering", "Order Management"], btn: "Start Now" },
-        { name: "Popular ⭐", planId: "growth", tag: "⭐ Most Popular", desc: "For growing cafes", price: "9 OMR", priceSub: "Less than 0.3 OMR/day", features: ["Everything in Basic", "Loyalty System 🎁", "Offers & Discounts", "Basic Analytics", "Notifications"], btn: "Grow Your Cafe" },
-        { name: "Business", planId: "pro", desc: "For professional chains", price: "15 OMR", priceSub: "Less than 0.5 OMR/day", features: ["Multi-branch", "Advanced Analytics", "Priority Support", "Custom Branding"], btn: "Start Pro" }
+        { name: "Free", planId: "free", desc: "Basic digital menu", price: "0 OMR", priceSub: "Free forever", features: ["QR Menu", "Up to 20 items", "No loyalty", "No analytics"], btn: "Start Free →" },
+        { name: "Basic", planId: "starter", desc: "For solid beginnings", price: "5 OMR", priceSub: "Less than 0.16 OMR/day", features: ["Full Menu", "QR Ordering", "Order Management"], btn: "Start with Basic →" },
+        { name: "Popular ⭐", planId: "growth", tag: "⭐ Most Popular", desc: "For growing cafes", price: "9 OMR", priceSub: "Less than 0.3 OMR/day", features: ["Everything in Basic", "Loyalty System 🎁", "Offers & Discounts", "Basic Analytics", "Notifications"], btn: "Start with Popular →" },
+        { name: "Business", planId: "pro", desc: "For professional chains", price: "15 OMR", priceSub: "Less than 0.5 OMR/day", features: ["Multi-branch", "Advanced Analytics", "Priority Support", "Custom Branding"], btn: "Start with Business →" }
       ],
       offerTitle: "🎉 Launch Offer",
       offerDesc: "🔥 Only 50 Cafes in Oman Get Lifetime 50% Discount",
       offerExample: "Popular Plan: 9 OMR → 4.5 OMR only",
-      offerBtn: "Claim Your Spot Now",
+      offerBtn: "🔥 Claim 50% Lifetime Discount →",
       spotsLeft: "17 spots left",
       compareTitle: "Feature Comparison",
       compareHeaders: ["Feature", "Free", "Basic", "Popular ⭐", "Business"],
@@ -184,7 +184,7 @@ export const translations = {
     finalCta: {
       title: "Launch Your QR Menu in 5 Minutes",
       desc: "No setup. No complexity. Just scan and go.",
-      btn: "🚀 Start Getting Orders Today"
+      btn: "🚀 Start Free in 5 Minutes →"
     },
     bonus: {
       title: "Built for the Way Cafes Actually Work",
@@ -354,15 +354,15 @@ export const translations = {
       title: "خطط تناسب كل كافيه ☕",
       desc: "بدون عقود • بدون تعقيد • إلغاء في أي وقت",
       cards: [
-        { name: "Free", planId: "free", desc: "باقة مجانية", price: "0 ر.ع", priceSub: "مجاني للأبد", features: ["QR Menu", "حتى 20 منتج", "بدون ولاء", "بدون تقارير"], btn: "ابدأ مجانًا" },
-        { name: "Basic", planId: "starter", desc: "لبداية قوية", price: "5 ر.ع", priceSub: "أقل من 0.16 ر.ع يوميًا", features: ["منيو كامل", "طلبات QR", "إدارة طلبات"], btn: "ابدأ الآن" },
-        { name: "Popular ⭐", planId: "growth", tag: "⭐ الأكثر استخدامًا", desc: "للمقاهي النامية", price: "9 ر.ع", priceSub: "أقل من 0.3 ر.ع يوميًا", features: ["كل شيء في Basic", "نظام الولاء 🎁", "عروض وخصومات", "تقارير أساسية", "إشعارات"], btn: "ابدأ وطور كافيهك" },
-        { name: "Business", planId: "pro", desc: "احترافي / سلاسل", price: "15 ر.ع", priceSub: "أقل من 0.5 ر.ع يوميًا", features: ["فروع متعددة", "تقارير متقدمة", "دعم سريع", "Branding مخصص"], btn: "ابدأ برو" }
+        { name: "Free", planId: "free", desc: "باقة مجانية", price: "0 ر.ع", priceSub: "مجاني للأبد", features: ["QR Menu", "حتى 20 منتج", "بدون ولاء", "بدون تقارير"], btn: "ابدأ مجاناً ←" },
+        { name: "Basic", planId: "starter", desc: "لبداية قوية", price: "5 ر.ع", priceSub: "أقل من 0.16 ر.ع يوميًا", features: ["منيو كامل", "طلبات QR", "إدارة طلبات"], btn: "ابدأ بخطة Basic ←" },
+        { name: "Popular ⭐", planId: "growth", tag: "⭐ الأكثر استخدامًا", desc: "للمقاهي النامية", price: "9 ر.ع", priceSub: "أقل من 0.3 ر.ع يوميًا", features: ["كل شيء في Basic", "نظام الولاء 🎁", "عروض وخصومات", "تقارير أساسية", "إشعارات"], btn: "ابدأ بخطة Popular ←" },
+        { name: "Business", planId: "pro", desc: "احترافي / سلاسل", price: "15 ر.ع", priceSub: "أقل من 0.5 ر.ع يوميًا", features: ["فروع متعددة", "تقارير متقدمة", "دعم سريع", "Branding مخصص"], btn: "ابدأ بخطة Business ←" }
       ],
       offerTitle: "🎉 عرض الإطلاق",
       offerDesc: "🔥 أول 50 كافيه في عمان يحصلون على خصم 50% مدى الحياة",
       offerExample: "خطة Popular بسعر 4.5 ر.ع فقط (بدل 9 ر.ع)",
-      offerBtn: "احجز مكانك الآن",
+      offerBtn: "🔥 احجز خصم 50% مدى الحياة ←",
       spotsLeft: "متبقي 17 مقعداً",
       compareTitle: "مقارنة بسيطة وواضحة",
       compareHeaders: ["الميزة", "Free", "Basic", "Popular ⭐", "Business"],
@@ -386,7 +386,7 @@ export const translations = {
     finalCta: {
       title: "أطلق المنيو الخاص بك في 5 دقائق",
       desc: "بدون تعقيد، بدون بطاقة بنكية — فقط امسح وابدأ",
-      btn: "🚀 ابدأ باستقبال الطلبات اليوم"
+      btn: "🚀 ابدأ مجاناً في 5 دقائق ←"
     },
     bonus: {
       title: "مصمم للطريقة التي تعمل بها المقاهي بالفعل",
