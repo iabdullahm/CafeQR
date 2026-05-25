@@ -79,3 +79,6 @@ project.zip
 /test_query.js
 /ts-fix.cjs
 /scratch/
+
+.vercel
+.env*
