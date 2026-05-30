@@ -5,30 +5,18 @@
  * where Firebase Admin SDK can't initialise (e.g. service-account key
  * generation blocked by org policy).
  *
- * Why a parallel route?
- *   - Zero risk to the existing /api/orders/place — we ship this in parallel
- *     and switch the client only after we verify it works.
- *   - No dependency on FIREBASE_SERVICE_ACCOUNT_KEY — pure Prisma + Neon.
+ * No dependency on FIREBASE_SERVICE_ACCOUNT_KEY — pure Prisma + Neon.
  *
- * Trade-offs:
- *   - No real-time order tracking in customer success page (Firestore
- *     onSnapshot replaced with polling).
- *   - Loyalty / customer linking deferred — only the order rows are written.
- *
- * Payload shape: identical to /api/orders/place so the client can switch
- * with a one-line URL change.
+ * Payload shape: identical to /api/orders/place (PlaceOrderInput) so the
+ * client can switch with a one-line URL change.
  */
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type {
-  PlaceOrderInput,
-  PlaceOrderItem,
-} from "@/lib/orders-logic";
+import type { PlaceOrderInput, OrderItemInput } from "@/lib/orders-logic";
 
 const VALID_TYPES = ["DINE_IN", "CAR_SERVICE", "TAKEAWAY"] as const;
 type ValidType = (typeof VALID_TYPES)[number];
-const VALID_SOURCES = ["qr", "in_store", "phone"] as const;
 
 function genOrderNumber(): string {
   const ts = Date.now().toString(36).toUpperCase();
@@ -66,7 +54,7 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  for (const it of items) {
+  for (const it of items as OrderItemInput[]) {
     if (
       !it.productId ||
       typeof it.unitPrice !== "number" ||
@@ -83,22 +71,16 @@ export async function POST(req: Request) {
     }
   }
 
-  // Compute totals server-side to avoid trusting the client.
+  // Compute totals server-side
   let subtotal = 0;
-  for (const it of items) {
+  for (const it of items as OrderItemInput[]) {
     const lineTotal = it.unitPrice * it.quantity;
-    const optionsTotal = (it.options ?? []).reduce(
-      (s, o) => s + (o.extraPrice ?? 0),
-      0
-    );
-    subtotal += lineTotal + optionsTotal * it.quantity;
+    subtotal += lineTotal;
   }
-  const discountAmount = Number(input.discountAmount ?? 0);
-  const taxAmount = Number(input.taxAmount ?? 0);
+  const discountAmount = Number(input.rewardDiscount ?? 0);
+  const taxAmount = 0;
   const totalAmount = subtotal - discountAmount + taxAmount;
 
-  // Resolve foreign keys. The customer page passes string ids like "1" or
-  // "default"; coerce gracefully.
   const cafeIdBig = safeBigInt(cafeId);
   if (!cafeIdBig) {
     return NextResponse.json(
@@ -109,6 +91,10 @@ export async function POST(req: Request) {
   const branchIdBig = safeBigInt(branchId);
   const tableIdBig = safeBigInt(tableId);
 
+  // Map client source value to enum used in schema
+  const sourceEnum: "qr" | "in_store" =
+    input.source === "cashier_manual" ? "in_store" : "qr";
+
   try {
     const order = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
@@ -118,7 +104,7 @@ export async function POST(req: Request) {
           tableId: tableIdBig,
           orderNumber: genOrderNumber(),
           orderType: type as ValidType,
-          source: (input.source ?? "qr") as (typeof VALID_SOURCES)[number],
+          source: sourceEnum,
           subtotal: round3(subtotal),
           discountAmount: round3(discountAmount),
           taxAmount: round3(taxAmount),
@@ -129,41 +115,21 @@ export async function POST(req: Request) {
         },
       });
 
-      // Bulk-insert items
-      for (const it of items as PlaceOrderItem[]) {
-        const optionsTotal = (it.options ?? []).reduce(
-          (s, o) => s + (o.extraPrice ?? 0),
-          0
-        );
-        const itemTotal = (it.unitPrice + optionsTotal) * it.quantity;
-
+      for (const it of items as OrderItemInput[]) {
+        const itemTotal = it.unitPrice * it.quantity;
         const menuItemIdBig = safeBigInt(it.productId);
-        // If the productId isn't a real DB row (e.g. legacy Firestore string),
-        // store the line as a free-text item without a menuItemId. We allow
-        // null on menuItemId in our migration, but the current schema requires
-        // it — fall back to id=0 sentinel if absent.
-        const orderItem = await tx.orderItem.create({
+        await tx.orderItem.create({
           data: {
             orderId: newOrder.id,
+            // Sentinel 0 when productId isn't a real DB row (legacy Firestore string ids)
             menuItemId: menuItemIdBig ?? BigInt(0),
-            itemName: it.name ?? "Item",
+            itemName: it.productName ?? it.nameEn ?? "Item",
             unitPrice: round3(it.unitPrice),
             quantity: it.quantity,
             totalPrice: round3(itemTotal),
             notes: it.notes ?? null,
           },
         });
-
-        if ((it.options ?? []).length > 0) {
-          await tx.orderItemOption.createMany({
-            data: it.options!.map((o) => ({
-              orderItemId: orderItem.id,
-              optionName: o.name ?? "",
-              optionValue: o.value ?? "",
-              extraPrice: round3(o.extraPrice ?? 0),
-            })),
-          });
-        }
       }
 
       return newOrder;
@@ -182,8 +148,6 @@ export async function POST(req: Request) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("[/api/orders/place-pg] error:", msg);
-
-    // Customer-safe message — never leak DB internals.
     return NextResponse.json(
       {
         success: false,
@@ -200,7 +164,6 @@ export async function POST(req: Request) {
 function safeBigInt(v: unknown): bigint | null {
   if (v === null || v === undefined || v === "") return null;
   const s = String(v);
-  // Accept positive integer strings only
   if (!/^\d+$/.test(s)) return null;
   try {
     return BigInt(s);
