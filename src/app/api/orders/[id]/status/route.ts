@@ -142,9 +142,14 @@ export async function PATCH(
       const msg = err instanceof Error ? err.message : 'Unknown error';
       console.error('PATCH /api/orders/[id]/status error:', msg);
       const notFound = msg === 'Order not found';
+      if (notFound) {
+        return NextResponse.json({ success: false, message: msg }, { status: 404 });
+      }
+      // Never leak infra error text (env var names, Firebase Admin internals)
+      // to staff devices — they see this in the KDS / order list.
       return NextResponse.json(
-        { success: false, message: msg },
-        { status: notFound ? 404 : 500 }
+        { success: false, message: 'Could not update order status — please retry.' },
+        { status: 503 }
       );
     }
   });

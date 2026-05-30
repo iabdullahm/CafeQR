@@ -190,10 +190,21 @@ export async function POST(req: Request) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error';
     console.error('POST /api/orders/place error:', msg);
+
+    // Business-rule failures: surface the message so the UI can show it.
     const businessError = /is currently disabled\.$/.test(msg);
+    if (businessError) {
+      return NextResponse.json({ success: false, message: msg }, { status: 400 });
+    }
+
+    // Server / infra failure: NEVER leak internals (env var names, stack
+    // traces, Firebase Admin diagnostics) to end customers. Logs above keep
+    // the real reason for debugging.
+    const customerSafeMessage =
+      'Order service is temporarily unavailable. Please ask the cashier to take your order, or try again in a few minutes.';
     return NextResponse.json(
-      { success: false, message: msg },
-      { status: businessError ? 400 : 500 }
+      { success: false, message: customerSafeMessage },
+      { status: 503 }
     );
   }
 }
