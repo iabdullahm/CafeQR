@@ -1,22 +1,39 @@
 /**
  * POST /api/orders/place-pg
  *
- * Postgres-only order placement. Replaces /api/orders/place for environments
- * where Firebase Admin SDK can't initialise (e.g. service-account key
- * generation blocked by org policy).
+ * Postgres-only order placement. No Firebase Admin SDK dependency.
  *
- * No dependency on FIREBASE_SERVICE_ACCOUNT_KEY — pure Prisma + Neon.
- *
- * Payload shape: identical to /api/orders/place (PlaceOrderInput) so the
- * client can switch with a one-line URL change.
+ * Payload contract (PlaceOrderInput): the client uses the legacy upper-
+ * case TS string-union types like 'DINE_IN'. The Prisma schema, however,
+ * defines the enums in lowercase (dine_in, car, pickup; qr, cashier,
+ * admin). We translate at the boundary.
  */
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { PlaceOrderInput, OrderItemInput } from "@/lib/orders-logic";
+import { OrderType as PrismaOrderType, OrderSource as PrismaOrderSource } from "@prisma/client";
 
-const VALID_TYPES = ["DINE_IN", "CAR_SERVICE", "TAKEAWAY"] as const;
-type ValidType = (typeof VALID_TYPES)[number];
+const VALID_INPUT_TYPES = ["DINE_IN", "CAR_SERVICE", "TAKEAWAY"] as const;
+type ValidInputType = (typeof VALID_INPUT_TYPES)[number];
+
+// Map client-facing OrderType strings to Prisma enum values.
+function mapOrderType(t: ValidInputType): PrismaOrderType {
+  switch (t) {
+    case "DINE_IN":
+      return PrismaOrderType.dine_in;
+    case "CAR_SERVICE":
+      return PrismaOrderType.car;
+    case "TAKEAWAY":
+      return PrismaOrderType.pickup;
+  }
+}
+
+function mapOrderSource(s: string | undefined): PrismaOrderSource {
+  if (s === "cashier_manual") return PrismaOrderSource.cashier;
+  if (s === "admin") return PrismaOrderSource.admin;
+  return PrismaOrderSource.qr;
+}
 
 function genOrderNumber(): string {
   const ts = Date.now().toString(36).toUpperCase();
@@ -25,6 +42,21 @@ function genOrderNumber(): string {
     .toUpperCase()
     .padStart(2, "0");
   return `ORD-${ts}-${rnd}`;
+}
+
+function safeBigInt(v: unknown): bigint | null {
+  if (v === null || v === undefined || v === "") return null;
+  const s = String(v);
+  if (!/^\d+$/.test(s)) return null;
+  try {
+    return BigInt(s);
+  } catch {
+    return null;
+  }
+}
+
+function round3(n: number): number {
+  return Math.round(n * 1000) / 1000;
 }
 
 export async function POST(req: Request) {
@@ -48,7 +80,7 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
-  if (!VALID_TYPES.includes(type as ValidType)) {
+  if (!VALID_INPUT_TYPES.includes(type as ValidInputType)) {
     return NextResponse.json(
       { success: false, message: `Invalid type: ${type}` },
       { status: 400 }
@@ -71,11 +103,10 @@ export async function POST(req: Request) {
     }
   }
 
-  // Compute totals server-side
+  // Server-side totals (don't trust the client)
   let subtotal = 0;
   for (const it of items as OrderItemInput[]) {
-    const lineTotal = it.unitPrice * it.quantity;
-    subtotal += lineTotal;
+    subtotal += it.unitPrice * it.quantity;
   }
   const discountAmount = Number(input.rewardDiscount ?? 0);
   const taxAmount = 0;
@@ -91,10 +122,6 @@ export async function POST(req: Request) {
   const branchIdBig = safeBigInt(branchId);
   const tableIdBig = safeBigInt(tableId);
 
-  // Map client source value to enum used in schema
-  const sourceEnum: "qr" | "in_store" =
-    input.source === "cashier_manual" ? "in_store" : "qr";
-
   try {
     const order = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
@@ -103,8 +130,8 @@ export async function POST(req: Request) {
           branchId: branchIdBig,
           tableId: tableIdBig,
           orderNumber: genOrderNumber(),
-          orderType: type as ValidType,
-          source: sourceEnum,
+          orderType: mapOrderType(type as ValidInputType),
+          source: mapOrderSource(input.source),
           subtotal: round3(subtotal),
           discountAmount: round3(discountAmount),
           taxAmount: round3(taxAmount),
@@ -116,7 +143,6 @@ export async function POST(req: Request) {
       });
 
       for (const it of items as OrderItemInput[]) {
-        const itemTotal = it.unitPrice * it.quantity;
         const menuItemIdBig = safeBigInt(it.productId);
         await tx.orderItem.create({
           data: {
@@ -126,7 +152,7 @@ export async function POST(req: Request) {
             itemName: it.productName ?? it.nameEn ?? "Item",
             unitPrice: round3(it.unitPrice),
             quantity: it.quantity,
-            totalPrice: round3(itemTotal),
+            totalPrice: round3(it.unitPrice * it.quantity),
             notes: it.notes ?? null,
           },
         });
@@ -157,21 +183,4 @@ export async function POST(req: Request) {
       { status: 503 }
     );
   }
-}
-
-// ----- helpers -----
-
-function safeBigInt(v: unknown): bigint | null {
-  if (v === null || v === undefined || v === "") return null;
-  const s = String(v);
-  if (!/^\d+$/.test(s)) return null;
-  try {
-    return BigInt(s);
-  } catch {
-    return null;
-  }
-}
-
-function round3(n: number): number {
-  return Math.round(n * 1000) / 1000;
 }
