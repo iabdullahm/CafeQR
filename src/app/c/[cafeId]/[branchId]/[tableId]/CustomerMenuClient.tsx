@@ -402,7 +402,7 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
         }))
       };
 
-      const res = await fetch('/api/orders/place', {
+      const res = await fetch('/api/orders/place-pg', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderPayload)

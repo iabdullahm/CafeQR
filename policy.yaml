@@ -1,0 +1,4 @@
+﻿name: projects/cafeqr-new/policies/iam.disableServiceAccountKeyCreation
+spec:
+  rules:
+  - enforce: false

@@ -115,7 +115,7 @@ export function ManualOrderModal({ customTrigger }: ManualOrderModalProps) {
 
     setLoading(true);
     try {
-      const res = await fetch('/api/orders/place', {
+      const res = await fetch('/api/orders/place-pg', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
