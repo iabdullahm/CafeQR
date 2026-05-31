@@ -40,16 +40,7 @@ export default function CafeProfile() {
   const [pgFallback, setPgFallback] = useState<any>(null);
 
   useEffect(() => {
-    // Skip the Postgres fallback when cafeId isn't a real lookup target —
-    // e.g. "SUPER_ADMIN" sentinel for platform admins who don't own a cafe.
-    // Hitting the endpoint with it produced a 404 on every render and
-    // contributed to a re-render loop.
-    const isLookupable =
-      typeof cafeId === 'string' &&
-      cafeId.length > 0 &&
-      cafeId !== 'SUPER_ADMIN' &&
-      /^[\w-]+$/.test(cafeId);
-    if (isLookupable && !cafeData && !cafeLoading) {
+    if (cafeId && !cafeData && !cafeLoading) {
       fetch(`/api/public/cafes/${cafeId}`).then(res => res.json()).then(json => {
          if (json.success) setPgFallback(json.data);
       }).catch(() => {});
@@ -328,4 +319,16 @@ export default function CafeProfile() {
                              <div className={`h-3 w-10 ${formData.themeMode === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} rounded`} />
                           </div>
                           <div className={`h-32 rounded-2xl ${formData.themeMode === 'dark' ? 'bg-slate-900' : 'bg-white shadow-sm'} p-3 border ${formData.themeMode === 'dark' ? 'border-slate-800' : 'border-slate-100'} flex flex-col justify-end`}>
-                             <div className={`h
+                             <div className={`h-3 w-20 ${formData.themeMode === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} rounded mb-1`} />
+                             <div className={`h-3 w-8 ${formData.themeMode === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} rounded`} />
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
