@@ -81,7 +81,12 @@ export default function OrderManagement() {
     previousReadyCount.current = readyCount;
     
     orders.forEach(o => knownOrderIds.current.add(o.id));
-  }, [orders, toast]);
+    // Note: `toast` is intentionally excluded from deps to prevent infinite
+    // loops — useToast() returns a fresh function reference on each render
+    // (after every toast call), which would re-fire this effect indefinitely
+    // and ultimately trigger React error #185 (Maximum update depth exceeded).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders]);
 
   const playSound = (type: 'new' | 'ready') => {
     try {
@@ -514,16 +519,4 @@ export default function OrderManagement() {
             <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-10">
                {kanbanColumns.completed.length === 0 && !isLoading && (
                  <div className="h-40 flex flex-col items-center justify-center text-muted-foreground/50 border-2 border-dashed border-muted-foreground/20 rounded-xl p-4 text-center">
-                    <CheckCircle2 className="h-8 w-8 mb-2 opacity-50" />
-                    <p className="font-bold text-sm">{t("No completed orders yet", "لا توجد طلبات مكتملة")}</p>
-                 </div>
-               )}
-               {kanbanColumns.completed.map(o => renderOrderCard(o, 'completed'))}
-            </div>
-         </div>
-
-      </div>
-
-    </div>
-  );
-}
+                    <CheckCir
