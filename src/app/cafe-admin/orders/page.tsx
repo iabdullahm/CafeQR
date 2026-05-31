@@ -170,12 +170,12 @@ export default function OrderManagement() {
     if (!db || !cafeId) return;
     try {
        setUpdatingId(order.id);
-       const idToken = user ? await user.getIdToken() : null;
-       const res = await fetch(`/api/orders/${order.id}/status`, {
+       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+       const res = await fetch(`/api/orders/${order.id}/status-pg`, {
          method: 'PATCH',
          headers: {
            'Content-Type': 'application/json',
-           ...(idToken ? { Authorization: `Bearer ${idToken}` } : {})
+           ...(token ? { Authorization: `Bearer ${token}` } : {})
          },
          body: JSON.stringify({ cafeId, status: newStatus })
        });
