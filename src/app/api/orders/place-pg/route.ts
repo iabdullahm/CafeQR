@@ -3,10 +3,13 @@
  *
  * Postgres-only order placement. No Firebase Admin SDK dependency.
  *
- * Payload contract (PlaceOrderInput): the client uses the legacy upper-
- * case TS string-union types like 'DINE_IN'. The Prisma schema, however,
- * defines the enums in lowercase (dine_in, car, pickup; qr, cashier,
- * admin). We translate at the boundary.
+ * Cafe id resolution: customers scan a QR encoded with a Firestore-era
+ * id (string like "CAF-1716173400"). We resolve it to a real Postgres
+ * bigint by trying, in order:
+ *   1. Direct numeric parse
+ *   2. cafeCode lookup
+ *   3. slug lookup
+ *   4. Fallback to seeded Demo Cafe (id=1) so the order isn't lost.
  */
 
 import { NextResponse } from "next/server";
@@ -17,15 +20,11 @@ import { OrderType as PrismaOrderType, OrderSource as PrismaOrderSource } from "
 const VALID_INPUT_TYPES = ["DINE_IN", "CAR_SERVICE", "TAKEAWAY"] as const;
 type ValidInputType = (typeof VALID_INPUT_TYPES)[number];
 
-// Map client-facing OrderType strings to Prisma enum values.
 function mapOrderType(t: ValidInputType): PrismaOrderType {
   switch (t) {
-    case "DINE_IN":
-      return PrismaOrderType.dine_in;
-    case "CAR_SERVICE":
-      return PrismaOrderType.car;
-    case "TAKEAWAY":
-      return PrismaOrderType.pickup;
+    case "DINE_IN":      return PrismaOrderType.dine_in;
+    case "CAR_SERVICE":  return PrismaOrderType.car;
+    case "TAKEAWAY":     return PrismaOrderType.pickup;
   }
 }
 
@@ -37,10 +36,7 @@ function mapOrderSource(s: string | undefined): PrismaOrderSource {
 
 function genOrderNumber(): string {
   const ts = Date.now().toString(36).toUpperCase();
-  const rnd = Math.floor(Math.random() * 1000)
-    .toString(36)
-    .toUpperCase()
-    .padStart(2, "0");
+  const rnd = Math.floor(Math.random() * 1000).toString(36).toUpperCase().padStart(2, "0");
   return `ORD-${ts}-${rnd}`;
 }
 
@@ -48,15 +44,35 @@ function safeBigInt(v: unknown): bigint | null {
   if (v === null || v === undefined || v === "") return null;
   const s = String(v);
   if (!/^\d+$/.test(s)) return null;
-  try {
-    return BigInt(s);
-  } catch {
-    return null;
-  }
+  try { return BigInt(s); } catch { return null; }
 }
 
 function round3(n: number): number {
   return Math.round(n * 1000) / 1000;
+}
+
+const FALLBACK_CAFE_ID = BigInt(1);
+
+async function resolveCafeId(raw: unknown): Promise<bigint> {
+  if (raw === null || raw === undefined || raw === "") return FALLBACK_CAFE_ID;
+  const s = String(raw).trim();
+
+  if (/^\d+$/.test(s)) {
+    try {
+      const id = BigInt(s);
+      const exists = await prisma.cafe.findUnique({ where: { id }, select: { id: true } });
+      if (exists) return exists.id;
+    } catch { /* fall through */ }
+  }
+
+  const byCode = await prisma.cafe.findFirst({ where: { cafeCode: s }, select: { id: true } });
+  if (byCode) return byCode.id;
+
+  const bySlug = await prisma.cafe.findFirst({ where: { slug: s }, select: { id: true } });
+  if (bySlug) return bySlug.id;
+
+  console.warn(`[place-pg] Unknown cafe id '${s}' — using fallback Demo Cafe.`);
+  return FALLBACK_CAFE_ID;
 }
 
 export async function POST(req: Request) {
@@ -64,46 +80,28 @@ export async function POST(req: Request) {
   try {
     input = (await req.json()) as PlaceOrderInput;
   } catch {
-    return NextResponse.json(
-      { success: false, message: "Invalid JSON body" },
-      { status: 400 }
-    );
+    return NextResponse.json({ success: false, message: "Invalid JSON body" }, { status: 400 });
   }
 
   const { cafeId, branchId, tableId, type, items } = input;
-  if (!cafeId || !branchId || !type || !items?.length) {
+  if (!cafeId || !type || !items?.length) {
     return NextResponse.json(
-      {
-        success: false,
-        message: "Missing required fields: cafeId, branchId, type, items",
-      },
+      { success: false, message: "Missing required fields: cafeId, type, items" },
       { status: 400 }
     );
   }
   if (!VALID_INPUT_TYPES.includes(type as ValidInputType)) {
-    return NextResponse.json(
-      { success: false, message: `Invalid type: ${type}` },
-      { status: 400 }
-    );
+    return NextResponse.json({ success: false, message: `Invalid type: ${type}` }, { status: 400 });
   }
   for (const it of items as OrderItemInput[]) {
-    if (
-      !it.productId ||
-      typeof it.unitPrice !== "number" ||
-      typeof it.quantity !== "number" ||
-      it.quantity < 1
-    ) {
+    if (!it.productId || typeof it.unitPrice !== "number" || typeof it.quantity !== "number" || it.quantity < 1) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid item: productId, unitPrice, quantity required",
-        },
+        { success: false, message: "Invalid item: productId, unitPrice, quantity required" },
         { status: 400 }
       );
     }
   }
 
-  // Server-side totals (don't trust the client)
   let subtotal = 0;
   for (const it of items as OrderItemInput[]) {
     subtotal += it.unitPrice * it.quantity;
@@ -112,13 +110,7 @@ export async function POST(req: Request) {
   const taxAmount = 0;
   const totalAmount = subtotal - discountAmount + taxAmount;
 
-  const cafeIdBig = safeBigInt(cafeId);
-  if (!cafeIdBig) {
-    return NextResponse.json(
-      { success: false, message: "Invalid cafeId" },
-      { status: 400 }
-    );
-  }
+  const cafeIdBig = await resolveCafeId(cafeId);
   const branchIdBig = safeBigInt(branchId);
   const tableIdBig = safeBigInt(tableId);
 
@@ -147,7 +139,6 @@ export async function POST(req: Request) {
         await tx.orderItem.create({
           data: {
             orderId: newOrder.id,
-            // Sentinel 0 when productId isn't a real DB row (legacy Firestore string ids)
             menuItemId: menuItemIdBig ?? BigInt(0),
             itemName: it.productName ?? it.nameEn ?? "Item",
             unitPrice: round3(it.unitPrice),
@@ -175,11 +166,7 @@ export async function POST(req: Request) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     console.error("[/api/orders/place-pg] error:", msg);
     return NextResponse.json(
-      {
-        success: false,
-        message:
-          "Order service is temporarily unavailable. Please try again in a moment.",
-      },
+      { success: false, message: "Order service is temporarily unavailable. Please try again in a moment." },
       { status: 503 }
     );
   }

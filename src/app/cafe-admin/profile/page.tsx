@@ -40,7 +40,12 @@ export default function CafeProfile() {
   const [pgFallback, setPgFallback] = useState<any>(null);
 
   useEffect(() => {
-    if (cafeId && !cafeData && !cafeLoading) {
+    const isLookupable =
+      typeof cafeId === 'string' &&
+      cafeId.length > 0 &&
+      cafeId !== 'SUPER_ADMIN' &&
+      /^[\w-]+$/.test(cafeId);
+    if (isLookupable && !cafeData && !cafeLoading) {
       fetch(`/api/public/cafes/${cafeId}`).then(res => res.json()).then(json => {
          if (json.success) setPgFallback(json.data);
       }).catch(() => {});
@@ -322,13 +327,3 @@ export default function CafeProfile() {
                              <div className={`h-3 w-20 ${formData.themeMode === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} rounded mb-1`} />
                              <div className={`h-3 w-8 ${formData.themeMode === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} rounded`} />
                           </div>
-                       </div>
-                    </div>
-                 </div>
-             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
