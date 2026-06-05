@@ -66,7 +66,7 @@ export default function KDSManagement() {
     }
 
     orders.forEach(o => knownOrderIds.current.add(o.id));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- toast identity changes every render; only re-run on orders
   }, [orders]);
 
   const playSound = () => {
@@ -349,4 +349,14 @@ export default function KDSManagement() {
             <div className="h-full flex flex-col items-center justify-center text-muted-foreground/50 border-4 border-dashed border-muted-foreground/20 rounded-3xl p-8 text-center min-h-[400px]">
                <Utensils className="h-24 w-24 mb-6 opacity-20" />
                <h2 className="font-black text-3xl mb-2">{t("No Active Tickets", "لا توجد طلبات نشطة")}</h2>
-               <p className="text-xl">{t("Waiting for new orders...", "
+               <p className="text-xl">{t("Waiting for new orders...", "في انتظار طلبات جديدة...")}</p>
+            </div>
+         )}
+         
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+            {activeTickets.map(o => renderTicketCard(o))}
+         </div>
+      </div>
+    </div>
+  );
+}

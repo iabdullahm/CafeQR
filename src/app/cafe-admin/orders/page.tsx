@@ -81,7 +81,7 @@ export default function OrderManagement() {
     previousReadyCount.current = readyCount;
     
     orders.forEach(o => knownOrderIds.current.add(o.id));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- toast identity changes every render; only re-run on orders
   }, [orders]);
 
   const playSound = (type: 'new' | 'ready') => {
@@ -514,4 +514,17 @@ export default function OrderManagement() {
             </div>
             <div className="flex-1 overflow-y-auto space-y-4 pr-1 pb-10">
                {kanbanColumns.completed.length === 0 && !isLoading && (
-                 <div className="h-40 flex flex-col items-center justify-center text-muted-foreground/50 border-2 bor
+                 <div className="h-40 flex flex-col items-center justify-center text-muted-foreground/50 border-2 border-dashed border-muted-foreground/20 rounded-xl p-4 text-center">
+                    <CheckCircle2 className="h-8 w-8 mb-2 opacity-50" />
+                    <p className="font-bold text-sm">{t("No completed orders yet", "لا توجد طلبات مكتملة")}</p>
+                 </div>
+               )}
+               {kanbanColumns.completed.map(o => renderOrderCard(o, 'completed'))}
+            </div>
+         </div>
+
+      </div>
+
+    </div>
+  );
+}

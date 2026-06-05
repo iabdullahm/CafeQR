@@ -40,6 +40,8 @@ export default function CafeProfile() {
   const [pgFallback, setPgFallback] = useState<any>(null);
 
   useEffect(() => {
+    // Skip the public cafe lookup for sentinel ids (e.g. "SUPER_ADMIN") and any
+    // non-identifier value — they always 404 and cause noisy console errors.
     const isLookupable =
       typeof cafeId === 'string' &&
       cafeId.length > 0 &&
@@ -327,3 +329,13 @@ export default function CafeProfile() {
                              <div className={`h-3 w-20 ${formData.themeMode === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} rounded mb-1`} />
                              <div className={`h-3 w-8 ${formData.themeMode === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} rounded`} />
                           </div>
+                       </div>
+                    </div>
+                 </div>
+             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
