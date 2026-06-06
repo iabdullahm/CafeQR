@@ -125,25 +125,19 @@ export default function TablesManagement() {
     setNewTableData({ name: "", type: "DINE_IN", branchId: selectedBranch.id });
   };
 
-  const handleGenerateLegacyToken = async (table: any) => {
-    if (!db || !cafeId) return;
-    const token = Math.random().toString(36).substring(2, 8) + Date.now().toString(36);
-    
-    // QR generation handled by /api/cafes/[id]/tables on create.
-    return; // (legacy regenerate-qr flow disabled; needs PATCH /api/cafes/[id]/tables/[tableId]/qr endpoint)
-        const tableRef = doc(db, 'cafes', cafeId, 'tables', table.id);
-    await setDoc(tableRef, { qrToken: token }, { merge: true });
-
-    const tokenRef = doc(db, 'qr_tokens', token);
-    await setDoc(tokenRef, {
-      cafeId,
-      branchId: table.branchId || 'default',
-      tableId: table.id,
-      createdAt: new Date().toISOString()
+  // Legacy regenerate-QR flow disabled. The new flow creates QR rows
+  // transactionally with the table at POST /api/cafes/[id]/tables. A
+  // dedicated regenerate endpoint is on the TODO list — until then this
+  // is a no-op so the UI button doesn't crash.
+  const handleGenerateLegacyToken = async (_table: any) => {
+    toast({
+      title: t("QR Regeneration", "إعادة إنشاء QR"),
+      description: t(
+        "Regenerating QR codes for existing tables is not yet wired up. Recreate the table to issue a new QR.",
+        "إعادة إنشاء رمز QR للطاولات الموجودة غير مفعل بعد. أعد إنشاء الطاولة للحصول على رمز جديد."
+      ),
+      variant: "destructive",
     });
-
-    toast({ title: t("Token Generated", "تم إنشاء رمز جديد"), description: t("Successfully upgraded table QR token.", "تم تحديث رمز الطاولة بنجاح.") });
-    setQrTable({ ...table, qrToken: token });
   };
 
   const getTableMetrics = (table: any) => {
