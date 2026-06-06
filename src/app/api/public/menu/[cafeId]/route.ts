@@ -88,7 +88,7 @@ export async function GET(
           isFeatured: p.isFeatured,
           isAvailable: p.isAvailable,
           sortOrder: p.sortOrder,
-          options: p.options ?? [],
+          options: (p.optionsData as unknown[] | null) ?? [],
         })),
       },
     });

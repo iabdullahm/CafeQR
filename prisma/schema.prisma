@@ -389,7 +389,7 @@ model MenuItem {
   description     String?
   descriptionAr   String?  @map("description_ar")
   image           String?
-  options         Json?
+  optionsData     Json?    @map("options_data")
   price           Decimal  @db.Decimal(10, 3)
   costPrice       Decimal? @map("cost_price") @db.Decimal(10, 3)
   preparationTime Int?     @map("preparation_time")

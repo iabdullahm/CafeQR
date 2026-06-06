@@ -196,7 +196,7 @@ async function main() {
               price: n(pd.price) ?? 0,
               isFeatured: !!pd.isPopular || !!pd.isFeatured,
               isAvailable: pd.isAvailable !== false,
-              options: (pd.options as object) ?? [],
+              optionsData: (pd.options as object) ?? [],
               status: "active",
             };
 

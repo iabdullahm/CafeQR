@@ -46,7 +46,7 @@ export async function PATCH(
         const n = Number(body.price);
         if (!Number.isNaN(n)) data.price = n;
       }
-      if ("options" in body) data.options = body.options as object | null;
+      if ("options" in body) data.optionsData = body.options as object | null;
 
       const updated = await prisma.menuItem.update({
         where: { id: BigInt(id) },

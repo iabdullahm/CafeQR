@@ -56,7 +56,7 @@ export async function POST(req: Request) {
           image: body.image ?? null,
           price: Number(body.price),
           sku: body.sku ?? null,
-          options: (body.options ?? []) as object,
+          optionsData: (body.options ?? []) as object,
           isFeatured: !!body.isFeatured,
           isAvailable: body.isAvailable ?? true,
         },
