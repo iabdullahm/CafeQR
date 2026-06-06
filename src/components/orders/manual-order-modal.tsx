@@ -38,7 +38,8 @@ export function ManualOrderModal({ customTrigger }: ManualOrderModalProps) {
   const { cafeId } = useCafe();
 
   // Branch info
-  const userProfileRef = useMemoFirebase(() => db && user ? doc(db, 'users', user.uid) : null, [db, user]);
+  // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
+  const userProfileRef = useMemoFirebase(() => null, []);
   const { data: userProfile } = useDoc(userProfileRef);
   const currentBranchId = userProfile?.branchId || "main";
 
