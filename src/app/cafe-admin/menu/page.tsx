@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,8 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { generateMenuDescription } from "@/ai/flows/generate-menu-description";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc, useFirebaseApp } from "@/firebase";
-import { collection, query, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { useUser, useFirestore, useMemoFirebase, useDoc, useFirebaseApp } from "@/firebase";
+import { doc } from "firebase/firestore";
 import { useCafe } from "@/hooks/use-cafe";
 import { callAiWithRetry, withAiCache } from "@/lib/ai-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -61,11 +61,53 @@ export default function MenuManagement() {
   const lastCallTimestamp = useRef(0);
 
   const { cafeId } = useCafe();
-  const productsQuery = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
-    return query(collection(db, 'cafes', cafeId, 'products'));
-  }, [db, cafeId]);
-  const { data: products, isLoading } = useCollection(productsQuery);
+  // Postgres polling — replaces the old Firestore subscription.
+  // Stores both products and the live category map so we can resolve a
+  // legacy string category (e.g. 'hot_drinks') to a real Postgres BigInt id.
+  const [products, setProducts] = useState<any[] | null>(null);
+  const [categoryIdByName, setCategoryIdByName] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const refetchMenu = async () => {
+    if (!cafeId) return;
+    try {
+      const res = await fetch(`/api/public/menu/${cafeId}`, { cache: 'no-store' });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success && json.data) {
+        // products come from the same payload — shape it for the existing UI.
+        setProducts((json.data.products || []).map((p: any) => ({
+          id: p.id,
+          name: p.nameEn || p.name,
+          description: p.descriptionEn || p.description || '',
+          ingredients: '',
+          price: p.price,
+          imageUrl: p.imageUrl || p.image || '',
+          category: '',  // filled below from category map
+          categoryName: '',
+          categoryId: p.categoryId,
+          isActive: p.isAvailable !== false,
+          variants: [],
+        })));
+        const map: Record<string, string> = {};
+        for (const c of json.data.categories || []) {
+          map[c.nameEn || c.name] = c.id;
+        }
+        setCategoryIdByName(map);
+        // Now patch products with category slug (UI groups by .category string).
+        setProducts((curr) => (curr || []).map((p) => {
+          const slot = Object.entries(map).find(([, id]) => String(id) === String(p.categoryId));
+          return { ...p, category: slot ? slot[0] : (p.categoryName || 'hot_drinks') };
+        }));
+      }
+    } catch { /* ignore */ }
+    finally { setIsLoading(false); }
+  };
+  useEffect(() => {
+    void refetchMenu();
+    const iv = setInterval(refetchMenu, 15000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refetchMenu identity changes every render
+  }, [cafeId]);
 
   const configRef = useMemoFirebase(() => db && cafeId ? doc(db, 'cafes', cafeId, 'config', 'settings') : null, [db, cafeId]);
   const { data: configDoc } = useDoc(configRef);
@@ -161,29 +203,75 @@ export default function MenuManagement() {
       }
     }
 
-    const productId = editingProductId || newProduct.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const productRef = doc(db, 'cafes', cafeId, 'products', productId);
-    
-    await setDoc(productRef, {
-      ...newProduct,
-      imageUrl: finalImageUrl,
-      price: Number(newProduct.price),
-      variants: variants.map(v => ({ name: v.name, price: Number(v.price) })).filter(v => v.name && v.price),
-      cafeId,
-      updatedAt: new Date().toISOString(),
-      ...(editingProductId ? {} : { createdAt: new Date().toISOString() })
-    }, { merge: true });
+    // Resolve category slug ('hot_drinks') -> real Postgres category id.
+    let categoryId = categoryIdByName[newProduct.category];
+    if (!categoryId) {
+      // Create it on the fly.
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const catRes = await fetch('/api/menu/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ name: newProduct.category }),
+      });
+      const catJson = await catRes.json();
+      if (catJson.success && catJson.data?.id) {
+        categoryId = catJson.data.id;
+        setCategoryIdByName((m) => ({ ...m, [newProduct.category]: catJson.data.id }));
+      } else {
+        setIsUploading(false);
+        toast({ title: 'Save failed', description: catJson.message || 'Could not create category', variant: 'destructive' });
+        return;
+      }
+    }
 
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+    const itemPayload = {
+      categoryId,
+      name: newProduct.name,
+      description: newProduct.description,
+      image: finalImageUrl || null,
+      price: Number(newProduct.price),
+      isAvailable: !!newProduct.isActive,
+    };
+    let saveRes;
+    if (editingProductId) {
+      saveRes = await fetch(`/api/menu/items/${editingProductId}`, {
+        method: 'PATCH', headers, body: JSON.stringify(itemPayload),
+      });
+    } else {
+      saveRes = await fetch('/api/menu/items', {
+        method: 'POST', headers, body: JSON.stringify(itemPayload),
+      });
+    }
+    const saveJson = await saveRes.json();
     setIsUploading(false);
+    if (!saveRes.ok || !saveJson.success) {
+      toast({ title: 'Save failed', description: saveJson.message || `HTTP ${saveRes.status}`, variant: 'destructive' });
+      return;
+    }
     setIsModalOpen(false);
     toast({ title: editingProductId ? "Product Updated" : "Product Created", description: `${newProduct.name} has been saved.` });
+    void refetchMenu();
   };
 
   const toggleAvailability = async (p: any, checked: boolean) => {
-    if (!db || !cafeId) return;
-    const productRef = doc(db, 'cafes', cafeId, 'products', p.id);
-    await setDoc(productRef, { isActive: checked }, { merge: true });
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const res = await fetch(`/api/menu/items/${p.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ isAvailable: checked }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      toast({ title: 'Update failed', description: json.message || `HTTP ${res.status}`, variant: 'destructive' });
+      return;
+    }
     toast({ title: checked ? "Marked Available" : "Marked Out of Stock" });
+    void refetchMenu();
   };
 
   const addVariant = () => setVariants([...variants, { name: "", price: "" }]);
@@ -315,7 +403,19 @@ export default function MenuManagement() {
                     <Button variant="outline" size="sm" className="w-full font-bold" onClick={() => openModalForEdit(p)}>
                       <Edit className="h-3.5 w-3.5 mr-2" /> {t('Edit Details', 'تعديل')}
                     </Button>
-                    <Button variant="outline" size="icon" className="shrink-0 text-destructive border-red-100 hover:bg-red-50 hover:text-red-700" onClick={() => deleteDoc(doc(db!, 'cafes', cafeId!, 'products', p.id))}>
+                    <Button variant="outline" size="icon" className="shrink-0 text-destructive border-red-100 hover:bg-red-50 hover:text-red-700" onClick={async () => {
+                      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                      const res = await fetch(`/api/menu/items/${p.id}`, {
+                        method: 'DELETE',
+                        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                      });
+                      if (res.ok) {
+                        toast({ title: 'Product Deleted' });
+                        void refetchMenu();
+                      } else {
+                        toast({ title: 'Delete failed', variant: 'destructive' });
+                      }
+                    }}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>

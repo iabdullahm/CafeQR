@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Camera, Globe, Mail, Phone, MapPin, Save, Instagram, Facebook, Twitter, Loader2, AlertCircle, Smartphone } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 
@@ -85,7 +85,7 @@ export default function CafeProfile() {
   };
 
   const handleSubmit = async () => {
-    if (!cafeRef) return;
+    if (!cafeId) return;
     
     setSaving(true);
     const updates = {
@@ -109,7 +109,29 @@ export default function CafeProfile() {
     };
 
     try {
-      await setDoc(cafeRef, updates, { merge: true });
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const res = await fetch(`/api/cafes/${cafeId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: updates.name,
+          description: updates.description,
+          email: updates.email,
+          phone: updates.phone,
+          address: updates.address,
+          city: updates.city,
+          country: updates.country,
+          // Carry the legacy social + theme blob through the cafes.settings JSON field.
+          settings: { social: updates.social, theme: updates.theme, website: formData.website },
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || `HTTP ${res.status}`);
+      }
       toast({ 
         title: "✅ Profile saved successfully", 
         description: "Your cafe information has been updated for all visitors.",
