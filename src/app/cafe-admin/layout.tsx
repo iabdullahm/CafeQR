@@ -88,10 +88,19 @@ export default function CafeAdminLayout({
     { title: "Settings", href: "/cafe-admin/settings", icon: "Settings", allowed: ["OWNER", "SUPER_ADMIN"] },
   ];
 
-  const userRole = impersonation.active ? "OWNER" : (profile?.role?.toUpperCase() || "STAFF");
+  // JWT migration: read roles from useUser() (JWT-backed) — profile is now null.
+  const jwtRoles: string[] = Array.isArray((user as unknown as { roles?: string[] }) ?.roles)
+    ? (user as unknown as { roles: string[] }).roles.map((r) => r.toUpperCase())
+    : [];
+  // Pick the highest-privilege role for menu filtering. Owners who happen to also
+  // be linked as MANAGER still see the owner menu set.
+  const ROLE_PRIORITY = ["SUPER_ADMIN", "OWNER", "MANAGER", "CASHIER", "KITCHEN", "BARISTA", "STAFF"];
+  const userRole = impersonation.active
+    ? "OWNER"
+    : (ROLE_PRIORITY.find((r) => jwtRoles.includes(r)) || "STAFF");
   const navItems = navItemsRaw.filter(item => item.allowed.includes(userRole));
   
-  const cafeName = configDoc?.name || profile?.cafeName || "Demo Cafe"; // fallback name
+  const cafeName = configDoc?.name || (profile as unknown as { cafeName?: string } | null)?.cafeName || "Demo Cafe"; // fallback name
 
   return (
     <AuthGuard allowedRoles={["OWNER", "SUPER_ADMIN", "MANAGER", "CASHIER", "BARISTA", "STAFF", "KITCHEN"]}>
@@ -142,7 +151,7 @@ export default function CafeAdminLayout({
 
                <div className="hidden md:block text-end">
                   <p className="text-sm font-bold text-primary leading-tight">{profile?.fullName || 'User'}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{profile?.role?.replace('_', ' ') || 'Staff'}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{userRole.replace('_', ' ')}</p>
                </div>
                
               <Button variant="ghost" className="h-10 w-10 rounded-xl border bg-muted p-0 overflow-hidden hover:border-primary/50 transition-all">
