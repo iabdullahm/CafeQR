@@ -117,10 +117,31 @@ export const loginUser = async ({ email, password, isFirebaseSynced }: any) => {
       ? userRoles.map((item: any) => item.role.name)
       : ['staff']; // Default role if none assigned
 
+    // Resolve cafeId for cafe-scoped roles. Owners are linked via
+    // Cafe.ownerUserId. Managers/cashiers/kitchen via CafeUser. SUPER_ADMIN
+    // has no cafeId.
+    let cafeId: string | null = null;
+    if (!roles.includes('SUPER_ADMIN')) {
+      const ownedCafe = await prisma.cafe.findFirst({
+        where: { ownerUserId: user.id },
+        select: { id: true },
+      });
+      if (ownedCafe) {
+        cafeId = String(ownedCafe.id);
+      } else {
+        const staffLink = await prisma.cafeUser.findFirst({
+          where: { userId: user.id },
+          select: { cafeId: true },
+        });
+        if (staffLink) cafeId = String(staffLink.cafeId);
+      }
+    }
+
     const token = signToken({
       sub: String(user.id),
       email: user.email,
-      roles
+      roles,
+      ...(cafeId ? { cafeId } : {}),
     });
 
     return {
@@ -129,7 +150,8 @@ export const loginUser = async ({ email, password, isFirebaseSynced }: any) => {
         id: String(user.id),
         full_name: user.fullName,
         email: user.email,
-        roles
+        roles,
+        cafeId,
       }
     };
   } catch (error: any) {
@@ -170,10 +192,31 @@ export const getCurrentUser = async (userId: string) => {
     }
   });
 
+  const roleNames: string[] = userRoles.map((item: any) => item.role.name);
+
+  // Resolve cafe scope for non-SUPER_ADMIN users.
+  let cafeId: string | null = null;
+  if (!roleNames.includes('SUPER_ADMIN')) {
+    const ownedCafe = await prisma.cafe.findFirst({
+      where: { ownerUserId: user.id },
+      select: { id: true },
+    });
+    if (ownedCafe) {
+      cafeId = String(ownedCafe.id);
+    } else {
+      const staffLink = await prisma.cafeUser.findFirst({
+        where: { userId: user.id },
+        select: { cafeId: true },
+      });
+      if (staffLink) cafeId = String(staffLink.cafeId);
+    }
+  }
+
   return {
     id: String(user.id),
     full_name: user.fullName,
     email: user.email,
-    roles: userRoles.map((item: any) => item.role.name)
+    roles: roleNames,
+    cafeId,
   };
 };
