@@ -264,7 +264,13 @@ export default function CustomerInterfacePage({
     );
   }
 
+  // paramsWithTableName starts as Record<string, unknown> for flexibility while
+  // we attach tableName etc.; cast at the boundary back to whatever shape
+  // CustomerMenuClient consumes.
   return (
-    <CustomerMenuClient cafe={cafeData} params={paramsWithTableName || resolvedParams} />
+    <CustomerMenuClient
+      cafe={cafeData}
+      params={(paramsWithTableName || resolvedParams) as unknown as typeof resolvedParams & { tableName?: string }}
+    />
   );
 }
