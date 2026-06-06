@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
 import { SectionHeader } from "@/components/dashboard/section-header";
@@ -52,12 +52,30 @@ export default function CustomersPage() {
   // Real implementation for profile
   const cafeId = impersonatedCafeId || profile?.cafeId || (user ? localStorage.getItem('cafe_id_fallback') : null) || 'CAF-1776742784566'; // fallback for demo
   
-  const customersRef = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
-    return query(collection(db, 'cafes', cafeId, 'customers'), orderBy('lastOrderDate', 'desc'));
-  }, [db, cafeId]);
-
-  const { data: customers, isLoading } = useCollection(customersRef);
+  // Postgres polling — replaces the old Firestore subscription.
+  const [customers, setCustomers] = useState<any[] | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  useEffect(() => {
+    if (!cafeId) return;
+    let alive = true;
+    const fetchCustomers = async () => {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      try {
+        const res = await fetch(`/api/cafes/${cafeId}/customers?limit=300`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!alive) return;
+        if (json.success && Array.isArray(json.data)) setCustomers(json.data);
+      } catch { /* ignore */ }
+      finally { if (alive) setIsLoading(false); }
+    };
+    void fetchCustomers();
+    const iv = setInterval(fetchCustomers, 10000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [cafeId]);
   
   const loyaltyConfigRef = useMemoFirebase(() => db && cafeId ? doc(db, 'cafes', cafeId, 'config', 'loyalty') : null, [db, cafeId]);
   const { data: loyaltyConfig } = useDoc(loyaltyConfigRef);

@@ -34,12 +34,36 @@ export default function OrderManagement() {
   const isArabic = configDoc?.language === 'ar';
   const t = (en: string, ar: string) => isArabic ? ar : en;
 
-  // Retrieve matching cafe orders automatically 
-  const ordersQuery = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
-    return query(collection(db, 'cafes', cafeId, 'orders'), orderBy('createdAt', 'desc'));
-  }, [db, cafeId]);
-  const { data: orders, isLoading } = useCollection(ordersQuery);
+  // Postgres polling — replaces the old Firestore subscription. Polls every
+  // 5s while the page is in the foreground. The shape of `orders` is the
+  // same superset the existing UI already destructures from.
+  const [orders, setOrders] = useState<any[] | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  useEffect(() => {
+    if (!cafeId) return;
+    let alive = true;
+    const fetchOrders = async () => {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      try {
+        const res = await fetch(`/api/cafes/${cafeId}/orders?limit=200`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!alive) return;
+        if (json.success && Array.isArray(json.data)) {
+          setOrders(json.data);
+        }
+      } catch { /* ignore network blips */ }
+      finally {
+        if (alive) setIsLoading(false);
+      }
+    };
+    void fetchOrders();
+    const iv = setInterval(fetchOrders, 5000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [cafeId]);
 
   const knownOrderIds = useRef<Set<string>>(new Set());
 
