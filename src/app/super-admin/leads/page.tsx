@@ -16,18 +16,17 @@ export default function LeadsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchLeads = async () => {
-    if (!db) return;
-    setIsLoading(true);
+    setLoading(true);
     try {
-      const q = query(collection(db, 'leads'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setLeads(data);
-    } catch (error) {
-      console.error("Error fetching leads:", error);
-    } finally {
-      setIsLoading(false);
-    }
+      const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const res = await fetch('/api/super-admin/leads', {
+        headers: tok ? { Authorization: `Bearer ${tok}` } : undefined,
+        cache: 'no-store',
+      });
+      const json = await res.json();
+      if (json.success) setLeads(json.data);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
   };
 
   useEffect(() => {

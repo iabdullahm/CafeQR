@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
@@ -53,11 +53,25 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function AuditLogsPage() {
   const db = useFirestore();
-  const logsQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(100));
-  }, [db]);
-  const { data: logsData = [], isLoading } = useCollection(logsQuery);
+    const [logsData, setLogsData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  useEffect(() => {
+    let alive = true;
+    const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers = tok ? { Authorization: `Bearer ${tok}` } : undefined;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/super-admin/audit-logs', { headers, cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (alive && json.success && Array.isArray(json.data)) setLogsData(json.data);
+      } catch { /* ignore */ }
+      finally { if (alive) setIsLoading(false); }
+    };
+    void load();
+    const iv = setInterval(load, 30000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [])
   const logs = logsData || [];
 
   const [selectedLog, setSelectedLog] = useState<any>(null);

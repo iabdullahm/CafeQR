@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { 
@@ -100,11 +100,25 @@ const PERMISSION_LIST = [
 
 export default function UsersRolesManagement() {
   const db = useFirestore();
-  const usersQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'users'), orderBy('createdAt', 'desc'), limit(100));
-  }, [db]);
-  const { data: usersData = [], isLoading } = useCollection(usersQuery);
+    const [usersData, setUsersData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  useEffect(() => {
+    let alive = true;
+    const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers = tok ? { Authorization: `Bearer ${tok}` } : undefined;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/super-admin/users', { headers, cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (alive && json.success && Array.isArray(json.data)) setUsersData(json.data);
+      } catch { /* ignore */ }
+      finally { if (alive) setIsLoading(false); }
+    };
+    void load();
+    const iv = setInterval(load, 30000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [])
   const users = usersData || [];
 
   const [activeTab, setActiveTab] = useState("users");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,11 +71,25 @@ import {
 
 export default function SupportPage() {
   const db = useFirestore();
-  const ticketsQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc'), limit(100));
-  }, [db]);
-  const { data: ticketsData = [], isLoading } = useCollection(ticketsQuery);
+    const [ticketsData, setTicketsData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  useEffect(() => {
+    let alive = true;
+    const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers = tok ? { Authorization: `Bearer ${tok}` } : undefined;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/super-admin/support-tickets', { headers, cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (alive && json.success && Array.isArray(json.data)) setTicketsData(json.data);
+      } catch { /* ignore */ }
+      finally { if (alive) setIsLoading(false); }
+    };
+    void load();
+    const iv = setInterval(load, 30000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [])
   const tickets = ticketsData || [];
 
   const [selectedTicket, setSelectedTicket] = useState<any>(null);

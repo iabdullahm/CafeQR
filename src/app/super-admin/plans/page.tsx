@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,26 +61,31 @@ const IconMap: Record<string, any> = {
 export default function PlansManagement() {
   const db = useFirestore();
 
-  // Fetch Live Plans
-  const plansRef = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'plans'), orderBy('monthlyPrice', 'asc'));
-  }, [db]);
-  const { data: plansData, isLoading: plansLoading } = useCollection(plansRef);
-
-  // Fetch Live Cafes for Metrics Simulation (Since we are reading the central CRM state)
-  const cafesRef = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'cafes'));
-  }, [db]);
-  const { data: cafes } = useCollection(cafesRef);
-
-  // Fetch Live Addons
-  const addonsRef = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'addons')); // Will be empty if they haven't explicitly created this table yet
-  }, [db]);
-  const { data: addonsData } = useCollection(addonsRef);
+  // Postgres polling for plans + cafes. Addons not yet modeled.
+  const [plansData, setPlansData] = useState<any[]>([]);
+  const [plansLoading, setPlansLoading] = useState<boolean>(true);
+  const [cafes, setCafes] = useState<any[]>([]);
+  const addonsData: any[] = [];
+  useEffect(() => {
+    let alive = true;
+    const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers = tok ? { Authorization: `Bearer ${tok}` } : undefined;
+    const load = async () => {
+      try {
+        const [pRes, cRes] = await Promise.all([
+          fetch('/api/super-admin/plans', { headers, cache: 'no-store' }),
+          fetch('/api/cafes', { headers, cache: 'no-store' }),
+        ]);
+        if (!alive) return;
+        if (pRes.ok) { const j = await pRes.json(); if (j.success) setPlansData(j.data); }
+        if (cRes.ok) { const j = await cRes.json(); if (j.success && Array.isArray(j.data)) setCafes(j.data); }
+      } catch { /* ignore */ }
+      finally { if (alive) setPlansLoading(false); }
+    };
+    void load();
+    const iv = setInterval(load, 60000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [])
 
   // Computed Business Logic mapping DB to UI
   const computedPlans = useMemo(() => {
@@ -153,89 +158,7 @@ export default function PlansManagement() {
 
   const handleInitializeTiers = async () => {
     if (!db) return;
-    const { setDoc, doc } = await import('firebase/firestore');
-    const defaultPlans = [
-      {
-        id: "free",
-        name: "Free",
-        slug: "free",
-        version: "v1.0",
-        status: "active",
-        visibility: "public",
-        monthlyPrice: 0,
-        yearlyPrice: 0,
-        currency: "OMR",
-        trialDays: 0,
-        maxBranches: 1,
-        maxTables: 10,
-        maxProducts: 20,
-        maxStaffUsers: 1,
-        features: { qr_menu: true, orders: false, loyalty: false, staff_roles: false, analytics: false },
-        color: "bg-zinc-100 text-zinc-700 border-zinc-200",
-        isPopular: false,
-      },
-      {
-        id: "starter",
-        name: "Basic",
-        slug: "starter",
-        version: "v1.0",
-        status: "active",
-        visibility: "public",
-        monthlyPrice: 5,
-        yearlyPrice: 50,
-        currency: "OMR",
-        trialDays: 14,
-        maxBranches: 1,
-        maxTables: 50,
-        maxProducts: 200,
-        maxStaffUsers: 3,
-        features: { qr_menu: true, orders: true, loyalty: false, staff_roles: false, analytics: false },
-        color: "bg-blue-50 text-blue-700 border-blue-200",
-        isPopular: false,
-      },
-      {
-        id: "growth",
-        name: "Popular",
-        slug: "growth",
-        version: "v1.0",
-        status: "active",
-        visibility: "public",
-        monthlyPrice: 9,
-        yearlyPrice: 90,
-        currency: "OMR",
-        trialDays: 14,
-        maxBranches: 1,
-        maxTables: 150,
-        maxProducts: 9999,
-        maxStaffUsers: 10,
-        features: { qr_menu: true, orders: true, loyalty: true, staff_roles: true, analytics: true },
-        color: "bg-amber-50 text-amber-700 border-amber-200",
-        isPopular: true,
-      },
-      {
-        id: "pro",
-        name: "Business",
-        slug: "pro",
-        version: "v1.0",
-        status: "active",
-        visibility: "public",
-        monthlyPrice: 15,
-        yearlyPrice: 150,
-        currency: "OMR",
-        trialDays: 14,
-        maxBranches: 999,
-        maxTables: 999,
-        maxProducts: 9999,
-        maxStaffUsers: 999,
-        features: { qr_menu: true, orders: true, loyalty: true, staff_roles: true, analytics: true },
-        color: "bg-zinc-900 text-white border-zinc-800",
-        isPopular: false,
-      }
-    ];
-
-    try {
-      for (const plan of defaultPlans) {
-        await setDoc(doc(db, 'plans', plan.id), plan);
+    /* TODO: PUT /api/super-admin/plans/[id] endpoint */
       }
       alert("Tiers initialized successfully!");
     } catch (e) {

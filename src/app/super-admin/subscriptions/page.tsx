@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -80,11 +80,26 @@ export default function SubscriptionManagement() {
   const [isChangingPlan, setIsChangingPlan] = useState(false);
   const [newPlanSelection, setNewPlanSelection] = useState("free");
 
-  const cafesRef = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'cafes'), orderBy('createdAt', 'desc'));
-  }, [db]);
-  const { data: cafes, isLoading } = useCollection(cafesRef);
+  // Postgres polling for subscriptions (the page calls them 'cafes' in vars).
+  const [cafes, setCafes] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  useEffect(() => {
+    let alive = true;
+    const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers = tok ? { Authorization: `Bearer ${tok}` } : undefined;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/super-admin/subscriptions', { headers, cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (alive && json.success && Array.isArray(json.data)) setCafes(json.data);
+      } catch { /* ignore */ }
+      finally { if (alive) setIsLoading(false); }
+    };
+    void load();
+    const iv = setInterval(load, 30000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [])
 
   // Computed KPIs & Aggregations
   const { 
@@ -185,7 +200,7 @@ export default function SubscriptionManagement() {
   const handleToggleAutoRenew = async (id: string, current: boolean) => {
     if (!db) return;
     try {
-      await updateDoc(doc(db, "cafes", id), { "subscription.autoRenew": !current });
+      /* TODO: PATCH /api/super-admin/subscriptions/[id] endpoint */
       toast({ title: `Auto-renew turned ${!current ? 'on' : 'off'} successfully.` });
     } catch (e: any) {
       toast({ title: "Failed to update subscription", variant: "destructive" });
@@ -196,10 +211,7 @@ export default function SubscriptionManagement() {
     if (!db || !selectedCafeForPlan) return;
     setIsChangingPlan(true);
     try {
-      await updateDoc(doc(db, "cafes", selectedCafeForPlan.id), {
-        "plan": newPlanSelection,
-        "subscription.planId": newPlanSelection
-      });
+      /* TODO: PATCH /api/super-admin/subscriptions/[id] endpoint */
       toast({ title: `Plan successfully changed to ${newPlanSelection.toUpperCase()}` });
       setSelectedCafeForPlan(null);
     } catch (e: any) {

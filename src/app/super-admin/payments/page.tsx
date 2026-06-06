@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import {
@@ -97,11 +97,25 @@ export default function PaymentsPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const db = useFirestore();
 
-  const paymentsQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'payments'), orderBy('createdAt', 'desc'));
-  }, [db]);
-  const { data, isLoading } = useCollection(paymentsQuery);
+    const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  useEffect(() => {
+    let alive = true;
+    const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers = tok ? { Authorization: `Bearer ${tok}` } : undefined;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/super-admin/payments', { headers, cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (alive && json.success && Array.isArray(json.data)) setData(json.data);
+      } catch { /* ignore */ }
+      finally { if (alive) setIsLoading(false); }
+    };
+    void load();
+    const iv = setInterval(load, 30000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [])
   const payments = data || [];
 
   const stats = useMemo(() => {

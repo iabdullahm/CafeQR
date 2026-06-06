@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,11 +58,25 @@ import {
 
 export default function NotificationsCenterPage() {
   const db = useFirestore();
-  const notificationsQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'notifications'), orderBy('createdAt', 'desc'));
-  }, [db]);
-  const { data: notificationsData = [], isLoading } = useCollection(notificationsQuery);
+    const [notificationsData, setNotificationsData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  useEffect(() => {
+    let alive = true;
+    const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers = tok ? { Authorization: `Bearer ${tok}` } : undefined;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/super-admin/notifications', { headers, cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (alive && json.success && Array.isArray(json.data)) setNotificationsData(json.data);
+      } catch { /* ignore */ }
+      finally { if (alive) setIsLoading(false); }
+    };
+    void load();
+    const iv = setInterval(load, 30000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [])
   const notifications = notificationsData || [];
 
   const stats = useMemo(() => {
