@@ -19,7 +19,6 @@ import { collection, query, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { useCafe } from "@/hooks/use-cafe";
 import { callAiWithRetry, withAiCache } from "@/lib/ai-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const CATEGORIES = [
   { id: 'hot_drinks', en: 'Hot Drinks', ar: 'المشروبات الساخنة' },
@@ -141,13 +140,21 @@ export default function MenuManagement() {
     let finalImageUrl = newProduct.imageUrl || "";
 
     if (imageFile) {
+      // Upload via Vercel Blob through our server endpoint (replaces Firebase Storage).
       try {
-        const storage = getStorage(firebaseApp);
-        const fileExt = imageFile.name.split('.').pop() || 'jpg';
-        const fileName = `products/${cafeId}/${Date.now()}.${fileExt}`;
-        const storageRef = ref(storage, fileName);
-        await uploadBytes(storageRef, imageFile);
-        finalImageUrl = await getDownloadURL(storageRef);
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        const uploadRes = await fetch('/api/upload/menu-image', {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          body: formData,
+        });
+        const uploadJson = await uploadRes.json();
+        if (!uploadRes.ok || !uploadJson.success || !uploadJson.data?.url) {
+          throw new Error(uploadJson.message || `Upload failed (${uploadRes.status})`);
+        }
+        finalImageUrl = uploadJson.data.url;
       } catch (error) {
         console.error("Image upload failed", error);
         toast({ title: "Upload Failed", description: "Could not upload image, using placeholder.", variant: "destructive" });
