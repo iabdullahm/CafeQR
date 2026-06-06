@@ -21,9 +21,8 @@ export default function LoyaltyManagement() {
   const { user } = useUser();
   const db = useFirestore();
 
-  const userProfileRef = useMemoFirebase(() => {
-    return (db && user) ? doc(db, 'users', user.uid) : null;
-  }, [db, user]);
+  // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
+  const userProfileRef = useMemoFirebase(() => null, []);
   
   const { data: profile } = useDoc(userProfileRef);
   const userRole = profile?.role || "STAFF";

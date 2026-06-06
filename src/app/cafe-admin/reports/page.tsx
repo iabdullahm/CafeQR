@@ -35,7 +35,8 @@ export default function ReportsPage() {
     }
   }, []);
 
-  const userProfileRef = useMemoFirebase(() => db && user ? doc(db, 'users', user.uid) : null, [db, user]);
+  // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
+  const userProfileRef = useMemoFirebase(() => null, []);
   const { data: profile } = useDoc(userProfileRef);
   const cafeId = impersonatedCafeId || profile?.cafeId || (user ? localStorage.getItem('cafe_id_fallback') : null) || 'CAF-1776742784566';
 

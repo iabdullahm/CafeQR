@@ -148,12 +148,12 @@ export default function CafeDetailsPage({ params }: { params: Promise<{ id: stri
       toast({ title: `Impersonating ${cafeName}...` });
       const oldToken = localStorage.getItem("token");
       if (oldToken) localStorage.setItem("superAdminToken", oldToken);
-      // Endpoint now uses Firebase ID token (fixes prod 401).
-      const idToken = user ? await user.getIdToken() : null;
-      if (!idToken) throw new Error("Not signed in to Firebase - please log in again.");
+      // Endpoint now uses our own JWT (no Firebase Auth required).
+      const jwt = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!jwt) throw new Error("Not signed in — please log in again.");
       const res = await fetch(`/api/super-admin/impersonate/${cafeId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwt}` },
       });
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.message || `Impersonate failed (${res.status})`);

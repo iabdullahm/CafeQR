@@ -1,74 +1,55 @@
+/**
+ * AuthGuard — JWT-based route guard (post Firebase Auth removal).
+ *
+ * Reads the user via useJwtAuth (which itself reads the localStorage JWT
+ * and re-verifies via /api/auth/me). Redirects to /login when there is
+ * no valid session. Enforces optional role-based access via allowedRoles.
+ *
+ * Pre-migration: this used Firebase Auth + a Firestore /users/{uid} doc
+ * lookup. That created two failure modes — invalid Firebase config could
+ * crash the whole admin app, and a missing Firestore profile would loop
+ * users back to /login. Both are gone.
+ */
 
 "use client";
 
 import { useEffect, ReactNode } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
-import { useUser, useDoc, useMemoFirebase, useFirestore } from "@/firebase";
-import { doc } from "firebase/firestore";
+import { useUser } from "@/firebase";
 
 interface AuthGuardProps {
   children: ReactNode;
   allowedRoles?: string[];
 }
 
-/**
- * AuthGuard protects routes by checking Firebase Auth state and Firestore user profile.
- * It enforces account activity and role-based access control.
- */
 export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
   const { user, isUserLoading } = useUser();
-  const db = useFirestore();
   const router = useRouter();
 
-  // Reference to the user's profile in Firestore to check roles and activity
-  const userProfileRef = useMemoFirebase(() => {
-    return (db && user) ? doc(db, 'users', user.uid) : null;
-  }, [db, user]);
-  
-  const { data: profile, isLoading: isProfileLoading } = useDoc(userProfileRef);
-
   useEffect(() => {
-    // Redirect to login if auth check finishes and no user is found
-    if (!isUserLoading && !user) {
+    if (isUserLoading) return;
+
+    // No session — back to login.
+    if (!user) {
       router.push("/login");
+      return;
     }
-  }, [user, isUserLoading, router]);
 
-  useEffect(() => {
-    if (!isProfileLoading && profile && user) {
-      // 1. Enforce account activity check
-      if (profile.isActive === false) {
-        router.push("/login?error=inactive");
+    // Role gate.
+    if (allowedRoles && allowedRoles.length > 0) {
+      // user.roles is supplied by the JWT-backed useUser implementation.
+      const myRoles: string[] = Array.isArray((user as unknown as { roles?: string[] }).roles)
+        ? (user as unknown as { roles: string[] }).roles
+        : [];
+      const allowed = myRoles.some((r) => allowedRoles.includes(r.toUpperCase()));
+      if (!allowed) {
+        router.push("/login?error=unauthorized");
         return;
       }
-
-      // 2. Enforce role-based access control
-      if (allowedRoles && profile.role) {
-        if (!allowedRoles.includes(profile.role.toUpperCase())) {
-          router.push("/login?error=unauthorized");
-          return;
-        }
-      }
-
-      // 3. Platform JWT Synchronization
-      // If we have a profile but no token (or old version), try to sync
-      const currentToken = localStorage.getItem('token');
-      const tokenVersion = localStorage.getItem('token_version');
-      
-      if ((!currentToken || tokenVersion !== '1.1') && profile.email) {
-        // Token resync used to be done by re-posting hardcoded demo
-        // credentials. That was a credential-leak vector and is removed.
-        // The user must log in again via /login to refresh their JWT.
-        console.warn(
-          "AuthGuard: token missing or stale. User should re-authenticate via /login."
-        );
-      }
     }
-  }, [profile, isProfileLoading, user, allowedRoles, router]);
+  }, [user, isUserLoading, allowedRoles, router]);
 
-  // Show a professional loading state during the authentication handshake
-  if (isUserLoading || isProfileLoading) {
+  if (isUserLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background text-primary">
         <div className="text-center space-y-4">
@@ -79,12 +60,10 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
     );
   }
 
-  // If no user or profile after loading, we render nothing (useEffect handles redirection)
-  if (!user || !profile) return null;
-
-  // Prevent components from rendering if unauthorized or inactive
-  if (profile.isActive === false) return null;
-  if (allowedRoles && profile.role && !allowedRoles.includes(profile.role)) return null;
+  if (!user) {
+    // useEffect is already routing; render nothing while it happens.
+    return null;
+  }
 
   return <>{children}</>;
 }

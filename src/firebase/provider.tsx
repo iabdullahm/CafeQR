@@ -170,7 +170,26 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
  * This provides the User object, loading status, and any auth errors.
  * @returns {UserHookResult} Object with user, isUserLoading, userError.
  */
-export const useUser = (): UserHookResult => { // Renamed from useAuthUser
-  const { user, isUserLoading, userError } = useFirebase(); // Leverages the main hook
-  return { user, isUserLoading, userError };
+import { useJwtAuth } from '@/hooks/use-jwt-auth';
+
+/**
+ * useUser — JWT-backed auth state (post Firebase Auth removal, 2026-06-06).
+ *
+ * Returns a Firebase-compatible shape so existing pages do not need to
+ * change: { user, isUserLoading, userError }. The user object has uid,
+ * email, displayName, plus the JWT-supplied roles and cafeId — which
+ * means pages that previously fetched the profile from Firestore at
+ * /users/{uid} can now read role + cafeId directly off the user object.
+ */
+export const useUser = (): UserHookResult => {
+  const { user, isUserLoading, userError } = useJwtAuth();
+  // Cast through unknown because the JwtUser shape is a deliberate superset
+  // of the Firebase User fields we actually consume (uid, email, displayName,
+  // getIdToken). Pages that touched obscure Firebase-only fields will get a
+  // build-time prompt to migrate.
+  return {
+    user: user as unknown as User | null,
+    isUserLoading,
+    userError,
+  };
 };

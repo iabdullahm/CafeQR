@@ -31,7 +31,8 @@ export default function CafeSettings() {
    const db = useFirestore();
    const { toast } = useToast();
 
-   const userProfileRef = useMemoFirebase(() => db && user ? doc(db, 'users', user.uid) : null, [db, user]);
+   // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
+  const userProfileRef = useMemoFirebase(() => null, []);
    const { data: userProfile } = useDoc(userProfileRef);
    const cafeId = userProfile?.cafeId;
 

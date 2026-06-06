@@ -47,9 +47,8 @@ export default function CafeAdminLayout({
     }
   };
 
-  const userProfileRef = useMemoFirebase(() => {
-    return (db && user) ? doc(db, 'users', user.uid) : null;
-  }, [db, user]);
+  // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
+  const userProfileRef = useMemoFirebase(() => null, []);
   const { data: profile } = useDoc(userProfileRef);
 
   // If impersonating, use the cafeId from token. Otherwise use profile.cafeId

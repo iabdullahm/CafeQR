@@ -81,9 +81,8 @@ export default function CafeAdminDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  const userProfileRef = useMemoFirebase(() => {
-    return (db && user) ? doc(db, 'users', user.uid) : null;
-  }, [db, user]);
+  // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
+  const userProfileRef = useMemoFirebase(() => null, []);
   const { data: userProfile, isLoading: profileLoading } = useDoc(userProfileRef);
   const router = useRouter();
 
