@@ -7,7 +7,6 @@ export async function GET(req: Request) {
     const rows = await prisma.payment.findMany({
       orderBy: { createdAt: "desc" },
       take: 200,
-      include: { invoice: { select: { id: true } } },
     });
     return NextResponse.json({
       success: true,
