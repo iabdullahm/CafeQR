@@ -40,18 +40,32 @@ export default function ReportsPage() {
   const { data: profile } = useDoc(userProfileRef);
   const cafeId = impersonatedCafeId || profile?.cafeId || (user ? localStorage.getItem('cafe_id_fallback') : null) || 'CAF-1776742784566';
 
-  const ordersRef = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
-    return query(collection(db, 'cafes', cafeId, 'orders'), orderBy('createdAt', 'desc'));
-  }, [db, cafeId]);
-
-  const customersRef = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
-    return query(collection(db, 'cafes', cafeId, 'customers'));
-  }, [db, cafeId]);
-
-  const { data: ordersData, isLoading: isLoadingOrders } = useCollection(ordersRef);
-  const { data: customersData, isLoading: isLoadingCustomers } = useCollection(customersRef);
+    // Postgres polling for orders + customers reports.
+  const [ordersData, setOrdersData] = useState<any[] | null>(null);
+  const [customersData, setCustomersData] = useState<any[] | null>(null);
+  const [isLoadingOrders, setIsLoadingOrders] = useState<boolean>(true);
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState<boolean>(true);
+  useEffect(() => {
+    if (!cafeId) return;
+    let alive = true;
+    const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers = tok ? { Authorization: `Bearer ${tok}` } : undefined;
+    const load = async () => {
+      try {
+        const [oRes, cRes] = await Promise.all([
+          fetch(`/api/cafes/${cafeId}/orders?limit=500`, { headers, cache: 'no-store' }),
+          fetch(`/api/cafes/${cafeId}/customers?limit=500`, { headers, cache: 'no-store' }),
+        ]);
+        if (!alive) return;
+        if (oRes.ok) { const j = await oRes.json(); if (j.success) setOrdersData(j.data); }
+        if (cRes.ok) { const j = await cRes.json(); if (j.success) setCustomersData(j.data); }
+      } catch { /* ignore */ }
+      finally { if (alive) { setIsLoadingOrders(false); setIsLoadingCustomers(false); } }
+    };
+    void load();
+    const iv = setInterval(load, 30000);
+    return () => { alive = false; clearInterval(iv); };
+  }, [cafeId])
 
   // Process Data
   const analytics = useMemo(() => {

@@ -60,7 +60,16 @@ export default function CafeSettings() {
       if (!db || !cafeId) return;
       setIsSaving(true);
       try {
-         await setDoc(doc(db, 'cafes', cafeId, 'config', 'settings'), settings, { merge: true });
+         {
+           const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+           const res = await fetch(`/api/cafes/${cafeId}/settings`, {
+             method: 'PUT',
+             headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+             body: JSON.stringify({ settings }),
+           });
+           const json = await res.json();
+           if (!res.ok || !json.success) throw new Error(json.message || `HTTP ${res.status}`);
+         }
          toast({ title: "Settings Saved", description: "Your cafe configuration has been updated successfully." });
       } catch (e: any) {
          toast({ title: "Error", description: e.message || "Failed to save settings.", variant: "destructive" });

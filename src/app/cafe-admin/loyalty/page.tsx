@@ -44,11 +44,18 @@ export default function LoyaltyManagement() {
   const handleSaveConfig = async () => {
     if (!db || !cafeId) return;
     try {
-      await setDoc(doc(db, 'loyaltySettings', cafeId), { 
+      // JWT migration: write to Postgres via loyalty-config endpoint.
+      {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        await fetch(`/api/cafes/${cafeId}/loyalty-config`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ 
         cupsRequired: cupsReq,
         active: true,
         autoReset: true
-      }, { merge: true });
+      }) });
+      }
       toast({ title: "Settings Saved", description: "Loyalty configuration has been updated successfully." });
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });

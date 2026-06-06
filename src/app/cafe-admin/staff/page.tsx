@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,12 +38,28 @@ export default function StaffManagementPage() {
   const isArabic = configDoc?.language === 'ar';
   const t = (en: string, ar: string) => isArabic ? ar : en;
 
-  const staffQuery = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
-    return query(collection(db, 'users'), where('cafeId', '==', cafeId));
-  }, [db, cafeId]);
-
-  const { data: firestoreStaff } = useCollection(staffQuery);
+  const [firestoreStaff, setFirestoreStaff] = useState<any[] | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const refetchStaff = async () => {
+    if (!cafeId) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch(`/api/cafes/${cafeId}/staff`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        cache: 'no-store',
+      });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) setFirestoreStaff(json.data);
+    } catch { /* ignore */ }
+    finally { setIsLoading(false); }
+  };
+  useEffect(() => {
+    void refetchStaff();
+    const iv = setInterval(refetchStaff, 15000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cafeId]);
   const staffData = firestoreStaff || [];
 
   const { toast } = useToast();
@@ -54,9 +71,15 @@ export default function StaffManagementPage() {
   const handleRemoveAccess = async (staffId: string) => {
     if (confirm(t("Are you sure you want to remove this staff member's access?", "هل أنت متأكد من إزالة صلاحية هذا الموظف؟"))) {
        try {
-         await deleteDoc(doc(db, 'users', staffId));
+         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+         const res = await fetch(`/api/cafes/${cafeId}/staff/${staffId}`, {
+           method: 'DELETE',
+           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+         });
+         if (!res.ok) throw new Error('delete failed');
          toast({ title: t("Success", "نجاح"), description: t("Staff member removed.", "تم إزالة الموظف بنجاح.") });
-       } catch (error) {
+         void refetchStaff();
+       } catch {
          toast({ title: t("Error", "خطأ"), description: t("Failed to remove staff.", "فشل في إزالة الموظف."), variant: "destructive" });
        }
     }
