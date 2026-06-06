@@ -69,7 +69,6 @@ export default function TablesManagement() {
   }, [cafeId])
 
   const [branches, setBranches] = useState<any[] | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const refetchBranches = async () => {
     if (!cafeId) return;
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -82,7 +81,6 @@ export default function TablesManagement() {
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) setBranches(json.data);
     } catch { /* ignore */ }
-    finally { setIsLoading(false); }
   };
   useEffect(() => {
     void refetchBranches();
