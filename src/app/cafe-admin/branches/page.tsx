@@ -29,32 +29,49 @@ export default function BranchesManagement() {
   const isArabic = configDoc?.language === 'ar';
   const t = (en: string, ar: string) => isArabic ? ar : en;
 
-  const branchesQuery = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
-    return query(collection(db, 'cafes', cafeId, 'branches'));
-  }, [db, cafeId]);
-  const { data: branches, isLoading } = useCollection(branchesQuery);
+  const [branches, setBranches] = useState<any[] | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const refetchBranches = async () => {
+    if (!cafeId) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch(`/api/cafes/${cafeId}/branches`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        cache: 'no-store',
+      });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) setBranches(json.data);
+    } catch { /* ignore */ }
+    finally { setIsLoading(false); }
+  };
+  useEffect(() => {
+    void refetchBranches();
+    const iv = setInterval(refetchBranches, 15000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cafeId])
 
   const handleAddBranch = async () => {
-    if (!db || !cafeId) return;
+    if (!cafeId) return;
     const name = prompt(t("Enter Branch Name:", "أدخل اسم الفرع:"));
     if (!name) return;
-
-    const branchId = name.toLowerCase().replace(/\s+/g, '-');
-    const branchRef = doc(db, 'cafes', cafeId, 'branches', branchId);
-    
-    await setDoc(branchRef, {
-      name,
-      code: branchId.substring(0, 6).toUpperCase(),
-      city: "Muscat",
-      address: "Sultan Qaboos St",
-      phone: "+968 9000 0000",
-      status: "ACTIVE",
-      cafeId,
-      createdAt: new Date().toISOString()
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const res = await fetch(`/api/cafes/${cafeId}/branches`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ name, city: 'Muscat', address: 'Sultan Qaboos St' }),
     });
-
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      toast({ title: 'Failed', description: json.message || `HTTP ${res.status}`, variant: 'destructive' });
+      return;
+    }
     toast({ title: t("Branch Added", "تم إضافة الفرع"), description: t(`${name} location has been registered.`, `تم تسجيل موقع ${name}.`) });
+    void refetchBranches();
   };
 
   const getBranchMetrics = (branch: any) => {

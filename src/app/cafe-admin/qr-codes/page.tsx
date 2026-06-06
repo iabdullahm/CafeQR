@@ -26,11 +26,28 @@ export default function QRManagement() {
   const isArabic = configDoc?.language === 'ar';
   const t = (en: string, ar: string) => isArabic ? ar : en;
 
-  const tablesQuery = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
-    return query(collection(db, 'cafes', cafeId, 'tables'));
-  }, [db, cafeId]);
-  const { data: tables, isLoading } = useCollection(tablesQuery);
+  const [tables, setTables] = useState<any[] | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const refetchTables = async () => {
+    if (!cafeId) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch(`/api/cafes/${cafeId}/tables`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        cache: 'no-store',
+      });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) setTables(json.data);
+    } catch { /* ignore */ }
+    finally { setIsLoading(false); }
+  };
+  useEffect(() => {
+    void refetchTables();
+    const iv = setInterval(refetchTables, 15000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cafeId])
 
   const qrData = useMemo(() => {
     if (!tables) return [];

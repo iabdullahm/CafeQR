@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,17 +45,51 @@ export default function TablesManagement() {
   const isArabic = configDoc?.language === 'ar';
   const t = (en: string, ar: string) => isArabic ? ar : en;
 
-  const tablesQuery = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
-    return query(collection(db, 'cafes', cafeId, 'tables'));
-  }, [db, cafeId]);
-  const { data: tables, isLoading } = useCollection(tablesQuery);
+  const [tables, setTables] = useState<any[] | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const refetchTables = async () => {
+    if (!cafeId) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch(`/api/cafes/${cafeId}/tables`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        cache: 'no-store',
+      });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) setTables(json.data);
+    } catch { /* ignore */ }
+    finally { setIsLoading(false); }
+  };
+  useEffect(() => {
+    void refetchTables();
+    const iv = setInterval(refetchTables, 15000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cafeId])
 
-  const branchesQuery = useMemoFirebase(() => {
-    if (!db || !cafeId) return null;
-    return query(collection(db, 'cafes', cafeId, 'branches'));
-  }, [db, cafeId]);
-  const { data: branches } = useCollection(branchesQuery);
+  const [branches, setBranches] = useState<any[] | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const refetchBranches = async () => {
+    if (!cafeId) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    try {
+      const res = await fetch(`/api/cafes/${cafeId}/branches`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        cache: 'no-store',
+      });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) setBranches(json.data);
+    } catch { /* ignore */ }
+    finally { setIsLoading(false); }
+  };
+  useEffect(() => {
+    void refetchBranches();
+    const iv = setInterval(refetchBranches, 15000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cafeId])
 
   const confirmAddTable = async () => {
     if (!db || !cafeId) return;
@@ -67,31 +101,27 @@ export default function TablesManagement() {
     const selectedBranch = branches?.find((b: any) => b.id === newTableData.branchId);
     if (!selectedBranch) return;
 
-    const tableId = `T-${Date.now()}`;
-    const tableRef = doc(db, 'cafes', cafeId, 'tables', tableId);
-    const token = Math.random().toString(36).substring(2, 8) + Date.now().toString(36);
-
-    await setDoc(tableRef, {
-      number: Date.now(), // Fallback unique number
-      name: newTableData.name,
-      type: newTableData.type,
-      status: "AVAILABLE",
-      branchId: selectedBranch.id,
-      branchName: selectedBranch.name,
-      cafeId,
-      isActive: true,
-      qrToken: token,
-      createdAt: new Date().toISOString()
+    const authToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const res = await fetch(`/api/cafes/${cafeId}/tables`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: JSON.stringify({
+        branchId: selectedBranch.id,
+        tableNumber: String(Date.now()).slice(-4),
+        tableName: newTableData.name,
+        seatsCount: newTableData.type === 'car' ? 1 : 2,
+        generateQr: true,
+      }),
     });
-
-    const tokenRef = doc(db, 'qr_tokens', token);
-    await setDoc(tokenRef, {
-      cafeId,
-      branchId: selectedBranch.id,
-      tableId,
-      createdAt: new Date().toISOString()
-    });
-
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      toast({ title: 'Failed to add table', description: json.message || `HTTP ${res.status}`, variant: 'destructive' });
+      return;
+    }
+    void refetchTables();
     toast({ title: t("Unit Added", "تم إضافة الوحدة"), description: `${newTableData.name} ` + t(`is now active at ${selectedBranch.name}.`, `مُفعّلة الآن في ${selectedBranch.name}.`) });
     setIsAddTableOpen(false);
     setNewTableData({ name: "", type: "DINE_IN", branchId: selectedBranch.id });
@@ -101,7 +131,9 @@ export default function TablesManagement() {
     if (!db || !cafeId) return;
     const token = Math.random().toString(36).substring(2, 8) + Date.now().toString(36);
     
-    const tableRef = doc(db, 'cafes', cafeId, 'tables', table.id);
+    // QR generation handled by /api/cafes/[id]/tables on create.
+    return; // (legacy regenerate-qr flow disabled; needs PATCH /api/cafes/[id]/tables/[tableId]/qr endpoint)
+        const tableRef = doc(db, 'cafes', cafeId, 'tables', table.id);
     await setDoc(tableRef, { qrToken: token }, { merge: true });
 
     const tokenRef = doc(db, 'qr_tokens', token);
@@ -213,7 +245,19 @@ export default function TablesManagement() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             className="text-destructive gap-2 focus:bg-destructive/10 focus:text-destructive"
-                            onClick={() => deleteDoc(doc(db!, 'cafes', cafeId!, 'tables', table.id))}
+                            onClick={async () => {
+                              const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                              const res = await fetch(`/api/cafes/${cafeId}/tables/${table.id}`, {
+                                method: 'DELETE',
+                                headers: tok ? { Authorization: `Bearer ${tok}` } : undefined,
+                              });
+                              if (res.ok) {
+                                toast({ title: 'Table deleted' });
+                                void refetchTables();
+                              } else {
+                                toast({ title: 'Delete failed', variant: 'destructive' });
+                              }
+                            }}
                           >
                             <Trash2 className="h-4 w-4" /> {t("Delete Unit", "حذف الوحدة")}
                           </DropdownMenuItem>
