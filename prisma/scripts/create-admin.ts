@@ -156,7 +156,7 @@ async function main() {
         });
         if (!existing) {
           await prisma.cafeUser.create({
-            data: { userId: user.id, cafeId: cafe.id },
+            data: { userId: user.id, cafeId: cafe.id, roleId: roleRow.id },
           });
         }
       }
