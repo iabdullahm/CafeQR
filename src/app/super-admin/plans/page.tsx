@@ -157,14 +157,9 @@ export default function PlansManagement() {
     }));
 
   const handleInitializeTiers = async () => {
-    if (!db) return;
-    /* TODO: PUT /api/super-admin/plans/[id] endpoint */
-      }
-      alert("Tiers initialized successfully!");
-    } catch (e) {
-      console.error(e);
-      alert("Error initializing tiers");
-    }
+    // TODO: PUT /api/super-admin/plans/[id] endpoint — write path not yet
+    // migrated to Postgres. Disabled to avoid Firestore writes.
+    alert("Plan initialization is temporarily disabled while the SaaS pricing engine is migrating to Postgres.");
   };
 
   return (
