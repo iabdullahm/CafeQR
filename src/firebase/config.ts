@@ -1,9 +1,14 @@
+/**
+ * Legacy Firebase config. After the Firebase migration the values here are
+ * inert — nothing actively initializes the SDK with them. Kept exported
+ * because a handful of consumer-facing pages still import it; their reads
+ * resolve to no-op stubs.
+ */
 export const firebaseConfig = {
-  apiKey: "AIzaSyCjIofdZYK5Ixvp7vYq_QP5znK54C8SHzg",
-  authDomain: "cafeqr-new.firebaseapp.com",
-  projectId: "cafeqr-new",
-  storageBucket: "cafeqr-new.firebasestorage.app",
-  messagingSenderId: "137191246479",
-  appId: "1:137191246479:web:346a7f3ff524e6c8067efa",
-  measurementId: "G-Y8BTDKVQM6"
+  apiKey: "DEPRECATED",
+  authDomain: "DEPRECATED",
+  projectId: "DEPRECATED",
+  storageBucket: "DEPRECATED",
+  messagingSenderId: "DEPRECATED",
+  appId: "DEPRECATED",
 };
