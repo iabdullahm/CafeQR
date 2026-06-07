@@ -1,5 +1,4 @@
 import { doc, runTransaction, getFirestore, collection, serverTimestamp } from "firebase/firestore";
-
 // --- Domain Models & Types ---
 
 export type OrderType = 'DINE_IN' | 'CAR_SERVICE' | 'TAKEAWAY';

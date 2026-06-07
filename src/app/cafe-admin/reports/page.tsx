@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
-import { collection, query, orderBy, doc } from "firebase/firestore";
+
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Coffee, Users, Gift, TrendingUp, History, Save, Edit3, Plus, Settings, Target, CheckCircle2, Ticket } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
-import { doc, setDoc, collection, query, where } from "firebase/firestore";
+import { doc, collection, query, where } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LoyaltyManagement() {

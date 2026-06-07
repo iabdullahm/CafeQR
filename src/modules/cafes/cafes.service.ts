@@ -1,10 +1,8 @@
 
 import prisma from '../../config/prisma';
 import { firebaseConfig } from '@/firebase/config';
-import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, serverTimestamp, setDoc, doc } from 'firebase/firestore';
-
-
+import { initializeApp, getApps } from "firebase/app";
+import { getFirestore, serverTimestamp, setDoc, doc } from "firebase/firestore";
 // Initialize Firebase for server-side sync (if not already initialized)
 const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(firebaseApp);

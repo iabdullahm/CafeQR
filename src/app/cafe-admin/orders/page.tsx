@@ -9,7 +9,7 @@ import {
   CheckCircle2, Ban, Receipt, Check, Printer
 } from "lucide-react";
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
-import { collection, query, doc, orderBy } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { useCafe } from "@/hooks/use-cafe";

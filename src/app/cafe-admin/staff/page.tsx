@@ -20,7 +20,7 @@ import { AuthGuard } from "@/components/auth-guard";
 import { AddStaffModal } from "@/components/staff/add-staff-modal";
 import { ChangeRoleModal } from "@/components/staff/change-role-modal";
 import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection } from "@/firebase";
-import { doc, collection, query, where, deleteDoc } from "firebase/firestore";
+import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 const MOCK_STAFF: any[] = [];

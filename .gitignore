@@ -82,3 +82,4 @@ project.zip
 
 .vercel
 .env*
+firebase-export/

@@ -70,7 +70,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy } from "firebase/firestore";
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState("financial");
   const db = useFirestore();

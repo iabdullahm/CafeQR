@@ -21,7 +21,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { useCollection, useDoc, useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, orderBy, where, Timestamp } from 'firebase/firestore';
+import { doc, collection, query, orderBy, where, Timestamp } from "firebase/firestore";
 import { 
   AreaChart, 
   Area, 

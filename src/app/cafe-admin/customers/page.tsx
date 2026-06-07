@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
-import { collection, query, orderBy, doc } from "firebase/firestore";
+import { collection, doc } from "firebase/firestore";
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { DataTableReusable } from "@/components/tables/data-table-reusable";
 import { Card, CardContent } from "@/components/ui/card";

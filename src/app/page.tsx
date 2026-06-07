@@ -6,8 +6,7 @@ import { Coffee, QrCode, Smartphone, Car, LayoutDashboard, MapPin, Zap, Trending
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { translations } from './locales';
 import { useFirestore } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 export default function Home() {
   const db = useFirestore();
   const [lang, setLang] = useState<"en" | "ar">("en");

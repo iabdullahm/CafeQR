@@ -52,7 +52,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { AddCafeModal } from "@/components/cafes/add-cafe-modal";
 import { AdminManagementModal } from "@/components/cafes/admin-management-modal";
