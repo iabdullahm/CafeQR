@@ -16,7 +16,7 @@ export default function LeadsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchLeads = async () => {
-    setLoading(true);
+    setIsLoading(true);
     try {
       const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const res = await fetch('/api/super-admin/leads', {
@@ -26,7 +26,7 @@ export default function LeadsPage() {
       const json = await res.json();
       if (json.success) setLeads(json.data);
     } catch { /* ignore */ }
-    finally { setLoading(false); }
+    finally { setIsLoading(false); }
   };
 
   useEffect(() => {
