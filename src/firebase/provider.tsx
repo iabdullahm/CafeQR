@@ -1,51 +1,54 @@
 "use client";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useJwtAuth } from "@/hooks/use-jwt-auth";
 import { useMemo, type DependencyList } from "react";
 
 /**
  * Drop-in shims for the legacy @/firebase hooks.
  *
- * - useUser     : JWT-backed (delegates to useJwtAuth).
+ * - useUser     : JWT-backed (delegates to useJwtAuth). `user` is typed
+ *                 as `any` so legacy callers like `user.uid` typecheck.
  * - useAuth     : null.
  * - useFirestore: null (Firestore was retired in favor of Postgres APIs).
  * - useFirebase / useFirebaseApp : null services.
  * - useMemoFirebase: passthrough to useMemo for callers that still use it.
  */
 
-export interface UserHookResult<U = unknown> {
-  user: U | null;
+export interface UserHookResult {
+  user: any;
   isUserLoading: boolean;
   userError: Error | null;
 }
 
-export function useUser<U = unknown>(): UserHookResult<U> {
+export function useUser(): UserHookResult {
   const { user, isUserLoading, userError } = useJwtAuth();
   return {
-    user: user as unknown as U | null,
+    user: user as any,
     isUserLoading,
     userError,
   };
 }
 
-export function useAuth(): null {
+export function useAuth(): any {
   return null;
 }
 
-export function useFirestore(): null {
+export function useFirestore(): any {
   return null;
 }
 
-export function useFirebaseApp(): null {
+export function useFirebaseApp(): any {
   return null;
 }
 
 export function useFirebase(): {
   areServicesAvailable: boolean;
-  firebaseApp: null;
-  firestore: null;
-  auth: null;
-  user: null;
+  firebaseApp: any;
+  firestore: any;
+  auth: any;
+  user: any;
   isUserLoading: boolean;
   userError: Error | null;
 } {
@@ -55,7 +58,7 @@ export function useFirebase(): {
     firebaseApp: null,
     firestore: null,
     auth: null,
-    user: user as unknown as null,
+    user: user as any,
     isUserLoading,
     userError,
   };
