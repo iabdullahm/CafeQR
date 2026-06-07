@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { DataTableReusable } from "@/components/tables/data-table-reusable";
 import { Input } from "@/components/ui/input";
@@ -51,37 +51,58 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, doc, updateDoc } from "firebase/firestore";
+import { useUser } from '@/firebase';
 import { cn } from "@/lib/utils";
 import { AddCafeModal } from "@/components/cafes/add-cafe-modal";
 import { AdminManagementModal } from "@/components/cafes/admin-management-modal";
 import { SubscriptionManagementModal } from "@/components/cafes/subscription-management-modal";
 import { useToast } from "@/hooks/use-toast";
-import api from "@/lib/api";
 
 export default function CafeManagement() {
-  const db = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
-  
+  void user;
+
   // State
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
-  
+
   // Modals
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [subModalOpen, setSubModalOpen] = useState(false);
   const [selectedCafe, setSelectedCafe] = useState<any>(null);
 
-  // Firestore
-  const cafesRef = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'cafes'), orderBy('createdAt', 'desc'));
-  }, [db]);
-  const { data: cafes, isLoading } = useCollection(cafesRef);
+  // Cafes (Postgres via /api/super-admin/cafes — polling refresh)
+  const [cafes, setCafes] = useState<any[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchCafes = useCallback(async () => {
+    try {
+      const jwt = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch("/api/super-admin/cafes", {
+        headers: jwt ? { Authorization: `Bearer ${jwt}` } : {},
+        cache: "no-store",
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || `Failed to load cafes (${res.status})`);
+      }
+      setCafes(Array.isArray(json.data) ? json.data : []);
+    } catch (e: unknown) {
+      console.error("fetchCafes failed", e);
+      setCafes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCafes();
+    const t = setInterval(fetchCafes, 30_000);
+    return () => clearInterval(t);
+  }, [fetchCafes]);
 
   // 1. Business Calculations (KPIs)
   const { totalCafes, activeSubs, totalMRR, trialCount, expiredCount } = useMemo(() => {
@@ -157,15 +178,27 @@ export default function CafeManagement() {
     link.click();
   };
 
-  // Actions
+  // Actions — suspend/activate via PATCH /api/super-admin/cafes/[id]
   const toggleSuspend = async (cafe: any) => {
-    if (!db) return;
     if (!confirm(`Are you sure you want to ${cafe.isActive ? 'suspend' : 'activate'} this cafe?`)) return;
     try {
-      await updateDoc(doc(db, "cafes", cafe.id), { isActive: !cafe.isActive });
+      const jwt = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch(`/api/super-admin/cafes/${cafe.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
+        },
+        body: JSON.stringify({ isActive: !cafe.isActive }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || `Update failed (${res.status})`);
+      }
       toast({ title: `Cafe successfully ${cafe.isActive ? 'suspended' : 'activated'}.` });
+      fetchCafes();
     } catch (e: any) {
-      toast({ title: e.message || "Failed to update status.", variant: "destructive" });
+      toast({ title: e?.message || "Failed to update status.", variant: "destructive" });
     }
   };
 
