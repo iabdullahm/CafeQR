@@ -1,17 +1,19 @@
 "use client";
 
-export interface UseDocResult<T = unknown> {
-  data: T | null;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+export interface UseDocResult {
+  data: any;
   isLoading: boolean;
   error: Error | null;
 }
 
 /**
  * No-op replacement for the old Firestore useDoc hook.
- * Accepts (and ignores) any arguments to stay drop-in compatible with
- * legacy callers like useDoc(docRef).
+ * data is typed as `any` so legacy callers (e.g. `configDoc?.language`)
+ * keep typechecking without forcing a property contract.
  */
-export function useDoc<T = unknown>(..._args: unknown[]): UseDocResult<T> {
+export function useDoc(..._args: any[]): UseDocResult {
   void _args;
   return { data: null, isLoading: false, error: null };
 }
