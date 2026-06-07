@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, use } from "react";
+import React, { useState, use, useEffect, useCallback } from "react";
 import { 
   Card, 
   CardContent, 
@@ -55,8 +55,7 @@ import {
 import Link from "next/link";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc, updateDoc } from "firebase/firestore";
+import { useUser } from '@/firebase';
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 
@@ -95,49 +94,44 @@ export default function CafeDetailsPage({ params }: { params: Promise<{ id: stri
   const [isSaving, setIsSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
 
-  const db = useFirestore();
   const { toast } = useToast();
-  
-  const cafeRef = useMemoFirebase(() => {
-    if (!db || !id) return null;
-    return doc(db, 'cafes', id);
-  }, [db, id]);
 
-  const { data: cafe, isLoading } = useDoc(cafeRef);
+  // Cafe details (Postgres via /api/super-admin/cafes/[id], polling refresh).
+  const [cafe, setCafe] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Helper function to handle form saves
-  const handleSave = async (e: React.FormEvent<HTMLFormElement>, type: string) => {
-    e.preventDefault();
-    if (!cafeRef) return;
-    setIsSaving(true);
-    
+  const fetchCafe = useCallback(async () => {
+    if (!id) return;
+    const jwt = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const headers: Record<string, string> = jwt ? { Authorization: `Bearer ${jwt}` } : {};
     try {
-      const formData = new FormData(e.currentTarget);
-      const updates: any = {};
-      
-      if (type === 'edit_cafe') {
-        const name = formData.get('name') as string;
-        if (name) updates.name = name;
-        updates.email = formData.get('email');
-        updates.phone = formData.get('phone');
-        updates.location = formData.get('location');
-      } else if (type === 'assign_owner') {
-        updates.owner_name = formData.get('ownerName');
-        updates.owner_email = formData.get('ownerEmail');
-      } else if (type === 'add_branch') {
-        updates.branches_count = (cafe?.branches_count || 0) + 1;
-        // Normally push to subcollection
-      } else if (type === 'add_table') {
-        updates.tables_count = (cafe?.tables_count || 0) + 1;
-      } else if (type === 'add_menu_item') {
-        updates.menu_count = (cafe?.menu_count || 0) + 1;
-      }
+      const res = await fetch(`/api/super-admin/cafes/${id}`, { headers, cache: "no-store" });
+      if (!res.ok) { setCafe(null); return; }
+      const j = await res.json();
+      setCafe(j?.data ?? null);
+    } catch {
+      setCafe(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
 
-      await updateDoc(cafeRef, updates);
-      toast({ title: "Success", description: "Changes saved successfully!" });
+  useEffect(() => {
+    fetchCafe();
+    const h = setInterval(fetchCafe, 30_000);
+    return () => clearInterval(h);
+  }, [fetchCafe]);
+
+  // Save handler — currently a stub; full edit endpoints (rename, reassign
+  // owner, etc) are not implemented on the super-admin route yet. The
+  // dialog still shows so the UI doesn't regress, but the save is a toast.
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>, _type: string) => {
+    e.preventDefault();
+    void _type;
+    setIsSaving(true);
+    try {
+      toast({ title: "Not implemented", description: "Inline editing from the super-admin detail page is coming soon.", variant: "destructive" });
       setDialogOpen(null);
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to save.", variant: "destructive" });
     } finally {
       setIsSaving(false);
     }

@@ -11,27 +11,35 @@ import { DataTableReusable } from "@/components/tables/data-table-reusable";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Coffee, Users, Gift, TrendingUp, History, Save, Edit3, Plus, Settings, Target, CheckCircle2, Ticket } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
-import { doc, collection, query, where } from "firebase/firestore";
+import { useState, useEffect, useCallback } from "react";
+import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 
 export default function LoyaltyManagement() {
   const [cupsReq, setCupsReq] = useState(5);
   const { user } = useUser();
-  const db = useFirestore();
 
-  // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
-  const userProfileRef = useMemoFirebase(() => null, []);
-  
-  const { data: profile } = useDoc(userProfileRef);
-  const userRole = profile?.role || "STAFF";
+  // JWT migration: role + cafeId come from useUser() directly.
+  const userProfile = user as any;
+  const userRole = (userProfile?.roles?.[0] || userProfile?.role || "STAFF").toUpperCase();
   const isManagerOrAbove = ["OWNER", "SUPER_ADMIN", "MANAGER"].includes(userRole);
   const isOwnerOrSuperAdmin = ["OWNER", "SUPER_ADMIN"].includes(userRole);
-  
-  const cafeId = profile?.cafeId || (user ? localStorage.getItem('cafe_id_fallback') : null);
-  const loyaltyConfigRef = useMemoFirebase(() => db && cafeId ? doc(db, 'loyaltySettings', cafeId) : null, [db, cafeId]);
-  const { data: loyaltyConfig } = useDoc(loyaltyConfigRef);
+
+  const cafeId: string | null = userProfile?.cafeId || null;
+
+  // Loyalty config — fetched once from Postgres
+  const [loyaltyConfig, setLoyaltyConfig] = useState<any>(null);
+  useEffect(() => {
+    if (!cafeId) return;
+    const jwt = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    fetch(`/api/cafes/${cafeId}/loyalty-config`, {
+      headers: jwt ? { Authorization: `Bearer ${jwt}` } : {},
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setLoyaltyConfig(j?.data ?? j ?? null))
+      .catch(() => setLoyaltyConfig(null));
+  }, [cafeId]);
 
   const { toast } = useToast();
 
@@ -42,7 +50,7 @@ export default function LoyaltyManagement() {
   }, [loyaltyConfig]);
 
   const handleSaveConfig = async () => {
-    if (!db || !cafeId) return;
+    if (!cafeId) return;
     try {
       // JWT migration: write to Postgres via loyalty-config endpoint.
       {
@@ -62,8 +70,31 @@ export default function LoyaltyManagement() {
     }
   };
 
-  const customersRef = useMemoFirebase(() => db && cafeId ? query(collection(db, 'customers'), where('cafeId', '==', cafeId)) : null, [db, cafeId]);
-  const { data: customers } = useCollection(customersRef);
+  // Customers from Postgres — polling refresh every 30s
+  const [customers, setCustomers] = useState<any[] | null>(null);
+
+  const fetchCustomers = useCallback(async () => {
+    if (!cafeId) return;
+    const jwt = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    try {
+      const res = await fetch(`/api/cafes/${cafeId}/customers?limit=500`, {
+        headers: jwt ? { Authorization: `Bearer ${jwt}` } : {},
+        cache: "no-store",
+      });
+      if (!res.ok) { setCustomers([]); return; }
+      const j = await res.json();
+      const list = Array.isArray(j?.data) ? j.data : Array.isArray(j) ? j : [];
+      setCustomers(list);
+    } catch {
+      setCustomers([]);
+    }
+  }, [cafeId]);
+
+  useEffect(() => {
+    fetchCustomers();
+    const h = setInterval(fetchCustomers, 30_000);
+    return () => clearInterval(h);
+  }, [fetchCustomers]);
 
   // Compute metrics
   let totalMembers = 0;

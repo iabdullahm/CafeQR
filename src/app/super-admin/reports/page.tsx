@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -69,25 +69,37 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from "firebase/firestore";
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState("financial");
-  const db = useFirestore();
 
-  // Real-time Firebase Fetch
-  const cafesQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'cafes'), orderBy('createdAt', 'desc'));
-  }, [db]);
-  const { data: cafes, isLoading: cafesLoading } = useCollection(cafesQuery);
+  // Postgres-backed reports — polling refresh every 30s.
+  // Variable names preserved (cafes, cafesLoading) so the existing useMemo
+  // calculations below work unchanged. `reports` stays as an empty list
+  // until a reports endpoint is added (no Firestore /reports collection).
+  const [cafes, setCafes] = useState<any[] | null>(null);
+  const [cafesLoading, setCafesLoading] = useState(true);
+  const reports: any[] = [];
 
-  const reportsQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'reports'), orderBy('createdAt', 'desc'));
-  }, [db]);
-  const { data: reportsData = [] } = useCollection(reportsQuery);
-  const reports = reportsData || [];
+  const fetchCafes = useCallback(async () => {
+    const jwt = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const headers: Record<string, string> = jwt ? { Authorization: `Bearer ${jwt}` } : {};
+    try {
+      const res = await fetch("/api/super-admin/cafes", { headers, cache: "no-store" });
+      if (!res.ok) { setCafes([]); return; }
+      const j = await res.json();
+      setCafes(Array.isArray(j?.data) ? j.data : []);
+    } catch {
+      setCafes([]);
+    } finally {
+      setCafesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCafes();
+    const h = setInterval(fetchCafes, 30_000);
+    return () => clearInterval(h);
+  }, [fetchCafes]);
 
   // Computed Dynamic Data
   const { 

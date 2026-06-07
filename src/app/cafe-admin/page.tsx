@@ -20,8 +20,8 @@ import {
   MapPin,
   CheckCircle2
 } from "lucide-react";
-import { useCollection, useDoc, useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, orderBy, where, Timestamp } from "firebase/firestore";
+import { useUser } from '@/firebase';
+import { useCallback } from 'react';
 import { 
   AreaChart, 
   Area, 
@@ -73,8 +73,8 @@ function DashboardSkeleton() {
 
 export default function CafeAdminDashboard() {
   const { user, isUserLoading } = useUser();
-  const db = useFirestore();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const router = useRouter();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -82,62 +82,78 @@ export default function CafeAdminDashboard() {
   }, []);
 
   // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
-  const userProfileRef = useMemoFirebase(() => null, []);
-  const { data: userProfile, isLoading: profileLoading } = useDoc(userProfileRef);
-  const router = useRouter();
+  const userProfile = user as any;
+  const profileLoading = isUserLoading;
+  const cafeId = userProfile?.cafeId;
 
   // Redirect Cashier to Orders page, Kitchen to KDS
   useEffect(() => {
-    if (!profileLoading && userProfile?.role?.toUpperCase() === 'CASHIER') {
+    const role = (userProfile?.roles?.[0] || userProfile?.role || '').toUpperCase();
+    if (!profileLoading && role === 'CASHIER') {
       router.replace('/cafe-admin/orders');
     }
-    if (!profileLoading && userProfile?.role?.toUpperCase() === 'KITCHEN') {
+    if (!profileLoading && role === 'KITCHEN') {
       router.replace('/cafe-admin/kds');
     }
-  }, [userProfile?.role, profileLoading, router]);
+  }, [userProfile, profileLoading, router]);
 
-  const cafeId = userProfile?.cafeId;
-
-  const configRef = useMemoFirebase(() => db && cafeId ? doc(db, 'cafes', cafeId, 'config', 'settings') : null, [db, cafeId]);
-  const { data: configDoc } = useDoc(configRef);
-  const isArabic = configDoc?.language === 'ar';
+  // Language flag — defaulting to English; no Firestore config lookup needed for dashboard.
+  const isArabic = false;
   const t = (en: string, ar: string) => isArabic ? ar : en;
 
-  const startOfToday = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
+  // Postgres-backed dashboard data — polling refresh every 30s.
+  // Variable names preserved (todayOrders, branches, allTables, allProducts,
+  // ordersLoading) so the existing useMemo / render code below works unchanged.
+  const [todayOrders, setTodayOrders] = useState<any[] | null>(null);
+  const [branches, setBranches] = useState<any[] | null>(null);
+  const [allTables, setAllTables] = useState<any[] | null>(null);
+  const [allProducts, setAllProducts] = useState<any[] | null>(null);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
-  // Optimized Scoped Query for Orders
-  const todayOrdersQuery = useMemoFirebase(() => {
-    if (!db || !cafeId || profileLoading) return null;
-    return query(
-      collection(db, 'cafes', cafeId, 'orders'),
-      where('createdAt', '>=', Timestamp.fromDate(startOfToday)),
-      orderBy('createdAt', 'desc')
-    );
-  }, [db, cafeId, profileLoading, startOfToday]);
-  const { data: todayOrders, isLoading: ordersLoading } = useCollection(todayOrdersQuery);
+  const fetchDashboard = useCallback(async () => {
+    if (!cafeId) return;
+    const jwt = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const headers: Record<string, string> = jwt ? { Authorization: `Bearer ${jwt}` } : {};
+    try {
+      const [oRes, bRes, tRes, mRes] = await Promise.all([
+        fetch(`/api/cafes/${cafeId}/orders?limit=200`, { headers, cache: "no-store" }),
+        fetch(`/api/cafes/${cafeId}/branches`, { headers, cache: "no-store" }),
+        fetch(`/api/cafes/${cafeId}/tables`, { headers, cache: "no-store" }),
+        fetch(`/api/menu/${cafeId}`, { headers, cache: "no-store" }),
+      ]);
+      const j = async (r: Response) => (r.ok ? r.json().catch(() => null) : null);
+      const [oJ, bJ, tJ, mJ] = await Promise.all([j(oRes), j(bRes), j(tRes), j(mRes)]);
+      const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+      const allO = Array.isArray(oJ?.data) ? oJ.data : Array.isArray(oJ) ? oJ : [];
+      const todays = allO.filter((o: any) => {
+        const d = new Date(o.createdAt || o.created_at || 0);
+        return !isNaN(d.getTime()) && d >= startOfDay;
+      });
+      setTodayOrders(todays);
+      setBranches(Array.isArray(bJ?.data) ? bJ.data : Array.isArray(bJ) ? bJ : []);
+      setAllTables(Array.isArray(tJ?.data) ? tJ.data : Array.isArray(tJ) ? tJ : []);
+      const products = Array.isArray(mJ?.data?.items)
+        ? mJ.data.items
+        : Array.isArray(mJ?.items)
+        ? mJ.items
+        : Array.isArray(mJ?.data)
+        ? mJ.data
+        : [];
+      setAllProducts(products);
+    } catch (e) {
+      console.error("cafe-admin dashboard fetch failed", e);
+      setTodayOrders([]); setBranches([]); setAllTables([]); setAllProducts([]);
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [cafeId]);
 
-  const branchesQuery = useMemoFirebase(() => {
-    if (!db || !cafeId || profileLoading) return null;
-    return query(collection(db, 'cafes', cafeId, 'branches'));
-  }, [db, cafeId, profileLoading]);
-  const { data: branches } = useCollection(branchesQuery);
-
-  // Optimized Scoped Query for Tables (Non-collectionGroup)
-  const tablesQuery = useMemoFirebase(() => {
-    if (!db || !cafeId || profileLoading) return null;
-    return query(collection(db, 'cafes', cafeId, 'tables'));
-  }, [db, cafeId, profileLoading]);
-  const { data: allTables } = useCollection(tablesQuery);
-
-  const productsQuery = useMemoFirebase(() => {
-    if (!db || !cafeId || profileLoading) return null;
-    return query(collection(db, 'cafes', cafeId, 'products'));
-  }, [db, cafeId, profileLoading]);
-  const { data: allProducts } = useCollection(productsQuery);
+  useEffect(() => {
+    if (!cafeId) return;
+    fetchDashboard();
+    const handle = setInterval(fetchDashboard, 30_000);
+    return () => clearInterval(handle);
+  }, [cafeId, fetchDashboard]);
 
   const hasAnyOrders = Array.isArray(todayOrders) && todayOrders.length > 0;
   

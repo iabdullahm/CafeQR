@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { SectionHeader } from "@/components/dashboard/section-header";
 
 import { Button } from "@/components/ui/button";
@@ -42,31 +42,56 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { DataTableReusable } from "@/components/tables/data-table-reusable";
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function SuperAdminDashboard() {
-  const db = useFirestore();
   const [lang, setLang] = useState<'en' | 'ar'>('en');
   const isAr = lang === 'ar';
-  
+
   const t = (en: string, ar: string) => isAr ? ar : en;
 
-  // Real-time Cafes
-  const cafesQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'cafes'), orderBy('createdAt', 'desc'));
-  }, [db]);
-  const { data: cafes, isLoading: cafesLoading } = useCollection(cafesQuery);
+  // Cafes + plans (Postgres via /api/super-admin/*, polling refresh).
+  // Variable names preserved so the existing useMemo/render code below
+  // (stats, signupData, pieData) works unchanged.
+  const [cafes, setCafes] = useState<any[] | null>(null);
+  const [plansData, setPlansData] = useState<any[] | null>(null);
+  const [cafesLoading, setCafesLoading] = useState(true);
 
-  // Real-time Plans
-  const plansQuery = useMemoFirebase(() => {
-    if (!db) return null;
-    return query(collection(db, 'plans'));
-  }, [db]);
-  const { data: plansData } = useCollection(plansQuery);
+  const fetchAll = useCallback(async () => {
+    const jwt = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const headers: Record<string, string> = jwt ? { Authorization: `Bearer ${jwt}` } : {};
+    try {
+      const [cafesRes, plansRes] = await Promise.all([
+        fetch("/api/super-admin/cafes", { headers, cache: "no-store" }),
+        fetch("/api/super-admin/plans", { headers, cache: "no-store" }),
+      ]);
+      if (cafesRes.ok) {
+        const j = await cafesRes.json();
+        if (j?.success) setCafes(Array.isArray(j.data) ? j.data : []);
+      } else {
+        setCafes([]);
+      }
+      if (plansRes.ok) {
+        const j = await plansRes.json();
+        if (j?.success) setPlansData(Array.isArray(j.data) ? j.data : []);
+      } else {
+        setPlansData([]);
+      }
+    } catch (e) {
+      console.error("super-admin dashboard fetch failed", e);
+      setCafes([]);
+      setPlansData([]);
+    } finally {
+      setCafesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAll();
+    const handle = setInterval(fetchAll, 30_000);
+    return () => clearInterval(handle);
+  }, [fetchAll]);
 
   // Derived Stats
   const stats = useMemo(() => {
@@ -325,7 +350,7 @@ export default function SuperAdminDashboard() {
                       <div className="absolute top-0 right-[-4px] h-2.5 w-2.5 bg-emerald-500 border-2 border-background rounded-full" />
                    </div>
                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{t("Database", "قاعدة البيانات")}</p>
-                   <p className="text-lg font-black">{db ? '18ms' : 'Error'}</p>
+                   <p className="text-lg font-black">{cafes ? '18ms' : 'Error'}</p>
                 </div>
                 <div className="p-4 bg-muted/30 rounded-2xl border flex flex-col justify-center items-center text-center space-y-2">
                    <div className="relative">
