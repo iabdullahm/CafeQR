@@ -57,7 +57,8 @@ export default function CafeSettings() {
    }, [configDoc]);
 
    const handleSave = async () => {
-      if (!db || !cafeId) return;
+      // Post-Firebase: db is null shim. Settings save goes to /api/cafes/[id]/settings.
+      if (!cafeId) return;
       setIsSaving(true);
       try {
          {

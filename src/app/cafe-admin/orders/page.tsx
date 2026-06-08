@@ -192,7 +192,8 @@ export default function OrderManagement() {
   };
 
   const handleStatusChange = async (order: any, newStatus: string) => {
-    if (!db || !cafeId) return;
+    // Post-Firebase: db is null shim. Status update goes to /api/orders/[id]/status-pg.
+    if (!cafeId) return;
     try {
        setUpdatingId(order.id);
        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;

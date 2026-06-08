@@ -90,7 +90,8 @@ export default function TablesManagement() {
   }, [cafeId])
 
   const confirmAddTable = async () => {
-    if (!db || !cafeId) return;
+    // Post-Firebase: db is null no-op shim, gate would block every add.
+    if (!cafeId) return;
     if (!newTableData.name || !newTableData.branchId) {
        toast({ title: t("Validation Error", "خطأ في التحقق"), description: t("Name and Branch are required.", "تحديد الاسم والفرع مطلوب."), variant: "destructive" });
        return;
@@ -447,3 +448,4 @@ export default function TablesManagement() {
     </div>
   );
 }
+          
