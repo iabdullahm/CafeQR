@@ -252,18 +252,31 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
     };
   }, [db, cafe.id, customerPhone]);
 
-  // Listen to Order Status
+  // Poll order status from Postgres. Replaces the dead Firestore
+  // onSnapshot listener after Phase 4d (db = null no-op shim). Stops
+  // hitting the server once the order reaches a terminal state.
   useEffect(() => {
-    if (!db || !placedOrderInfo?.id || !cafe.id) return;
-    const unsub = onSnapshot(doc(db, "cafes", cafe.id, "orders", placedOrderInfo.id), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setOrderStatus(data?.status || "pending");
+    if (!placedOrderInfo?.id) return;
+    let cancelled = false;
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch(`/api/public/orders/${placedOrderInfo.id}/status`, { cache: "no-store" });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (cancelled) return;
+        const data = json?.data;
+        if (data?.status) setOrderStatus(data.status);
         if (data?.earnedPoints) setEarnedPoints(data.earnedPoints);
-      }
-    });
-    return () => unsub();
-  }, [db, placedOrderInfo?.id, cafe.id]);
+      } catch { /* swallow */ }
+    };
+    void fetchStatus();
+    const iv = setInterval(() => {
+      const terminal = ["completed", "cancelled", "canceled"].includes((orderStatus || "").toLowerCase());
+      if (terminal) return;
+      void fetchStatus();
+    }, 5000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, [placedOrderInfo?.id, orderStatus]);
 
   const isAr = lang === "ar";
   const dir = isAr ? "rtl" : "ltr";
