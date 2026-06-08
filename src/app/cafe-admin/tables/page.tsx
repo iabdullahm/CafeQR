@@ -57,7 +57,17 @@ export default function TablesManagement() {
       });
       if (!res.ok) return;
       const json = await res.json();
-      if (json.success && Array.isArray(json.data)) setTables(json.data);
+      if (json.success && Array.isArray(json.data)) {
+        // Map Postgres shape (tableName, branchId, qrToken) to the legacy
+        // Firestore-shaped fields the UI still reads (name, branchName, qrCodeUrl).
+        const mapped = json.data.map((r: any) => ({
+          ...r,
+          name: r.tableName || r.tableNumber || '—',
+          branchName: r.branchName || (Array.isArray(branches) ? (branches.find((b: any) => String(b.id) === String(r.branchId))?.name || null) : null),
+          qrCodeUrl: r.qrUrl || (r.qrToken ? `${typeof window !== 'undefined' ? window.location.origin : ''}/t/${r.qrToken}` : null),
+        }));
+        setTables(mapped);
+      }
     } catch { /* ignore */ }
     finally { setIsLoading(false); }
   };
