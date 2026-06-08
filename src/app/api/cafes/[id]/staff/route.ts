@@ -33,8 +33,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const rows = await prisma.cafeUser.findMany({
       where: { cafeId: cid },
       orderBy: { createdAt: "desc" },
-      include: { user: { select: { id: true, fullName: true, email: true, phone: true, status: true } } },
+      include: {
+        user: { select: { id: true, fullName: true, email: true, phone: true, status: true, lastLoginAt: true } },
+      },
     });
+    // CafeUser has no Prisma relation to Role — fetch the role catalogue
+    // once and join in memory.
+    const roleIds = Array.from(new Set(rows.map((r) => r.roleId)));
+    const roles = roleIds.length
+      ? await prisma.role.findMany({ where: { id: { in: roleIds } }, select: { id: true, name: true } })
+      : [];
+    const roleNameById = new Map(roles.map((r) => [String(r.id), r.name]));
     return NextResponse.json({
       success: true,
       data: rows.map((r) => ({
@@ -47,6 +56,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         cafeUserStatus: r.status,
         branchId: r.branchId ? String(r.branchId) : null,
         roleId: String(r.roleId),
+        roleName: roleNameById.get(String(r.roleId)) ?? null,
+        lastLoginAt: r.user.lastLoginAt?.toISOString() ?? null,
       })),
     });
   });

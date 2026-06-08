@@ -28,10 +28,10 @@ const MOCK_STAFF: any[] = [];
 export default function StaffManagementPage() {
   const { user } = useUser();
   const db = useFirestore();
-  // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
-  const userProfileRef = useMemoFirebase(() => null, []);
-  const { data: userProfile } = useDoc(userProfileRef);
-  const cafeId = userProfile?.cafeId;
+  void db;
+  // cafeId comes from JWT user directly. useDoc shim returns null so the
+  // old userProfile path was permanently empty.
+  const cafeId: string | null = ((user as any)?.cafeId) ?? null;
 
   const configRef = useMemoFirebase(() => db && cafeId ? doc(db, 'cafes', cafeId, 'config', 'settings') : null, [db, cafeId]);
   const { data: configDoc } = useDoc(configRef);
@@ -50,7 +50,17 @@ export default function StaffManagementPage() {
       });
       if (!res.ok) return;
       const json = await res.json();
-      if (json.success && Array.isArray(json.data)) setFirestoreStaff(json.data);
+      if (json.success && Array.isArray(json.data)) {
+        const mapped = json.data.map((r: any) => ({
+          ...r,
+          name: r.fullName || r.name || '—',
+          role: (r.roleName || r.role || 'STAFF').toUpperCase(),
+          roles: r.roleName ? [r.roleName.toUpperCase()] : (r.roles ? r.roles.map((x: string) => x.toUpperCase()) : ['STAFF']),
+          status: (r.cafeUserStatus === 'active' || r.userStatus === 'active') ? 'Active' : (r.cafeUserStatus || r.userStatus || 'Inactive'),
+          lastLogin: r.lastLoginAt ? new Date(r.lastLoginAt).toLocaleString() : 'Never',
+        }));
+        setFirestoreStaff(mapped);
+      }
     } catch { /* ignore */ }
     finally { setIsLoading(false); }
   };
