@@ -176,8 +176,11 @@ export default function MenuManagement() {
   };
 
   const handleSaveProduct = async () => {
-    if (!db || !cafeId || !newProduct.name || !firebaseApp) return;
-    
+    // Post-Firebase: only require cafeId + name. db/firebaseApp are no-op shims
+    // returning null in the current stack — keeping them in the gate would
+    // silently block every save.
+    if (!cafeId || !newProduct.name) return;
+
     setIsUploading(true);
     let finalImageUrl = newProduct.imageUrl || "";
 
@@ -587,3 +590,4 @@ export default function MenuManagement() {
     </div>
   );
 }
+        

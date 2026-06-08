@@ -369,7 +369,9 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
   };
 
   const handlePlaceOrder = async () => {
-    if (!db || cart.length === 0) return;
+    // Post-Firebase: drop the `!db` gate. Order placement now goes through
+    // /api/orders/place-pg which doesn't need the Firestore client.
+    if (cart.length === 0) return;
     setIsSubmitting(true);
     
     try {
@@ -1414,3 +1416,4 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
     </div>
   );
 }
+         
