@@ -9,18 +9,15 @@
  *
  * Request: multipart/form-data with field "file" (the image binary).
  *
- * Response: { success: true, data: { url: string, pathname: string } }
- *
- * Why a server endpoint instead of client SDK:
- *   - We do not want BLOB_READ_WRITE_TOKEN in the browser
- *   - Lets us enforce JWT auth, file-size cap, and cafe-scoped pathing
+ * Response: { success: true, data: { url, pathname } }
+ *           { success: false, message, debug? } on failure (real reason
+ *                                                surfaced to the owner)
  */
 
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { withAuth } from "@/middleware/auth-helpers";
 
-// Allow up to 5MB — menu photos are small.
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
@@ -35,7 +32,6 @@ export async function POST(req: Request) {
     try {
       const form = await req.formData();
       const file = form.get("file");
-
       if (!(file instanceof File)) {
         return NextResponse.json(
           { success: false, message: "Missing 'file' field" },
@@ -55,13 +51,10 @@ export async function POST(req: Request) {
         );
       }
 
-      // Folder pathing: scope by cafeId so tenants are isolated.
       const cafeId = user.cafeId || "shared";
       const extMatch = file.name.match(/\.([a-zA-Z0-9]+)$/);
       const ext = extMatch ? extMatch[1].toLowerCase() : "jpg";
-      const pathname = `products/${cafeId}/${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2, 8)}.${ext}`;
+      const pathname = `products/${cafeId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
       const blob = await put(pathname, file, {
         access: "public",
@@ -71,16 +64,15 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        data: {
-          url: blob.url,
-          pathname: blob.pathname,
-        },
+        data: { url: blob.url, pathname: blob.pathname },
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
-      console.error("[/api/upload/menu-image] error:", msg);
+      const stack = err instanceof Error ? err.stack : undefined;
+      console.error("[/api/upload/menu-image] error:", msg, stack);
+      const hasToken = !!process.env.BLOB_READ_WRITE_TOKEN;
       return NextResponse.json(
-        { success: false, message: "Upload failed" },
+        { success: false, message: `Upload failed: ${msg}`, debug: { hasToken } },
         { status: 500 }
       );
     }
