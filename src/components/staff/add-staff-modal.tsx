@@ -9,11 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-import { useFirestore, useUser, useMemoFirebase, useDoc } from "@/firebase";
-import { setDoc, serverTimestamp, doc } from "firebase/firestore";
-import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, signOut } from "firebase/auth";
-import { firebaseConfig } from "@/firebase/config";
+import { useUser } from "@/firebase";
 
 interface AddStaffModalProps {
   onAdd: (staff: any) => void;
@@ -27,11 +23,8 @@ export function AddStaffModal({ onAdd, defaultRole = "BARISTA", customTrigger }:
   const { toast } = useToast();
 
   const { user } = useUser();
-  const db = useFirestore();
-  // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
-  const userProfileRef = useMemoFirebase(() => null, []);
-  const { data: userProfile } = useDoc(userProfileRef);
-  const cafeId = userProfile?.cafeId;
+  // cafeId comes straight from the JWT-shimmed user.
+  const cafeId: string | null = (user as any)?.cafeId ?? null;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -46,71 +39,60 @@ export function AddStaffModal({ onAdd, defaultRole = "BARISTA", customTrigger }:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!db || !cafeId) {
-       toast({ title: "Error", description: "Could not find cafe context. Please try again.", variant: "destructive" });
-       return;
+    if (!cafeId) {
+      toast({ title: "Error", description: "Could not find cafe context. Please log out and back in.", variant: "destructive" });
+      return;
     }
-    
+
+    // Pick the highest role from the form.
+    const hierarchy = ["OWNER", "MANAGER", "CASHIER", "BARISTA", "KITCHEN", "STAFF"];
+    let primaryRole = formData.roles[0] || "BARISTA";
+    for (const r of hierarchy) {
+      if (formData.roles.includes(r)) { primaryRole = r; break; }
+    }
+    // The Postgres role catalogue uses KITCHEN (not BARISTA); map for compatibility.
+    const roleName = primaryRole === "BARISTA" ? "KITCHEN" : primaryRole;
+
     setLoading(true);
-
     try {
-      // Use a secondary Firebase app to create the user without logging out the current admin
-      let secondaryApp;
-      if (!getApps().some(app => app.name === 'Secondary')) {
-         secondaryApp = initializeApp(firebaseConfig, 'Secondary');
-      } else {
-         secondaryApp = getApp('Secondary');
-      }
-      
-      const secondaryAuth = getAuth(secondaryApp);
-      
-      const userCredential = await createUserWithEmailAndPassword(secondaryAuth, formData.email, formData.password);
-      const userUid = userCredential.user.uid;
-      
-      // Sign out immediately so it doesn't persist or interfere
-      await signOut(secondaryAuth);
-
-      // Determine primary role based on hierarchy
-      const hierarchy = ["OWNER", "MANAGER", "CASHIER", "BARISTA"];
-      let primaryRole = "BARISTA";
-      for (const r of hierarchy) {
-        if (formData.roles.includes(r)) {
-          primaryRole = r;
-          break;
-        }
-      }
-
-      // Create the user document in firestore with the actual Auth UID
-      await setDoc(doc(db, "users", userUid), {
-         name: formData.name,
-         email: formData.email,
-         role: primaryRole,
-         roles: formData.roles,
-         cafeId: cafeId,
-         status: "Active",
-         lastLogin: "Never",
-         createdAt: serverTimestamp(),
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch(`/api/cafes/${cafeId}/staff`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          fullName: formData.name,
+          email: formData.email,
+          password: formData.password,
+          roleName,
+        }),
       });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || `Save failed (${res.status})`);
+      }
 
       onAdd({
-        id: Math.random(),
+        id: json.data?.userId ?? Math.random(),
         ...formData,
-        role: primaryRole,
+        role: roleName,
         status: "Active",
         lastLogin: "Never",
       });
 
-      setLoading(false);
       setOpen(false);
       setFormData({ name: "", email: "", roles: [defaultRole], password: "" });
-      
+
       toast({
         title: "Staff Member Added",
-        description: `${formData.name} has been added to the team successfully.`,
+        description: `${formData.name} has been added to the team.`,
       });
     } catch (error: any) {
       console.error("Error adding staff:", error);
-      toast({ title: "Error", description: "Failed to add staff member.", variant: "destructive" });
+      toast({ title: "Error", description: error?.message || "Failed to add staff member.", variant: "destructive" });
+    } finally {
       setLoading(false);
     }
   };
