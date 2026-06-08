@@ -53,7 +53,19 @@ export default function OrderManagement() {
         const json = await res.json();
         if (!alive) return;
         if (json.success && Array.isArray(json.data)) {
-          setOrders(json.data);
+          const mapped = json.data.map((o: any) => ({
+            ...o,
+            table: o.tableName || o.tableNumber || (o.tableId ? `#${o.tableId}` : ""),
+            total: typeof o.total === "number" ? o.total : (typeof o.totalAmount === "number" ? o.totalAmount : 0),
+            serviceType: o.serviceType || (o.type === "CAR_SERVICE" ? "CAR" : o.type === "TAKEAWAY" ? "TAKEAWAY" : "DINE_IN"),
+            items: (o.items || []).map((it: any) => ({
+              ...it,
+              name: it.itemName || it.name || "Item",
+              qty: it.quantity ?? it.qty ?? 1,
+              price: typeof it.unitPrice === "number" ? it.unitPrice : (it.price ?? 0),
+            })),
+          }));
+          setOrders(mapped);
         }
       } catch { /* ignore network blips */ }
       finally {
