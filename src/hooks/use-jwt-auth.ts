@@ -74,42 +74,63 @@ function readCachedUser(token: string): JwtUser | null {
   }
 }
 
-async function fetchUserFromServer(token: string): Promise<JwtUser | null> {
+/**
+ * Result of asking /api/auth/me about the current token:
+ *   - "ok"          — fresh user object returned
+ *   - "invalid"     — server confirmed the token is bad (401)
+ *   - "transient"   — network error, 5xx, malformed JSON, etc. The token
+ *                     might still be valid; do NOT clear it.
+ */
+type FetchUserResult =
+  | { kind: "ok"; user: JwtUser }
+  | { kind: "invalid" }
+  | { kind: "transient" };
+
+async function fetchUserFromServer(token: string): Promise<FetchUserResult> {
+  let res: Response;
   try {
-    const res = await fetch("/api/auth/me", {
+    res = await fetch("/api/auth/me", {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
-    if (!res.ok) return null;
-    const json = (await res.json()) as {
-      success?: boolean;
-      data?: {
-        id: string;
-        email: string;
-        full_name?: string;
-        roles?: string[];
-        cafeId?: string | null;
-      };
+  } catch {
+    return { kind: "transient" };
+  }
+  if (res.status === 401 || res.status === 403) return { kind: "invalid" };
+  if (!res.ok) return { kind: "transient" };
+  let json: {
+    success?: boolean;
+    data?: {
+      id: string;
+      email: string;
+      full_name?: string;
+      roles?: string[];
+      cafeId?: string | null;
     };
-    if (!json.success || !json.data) return null;
-    const obj = json.data;
-    // Cache for fast paint on next reload.
-    try {
-      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(obj));
-    } catch {
-      /* quota or disabled — ignore */
-    }
-    return {
+  };
+  try {
+    json = await res.json();
+  } catch {
+    return { kind: "transient" };
+  }
+  if (!json.success || !json.data) return { kind: "transient" };
+  const obj = json.data;
+  try {
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(obj));
+  } catch {
+    /* ignore */
+  }
+  return {
+    kind: "ok",
+    user: {
       uid: String(obj.id),
       email: obj.email,
       displayName: obj.full_name || obj.email,
       roles: Array.isArray(obj.roles) ? obj.roles : [],
       cafeId: obj.cafeId ?? null,
       getIdToken: async () => token,
-    };
-  } catch {
-    return null;
-  }
+    },
+  };
 }
 
 export function useJwtAuth(): UseJwtAuthResult {
@@ -131,17 +152,21 @@ export function useJwtAuth(): UseJwtAuthResult {
     const cached = readCachedUser(token);
     if (cached) setUser(cached);
 
-    const fresh = await fetchUserFromServer(token);
-    if (fresh) {
-      setUser(fresh);
-    } else {
-      // /api/auth/me said no — token is invalid/expired. Clear state.
+    const result = await fetchUserFromServer(token);
+    if (result.kind === "ok") {
+      setUser(result.user);
+    } else if (result.kind === "invalid") {
+      // Server explicitly rejected the token — clear it.
       try {
         localStorage.removeItem(STORAGE_KEY_TOKEN);
         localStorage.removeItem(STORAGE_KEY_USER);
       } catch { /* ignore */ }
       setUser(null);
       setUserError(new Error("Session expired"));
+    } else {
+      // Transient failure (network blip, 5xx, etc). Keep the token; the
+      // cached user is already painted so the UI stays usable.
+      setUserError(new Error("Auth check failed, will retry"));
     }
     setIsUserLoading(false);
   }, []);
