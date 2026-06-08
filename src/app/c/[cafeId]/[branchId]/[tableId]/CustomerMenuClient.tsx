@@ -1416,4 +1416,3 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
     </div>
   );
 }
-         
