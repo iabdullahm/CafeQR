@@ -119,7 +119,7 @@ export default function CafeAdminDashboard() {
         fetch(`/api/cafes/${cafeId}/orders?limit=200`, { headers, cache: "no-store" }),
         fetch(`/api/cafes/${cafeId}/branches`, { headers, cache: "no-store" }),
         fetch(`/api/cafes/${cafeId}/tables`, { headers, cache: "no-store" }),
-        fetch(`/api/menu/${cafeId}`, { headers, cache: "no-store" }),
+        fetch(`/api/public/menu/${cafeId}`, { cache: "no-store" }),
       ]);
       const j = async (r: Response) => (r.ok ? r.json().catch(() => null) : null);
       const [oJ, bJ, tJ, mJ] = await Promise.all([j(oRes), j(bRes), j(tRes), j(mRes)]);

@@ -49,8 +49,8 @@ export default function CustomersPage() {
   const userProfileRef = useMemoFirebase(() => null, []);
   const { data: profile } = useDoc(userProfileRef);
   
-  // Real implementation for profile
-  const cafeId = impersonatedCafeId || profile?.cafeId || (user ? localStorage.getItem('cafe_id_fallback') : null) || 'CAF-1776742784566'; // fallback for demo
+  // cafeId resolution: impersonation header first, then JWT user, then legacy Firestore profile (no-op shim).
+  const cafeId: string | null = impersonatedCafeId || (user as any)?.cafeId || profile?.cafeId || null;
   
   // Postgres polling — replaces the old Firestore subscription.
   const [customers, setCustomers] = useState<any[] | null>(null);

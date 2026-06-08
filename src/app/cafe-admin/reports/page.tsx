@@ -38,7 +38,7 @@ export default function ReportsPage() {
   // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
   const userProfileRef = useMemoFirebase(() => null, []);
   const { data: profile } = useDoc(userProfileRef);
-  const cafeId = impersonatedCafeId || profile?.cafeId || (user ? localStorage.getItem('cafe_id_fallback') : null) || 'CAF-1776742784566';
+  const cafeId: string | null = impersonatedCafeId || (user as any)?.cafeId || profile?.cafeId || null;
 
     // Postgres polling for orders + customers reports.
   const [ordersData, setOrdersData] = useState<any[] | null>(null);
