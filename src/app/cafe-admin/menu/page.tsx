@@ -176,25 +176,44 @@ export default function MenuManagement() {
   };
 
   const handleSaveProduct = async () => {
-    // Post-Firebase: only require cafeId + name. db/firebaseApp are no-op shims
-    // returning null in the current stack — keeping them in the gate would
-    // silently block every save.
+    // Post-Firebase: only require cafeId + name. db/firebaseApp are no-op shims.
     if (!cafeId || !newProduct.name) return;
+
+    // Get token defensively: prefer in-memory user.getIdToken() (captured at
+    // hook construction time, immune to localStorage being cleared by a race
+    // condition). Fall back to direct localStorage read for older code paths.
+    const getToken = async (): Promise<string | null> => {
+      try {
+        if (user && typeof (user as any).getIdToken === 'function') {
+          const t = await (user as any).getIdToken();
+          if (t) return t;
+        }
+      } catch { /* fall through */ }
+      try {
+        return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      } catch { return null; }
+    };
+
+    const goLogin = () => {
+      toast({ title: 'Session expired', description: 'Please log in again.', variant: 'destructive' });
+      setTimeout(() => { window.location.href = '/login?error=expired'; }, 800);
+    };
 
     setIsUploading(true);
     let finalImageUrl = newProduct.imageUrl || "";
 
     if (imageFile) {
-      // Upload via Vercel Blob through our server endpoint (replaces Firebase Storage).
       try {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const token = await getToken();
+        if (!token) { setIsUploading(false); goLogin(); return; }
         const formData = new FormData();
         formData.append('file', imageFile);
         const uploadRes = await fetch('/api/upload/menu-image', {
           method: 'POST',
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          headers: { Authorization: `Bearer ${token}` },
           body: formData,
         });
+        if (uploadRes.status === 401) { setIsUploading(false); goLogin(); return; }
         const uploadJson = await uploadRes.json();
         if (!uploadRes.ok || !uploadJson.success || !uploadJson.data?.url) {
           throw new Error(uploadJson.message || `Upload failed (${uploadRes.status})`);
@@ -202,23 +221,20 @@ export default function MenuManagement() {
         finalImageUrl = uploadJson.data.url;
       } catch (error) {
         console.error("Image upload failed", error);
-        toast({ title: "Upload Failed", description: "Could not upload image, using placeholder.", variant: "destructive" });
+        toast({ title: "Upload Failed", description: (error as any)?.message || "Could not upload image.", variant: "destructive" });
       }
     }
 
-    // Resolve category slug ('hot_drinks') -> real Postgres category id.
     let categoryId = categoryIdByName[newProduct.category];
     if (!categoryId) {
-      // Create it on the fly.
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = await getToken();
+      if (!token) { setIsUploading(false); goLogin(); return; }
       const catRes = await fetch('/api/menu/categories', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: newProduct.category }),
       });
+      if (catRes.status === 401) { setIsUploading(false); goLogin(); return; }
       const catJson = await catRes.json();
       if (catJson.success && catJson.data?.id) {
         categoryId = catJson.data.id;
@@ -230,8 +246,9 @@ export default function MenuManagement() {
       }
     }
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+    const token = await getToken();
+    if (!token) { setIsUploading(false); goLogin(); return; }
+    const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
     const itemPayload = {
       categoryId,
       name: newProduct.name,
