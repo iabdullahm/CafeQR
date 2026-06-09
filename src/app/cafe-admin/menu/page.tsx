@@ -20,18 +20,9 @@ import { useCafe } from "@/hooks/use-cafe";
 import { callAiWithRetry, withAiCache } from "@/lib/ai-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ModifierGroupsEditor } from "@/components/menu/modifier-groups-editor";
+import { CAFE_CATEGORIES, RESTAURANT_CATEGORIES, ALL_CATEGORIES as CATEGORIES } from "@/lib/menu-categories";
 
-const CATEGORIES = [
-  { id: 'hot_drinks', en: 'Hot Drinks', ar: 'المشروبات الساخنة' },
-  { id: 'cold_drinks', en: 'Cold Drinks', ar: 'المشروبات الباردة' },
-  { id: 'cold_brew', en: 'Cold Brew', ar: 'كولد برو' },
-  { id: 'iced_tea', en: 'Iced Tea', ar: 'الشاي المثلج' },
-  { id: 'ice_cream', en: 'Ice Cream', ar: 'ايس كريم' },
-  { id: 'specialty_tea', en: 'Specialty Tea', ar: 'الشاي المختص' },
-  { id: 'hibiscus', en: 'Hibiscus', ar: 'الكركدية' },
-  { id: 'sweets', en: 'Sweets', ar: 'السويتات' },
-  { id: 'matcha', en: 'Matcha', ar: 'الماتشا' },
-];
+
 
 export default function MenuManagement() {
   const { user } = useUser();
@@ -495,7 +486,16 @@ export default function MenuManagement() {
                     <SelectValue placeholder="Select Category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map(c => (
+                    <div className="px-2 py-1 text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                      {t("Café & Beverages", "كافيه ومشروبات")}
+                    </div>
+                    {CAFE_CATEGORIES.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{isArabic ? c.ar : c.en}</SelectItem>
+                    ))}
+                    <div className="px-2 py-1 mt-2 text-[10px] uppercase font-bold text-muted-foreground tracking-wider border-t">
+                      {t("Restaurant", "مطعم")}
+                    </div>
+                    {RESTAURANT_CATEGORIES.map(c => (
                       <SelectItem key={c.id} value={c.id}>{isArabic ? c.ar : c.en}</SelectItem>
                     ))}
                   </SelectContent>
@@ -611,3 +611,4 @@ export default function MenuManagement() {
     </div>
   );
 }
+  

@@ -3,18 +3,9 @@
 import { useEffect, useState, use } from "react";
 import CustomerMenuClient from "../../c/[cafeId]/[branchId]/[tableId]/CustomerMenuClient";
 import { Loader2 } from "lucide-react";
+import { CAFE_CATEGORIES, RESTAURANT_CATEGORIES, ALL_CATEGORIES as CATEGORIES } from "@/lib/menu-categories";
 
-const CATEGORIES = [
-  { id: 'hot_drinks', en: 'Hot Drinks', ar: 'المشروبات الساخنة' },
-  { id: 'cold_drinks', en: 'Cold Drinks', ar: 'المشروبات الباردة' },
-  { id: 'cold_brew', en: 'Cold Brew', ar: 'كولد برو' },
-  { id: 'iced_tea', en: 'Iced Tea', ar: 'الشاي المثلج' },
-  { id: 'ice_cream', en: 'Ice Cream', ar: 'ايس كريم' },
-  { id: 'specialty_tea', en: 'Specialty Tea', ar: 'الشاي المختص' },
-  { id: 'hibiscus', en: 'Hibiscus', ar: 'الكركدية' },
-  { id: 'sweets', en: 'Sweets', ar: 'السويتات' },
-  { id: 'matcha', en: 'Matcha', ar: 'الماتشا' },
-];
+
 
 export default function SecureCustomerTokenPage({ params }: { params: Promise<{ token: string }> }) {
   const resolvedParamsInput = use(params);

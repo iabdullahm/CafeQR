@@ -5,6 +5,7 @@ import CustomerMenuClient from "./CustomerMenuClient";
 import { useFirestore } from "@/firebase";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
+import { ALL_CATEGORIES as FALLBACK_CATEGORIES } from "@/lib/menu-categories";
 
 /**
  * Customer-facing menu page.
@@ -19,17 +20,7 @@ import { Loader2 } from "lucide-react";
  * CustomerMenuClient component expects.
  */
 
-const FALLBACK_CATEGORIES = [
-  { id: "hot_drinks", en: "Hot Drinks", ar: "المشروبات الساخنة" },
-  { id: "cold_drinks", en: "Cold Drinks", ar: "المشروبات الباردة" },
-  { id: "cold_brew", en: "Cold Brew", ar: "كولد برو" },
-  { id: "iced_tea", en: "Iced Tea", ar: "الشاي المثلج" },
-  { id: "ice_cream", en: "Ice Cream", ar: "ايس كريم" },
-  { id: "specialty_tea", en: "Specialty Tea", ar: "الشاي المختص" },
-  { id: "hibiscus", en: "Hibiscus", ar: "الكركدية" },
-  { id: "sweets", en: "Sweets", ar: "السويتات" },
-  { id: "matcha", en: "Matcha", ar: "الماتشا" },
-];
+
 
 type RawProduct = {
   id?: string;
