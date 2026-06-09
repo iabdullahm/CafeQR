@@ -50,6 +50,15 @@ export default function MenuManagement() {
   
   const [variants, setVariants] = useState<{name: string, price: string}[]>([]);
 
+  // Owner-defined Postgres MenuCategory rows (live from refetchMenu).
+  // Used to render a "Your Custom Categories" section in the dropdown
+  // alongside the seeded CAFE_/RESTAURANT_ catalogues.
+  const [customCategories, setCustomCategories] = useState<{ id: string; nameEn: string; nameAr: string }[]>([]);
+  const [showAddCategory, setShowAddCategory] = useState<boolean>(false);
+  const [newCategoryEn, setNewCategoryEn] = useState<string>("");
+  const [newCategoryAr, setNewCategoryAr] = useState<string>("");
+  const [isCreatingCategory, setIsCreatingCategory] = useState<boolean>(false);
+
   const lastCallTimestamp = useRef(0);
 
   const { cafeId } = useCafe();
@@ -81,10 +90,17 @@ export default function MenuManagement() {
           variants: [],
         })));
         const map: Record<string, string> = {};
+        const seededSlugs = new Set([...CAFE_CATEGORIES.map(x => x.id), ...RESTAURANT_CATEGORIES.map(x => x.id)]);
+        const customs: { id: string; nameEn: string; nameAr: string }[] = [];
         for (const c of json.data.categories || []) {
-          map[c.nameEn || c.name] = c.id;
+          const key = c.nameEn || c.name;
+          map[key] = c.id;
+          if (!seededSlugs.has(key)) {
+            customs.push({ id: String(c.id), nameEn: c.nameEn || c.name, nameAr: c.nameAr || c.nameEn || c.name });
+          }
         }
         setCategoryIdByName(map);
+        setCustomCategories(customs);
         // Now patch products with category slug (UI groups by .category string).
         setProducts((curr) => (curr || []).map((p) => {
           const slot = Object.entries(map).find(([, id]) => String(id) === String(p.categoryId));
@@ -164,6 +180,35 @@ export default function MenuManagement() {
       toast({ title: "Generation failed", description: "We couldn't reach the AI describer right now.", variant: "destructive" });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!cafeId || !newCategoryEn.trim()) {
+      toast({ title: t("Name required", "الاسم مطلوب"), variant: "destructive" });
+      return;
+    }
+    setIsCreatingCategory(true);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch("/api/menu/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ name: newCategoryEn.trim(), nameAr: newCategoryAr.trim() || newCategoryEn.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || `HTTP ${res.status}`);
+      toast({ title: t("Category added", "تم إضافة القسم") });
+      // Auto-select the new category, refresh the list, and reset the form.
+      setNewProduct((p) => ({ ...p, category: newCategoryEn.trim() }));
+      setNewCategoryEn("");
+      setNewCategoryAr("");
+      setShowAddCategory(false);
+      await refetchMenu();
+    } catch (err: any) {
+      toast({ title: t("Failed", "فشل"), description: err?.message, variant: "destructive" });
+    } finally {
+      setIsCreatingCategory(false);
     }
   };
 
@@ -498,8 +543,47 @@ export default function MenuManagement() {
                     {RESTAURANT_CATEGORIES.map(c => (
                       <SelectItem key={c.id} value={c.id}>{isArabic ? c.ar : c.en}</SelectItem>
                     ))}
+                    {customCategories.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 mt-2 text-[10px] uppercase font-bold text-amber-600 tracking-wider border-t">
+                          {t("Your Custom Categories", "أقسامك المخصصة")}
+                        </div>
+                        {customCategories.map(c => (
+                          <SelectItem key={c.id} value={c.nameEn}>{isArabic ? c.nameAr : c.nameEn}</SelectItem>
+                        ))}
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
+                {!showAddCategory ? (
+                  <Button type="button" variant="ghost" size="sm" className="h-7 text-xs text-amber-600 hover:text-amber-700 mt-1" onClick={() => setShowAddCategory(true)}>
+                    <Plus className="h-3 w-3 mr-1" /> {t("Add custom category", "إضافة قسم مخصص")}
+                  </Button>
+                ) : (
+                  <div className="flex flex-col gap-2 p-2 mt-1 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200">
+                    <Input
+                      placeholder={t("Category (English)", "الاسم بالإنجليزي")}
+                      value={newCategoryEn}
+                      onChange={(e) => setNewCategoryEn(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                    <Input
+                      placeholder={t("Category (Arabic)", "الاسم بالعربي")}
+                      value={newCategoryAr}
+                      onChange={(e) => setNewCategoryAr(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" className="h-7 text-xs flex-1" onClick={handleCreateCategory} disabled={isCreatingCategory}>
+                        {isCreatingCategory && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                        {t("Save", "حفظ")}
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setShowAddCategory(false); setNewCategoryEn(""); setNewCategoryAr(""); }}>
+                        {t("Cancel", "إلغاء")}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
