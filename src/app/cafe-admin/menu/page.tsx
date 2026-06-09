@@ -19,6 +19,7 @@ import { doc } from "firebase/firestore";
 import { useCafe } from "@/hooks/use-cafe";
 import { callAiWithRetry, withAiCache } from "@/lib/ai-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ModifierGroupsEditor } from "@/components/menu/modifier-groups-editor";
 
 const CATEGORIES = [
   { id: 'hot_drinks', en: 'Hot Drinks', ar: 'المشروبات الساخنة' },
@@ -529,6 +530,9 @@ export default function MenuManagement() {
                 <p className="text-xs text-muted-foreground italic text-center py-2">{t("No variants added. Base price acts as the only price.", "السعر الأساسي هو المعتمد بسبب عدم وجود إضافات.")}</p>
               )}
             </div>
+
+            {/* Modifier groups (size, doneness, add-ons, ...). Persisted via /api/menu/items/:id/options */}
+            <ModifierGroupsEditor menuItemId={editingProductId} isArabic={isArabic} />
 
             <div className="space-y-2">
               <Label>{isArabic ? 'المكونات' : 'Key Ingredients'}</Label>
