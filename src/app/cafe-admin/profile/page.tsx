@@ -189,7 +189,7 @@ export default function CafeProfile() {
               <div className="flex flex-col md:flex-row items-start lg:items-center gap-8">
                 <div className="relative shrink-0">
                   <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                    <AvatarImage src={activeCafe.logoUrl || "https://picsum.photos/seed/cafe-logo/200/200"} />
+                    <AvatarImage src={activeCafe?.logoUrl || "https://picsum.photos/seed/cafe-logo/200/200"} />
                     <AvatarFallback className="font-headline font-bold text-xl">{formData.name?.substring(0,2)?.toUpperCase() || 'CR'}</AvatarFallback>
                   </Avatar>
                   <Button type="button" variant="secondary" size="icon" className="h-8 w-8 rounded-full absolute bottom-0 right-0 border-2 border-background shadow-sm hover:scale-105 transition-transform">
@@ -326,7 +326,7 @@ export default function CafeProfile() {
                  <div className="h-40 relative shrink-0 transition-colors duration-500" style={{ backgroundColor: formData.primaryColor }}>
                     <div className="absolute -bottom-10 left-6">
                        <Avatar className={`h-20 w-20 border-4 ${formData.themeMode === 'dark' ? 'border-slate-950' : 'border-slate-50'} shadow-md bg-card`}>
-                         <AvatarImage src={activeCafe.logoUrl} className="object-cover" />
+                         <AvatarImage src={activeCafe?.logoUrl} className="object-cover" />
                          <AvatarFallback className="text-xl font-black text-slate-400">
                            {formData.name?.substring(0,2)?.toUpperCase() || 'CR'}
                          </AvatarFallback>
