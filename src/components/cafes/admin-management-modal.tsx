@@ -24,8 +24,6 @@ import {
   CheckCircle2, 
   Loader2 
 } from "lucide-react";
-import { doc, updateDoc } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
 
 interface AdminManagementModalProps {
   cafe: any;
@@ -36,49 +34,79 @@ interface AdminManagementModalProps {
 export function AdminManagementModal({ cafe, open, onOpenChange }: AdminManagementModalProps) {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const { toast } = useToast();
-  const db = useFirestore();
-
   const handleAction = async (action: string, data?: any) => {
-    if (!cafe || !db) return;
+    if (!cafe) return;
     setLoadingAction(action);
     try {
-      const cafeRef = doc(db, "cafes", cafe.id);
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const authHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
 
       switch (action) {
-        case "save_admin":
-          const updates: any = {
-            owner_name: data.name,
-            owner_email: data.email,
-            adminAccessStatus: "active"
-          };
-          if (data.password && data.password.trim() !== "") {
-            updates.owner_temp_pass = data.password;
+        case "save_admin": {
+          // Create the user (or no-op) + link them as OWNER on this cafe.
+          const res = await fetch(`/api/cafes/${cafe.id}/staff`, {
+            method: "POST",
+            headers: authHeaders,
+            body: JSON.stringify({
+              fullName: data.name,
+              email: data.email,
+              password: (data.password && String(data.password).trim()) || `Cafe!${Math.random().toString(36).slice(2, 10)}`,
+              roleName: "OWNER",
+            }),
+          });
+          const json = await res.json();
+          if (!res.ok || !json.success) {
+            throw new Error(json.message || `Save failed (${res.status})`);
           }
-          await updateDoc(cafeRef, updates);
-          toast({ title: "Admin Assigned", description: "The user has been securely assigned as the cafe admin." });
+          toast({ title: "Admin Assigned", description: `${data.email} is now an OWNER of ${cafe.name}.` });
           onOpenChange(false);
           break;
+        }
         case "reset_password":
-          await new Promise(r => setTimeout(r, 600)); // Mock API Call
-          toast({ title: "Password Reset", description: `Password reset link sent to ${cafe.owner_email || cafe.email || 'the admin'}.` });
+          await new Promise((r) => setTimeout(r, 400));
+          toast({
+            title: "Not implemented yet",
+            description: "Password reset emails are not wired up on the Postgres backend yet.",
+            variant: "destructive",
+          });
           break;
         case "resend_creds":
-          await new Promise(r => setTimeout(r, 600)); 
-          toast({ title: "Credentials Sent", description: "Temporary credentials have been emailed to the admin." });
+          await new Promise((r) => setTimeout(r, 400));
+          toast({
+            title: "Not implemented yet",
+            description: "Resending credentials by email is not wired up yet.",
+            variant: "destructive",
+          });
           break;
         case "suspend_access":
-          await updateDoc(cafeRef, { adminAccessStatus: "suspended" });
-          toast({ title: "Access Suspended", description: "Cafe admin access has been immediately revoked.", variant: "destructive" });
+        case "restore_access": {
+          const isActive = action === "restore_access";
+          const res = await fetch(`/api/super-admin/cafes/${cafe.id}`, {
+            method: "PATCH",
+            headers: authHeaders,
+            body: JSON.stringify({ isActive }),
+          });
+          const json = await res.json();
+          if (!res.ok || !json.success) {
+            throw new Error(json.message || `Update failed (${res.status})`);
+          }
+          toast({
+            title: isActive ? "Access Restored" : "Access Suspended",
+            description: isActive
+              ? "Cafe admin access is now active."
+              : "Cafe admin access has been suspended.",
+            variant: isActive ? "default" : "destructive",
+          });
           break;
-        case "restore_access":
-          await updateDoc(cafeRef, { adminAccessStatus: "active" });
-          toast({ title: "Access Restored", description: "Cafe admin access is now active.", variant: "default" });
-          break;
+        }
         default:
           break;
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "An action error occurred.", variant: "destructive" });
+      toast({ title: "Error", description: err?.message || "An action error occurred.", variant: "destructive" });
     } finally {
       setLoadingAction(null);
     }
