@@ -50,6 +50,46 @@ type RawProduct = {
   options?: unknown[];
 };
 
+function normalizeOptions(rawOptions: unknown): any[] {
+  if (!Array.isArray(rawOptions)) return [];
+  return rawOptions.map((g: any) => {
+    if (Array.isArray(g?.values)) {
+      return {
+        id: String(g.id ?? ""),
+        nameEn: g.name || g.nameEn || "",
+        nameAr: g.nameAr || g.name || "",
+        type: g.type === "multi" ? "multi" : "single",
+        required: !!g.isRequired,
+        minSelect: Number(g.minSelect ?? 0),
+        maxSelect: Number(g.maxSelect ?? 1),
+        choices: (g.values || []).map((v: any) => ({
+          valueId: String(v.id ?? ""),
+          nameEn: v.valueName || v.nameEn || "",
+          nameAr: v.valueName || v.nameAr || v.nameEn || "",
+          price: Number(v.extraPrice ?? 0),
+        })),
+      };
+    }
+    return {
+      id: String(g.id ?? Math.random()),
+      nameEn: g.nameEn || g.name || "",
+      nameAr: g.nameAr || g.name || "",
+      type: g.type === "multi" ? "multi" : "single",
+      required: !!g.required,
+      minSelect: g.required ? 1 : 0,
+      maxSelect: g.type === "multi" ? 99 : 1,
+      choices: Array.isArray(g.choices)
+        ? g.choices.map((c: any) => ({
+            valueId: c.valueId ?? "",
+            nameEn: c.nameEn || c.name || "",
+            nameAr: c.nameAr || c.name || "",
+            price: Number(c.price ?? 0),
+          }))
+        : [],
+    };
+  });
+}
+
 function formatItem(p: RawProduct, defaultCategoryId = "hot_drinks") {
   const nameEn = p.nameEn || p.name || "Unnamed Item";
   const nameAr = p.nameAr || p.name || nameEn;
@@ -65,7 +105,7 @@ function formatItem(p: RawProduct, defaultCategoryId = "hot_drinks") {
     price: Number(p.price) || 0,
     image: p.imageUrl || p.image || "",
     tags: p.isPopular || p.isFeatured ? ["popular"] : [],
-    options: Array.isArray(p.options) ? p.options : [],
+    options: normalizeOptions(p.options),
   };
 }
 

@@ -71,6 +71,29 @@ export default function SecureCustomerTokenPage({ params }: { params: Promise<{ 
               }));
             }
             const products = Array.isArray(menuJson.data.products) ? menuJson.data.products : [];
+            const normOpts = (raw: unknown): any[] => {
+              if (!Array.isArray(raw)) return [];
+              return raw.map((g: any) => {
+                if (Array.isArray(g?.values)) {
+                  return {
+                    id: String(g.id ?? ""),
+                    nameEn: g.name || g.nameEn || "",
+                    nameAr: g.nameAr || g.name || "",
+                    type: g.type === "multi" ? "multi" : "single",
+                    required: !!g.isRequired,
+                    minSelect: Number(g.minSelect ?? 0),
+                    maxSelect: Number(g.maxSelect ?? 1),
+                    choices: (g.values || []).map((v: any) => ({
+                      valueId: String(v.id ?? ""),
+                      nameEn: v.valueName || v.nameEn || "",
+                      nameAr: v.valueName || v.nameAr || v.nameEn || "",
+                      price: Number(v.extraPrice ?? 0),
+                    })),
+                  };
+                }
+                return { id: String(g?.id ?? Math.random()), nameEn: g?.name || "", nameAr: g?.name || "", type: "single", required: false, minSelect: 0, maxSelect: 1, choices: [] };
+              });
+            };
             items = products.map((p: any) => ({
               id: p.id,
               categoryId: p.categoryId || categories[0]?.id || "hot_drinks",
@@ -81,7 +104,7 @@ export default function SecureCustomerTokenPage({ params }: { params: Promise<{ 
               price: Number(p.price) || 0,
               image: p.imageUrl || p.image || `https://picsum.photos/seed/${p.id}/400/400`,
               tags: p.isFeatured ? ["popular"] : [],
-              options: [],
+              options: normOpts(p.options),
             }));
           }
         }

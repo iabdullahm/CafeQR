@@ -334,6 +334,18 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
 
   const handleAddToCart = () => {
     if (!selectedProduct) return;
+    for (const opt of (selectedProduct.options || [])) {
+      const picked = (selectedOptions[opt.id] || []).length;
+      const minNeeded = opt.required ? Math.max(1, opt.minSelect || 0) : (opt.minSelect || 0);
+      if (minNeeded > 0 && picked < minNeeded) {
+        toast({ title: isAr ? "اختيار مطلوب" : "Selection required", description: isAr ? `يلزم اختيار ${minNeeded} على الأقل من "${opt.nameAr || opt.nameEn}".` : `Please pick at least ${minNeeded} from "${opt.nameEn}".`, variant: "destructive" });
+        return;
+      }
+      if (opt.maxSelect && picked > opt.maxSelect) {
+        toast({ title: isAr ? "اختيارات كثيرة" : "Too many choices", description: isAr ? `الحد الأقصى ${opt.maxSelect}.` : `Pick at most ${opt.maxSelect}.`, variant: "destructive" });
+        return;
+      }
+    }
     const itemPrice = calculateItemPrice();
     
     // Create a unique cart item ID based on options
@@ -404,17 +416,30 @@ export default function CustomerMenuClient({ cafe, params }: { cafe: any, params
         useReward,
         rewardDiscount,
         notes: isCarOrder ? `Spot: ${carInfo.parkingSpot}, Color: ${carInfo.color}, Model: ${carInfo.model}. ${carInfo.notes}` : undefined,
-        items: cart.map(item => ({
-          productId: item.product.id,
-          categoryId: item.product.categoryId || '',
-          productName: (isAr ? item.product.nameAr : item.product.nameEn) || item.product.nameEn,
-          nameEn: item.product.nameEn,
-          nameAr: item.product.nameAr,
-          unitPrice: item.totalPrice,
-          quantity: item.qty,
-          options: item.options,
-          notes: item.notes || ""
-        }))
+        items: cart.map(item => {
+          const optionValueIds: string[] = [];
+          const groups: any[] = item.product.options || [];
+          const selections: Record<string, string[]> = item.options || {};
+          for (const grp of groups) {
+            const picked = selections[grp.id] || [];
+            for (const choice of (grp.choices || [])) {
+              if (picked.includes(choice.nameEn) && choice.valueId) {
+                optionValueIds.push(String(choice.valueId));
+              }
+            }
+          }
+          return {
+            productId: item.product.id,
+            categoryId: item.product.categoryId || '',
+            productName: (isAr ? item.product.nameAr : item.product.nameEn) || item.product.nameEn,
+            nameEn: item.product.nameEn,
+            nameAr: item.product.nameAr,
+            unitPrice: item.totalPrice,
+            quantity: item.qty,
+            options: { optionValueIds, raw: item.options },
+            notes: item.notes || ""
+          };
+        })
       };
 
       const res = await fetch('/api/orders/place-pg', {
