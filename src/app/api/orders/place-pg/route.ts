@@ -3,13 +3,15 @@
  *
  * Postgres-only order placement. No Firebase Admin SDK dependency.
  *
- * Cafe id resolution: customers scan a QR encoded with a Firestore-era
- * id (string like "CAF-1716173400"). We resolve it to a real Postgres
- * bigint by trying, in order:
- *   1. Direct numeric parse
- *   2. cafeCode lookup
- *   3. slug lookup
- *   4. Fallback to seeded Demo Cafe (id=1) so the order isn't lost.
+ * Each item may carry `optionValueIds: string[]` — the customer's
+ * modifier selections. The server fetches every chosen MenuItemOptionValue,
+ * validates that the selections respect each option group's min/max
+ * constraints, recomputes unitPrice = base + sum(extraPrice), and writes
+ * one OrderItemOption row per selected value so receipts, KDS, and
+ * historical reports can display them.
+ *
+ * Cafe id resolution (legacy QR codes carried Firestore-era strings):
+ *   1. numeric id, 2. cafeCode, 3. slug, 4. fallback Demo Cafe.
  */
 
 import { NextResponse } from "next/server";
@@ -56,7 +58,6 @@ const FALLBACK_CAFE_ID = BigInt(1);
 async function resolveCafeId(raw: unknown): Promise<bigint> {
   if (raw === null || raw === undefined || raw === "") return FALLBACK_CAFE_ID;
   const s = String(raw).trim();
-
   if (/^\d+$/.test(s)) {
     try {
       const id = BigInt(s);
@@ -64,16 +65,28 @@ async function resolveCafeId(raw: unknown): Promise<bigint> {
       if (exists) return exists.id;
     } catch { /* fall through */ }
   }
-
   const byCode = await prisma.cafe.findFirst({ where: { cafeCode: s }, select: { id: true } });
   if (byCode) return byCode.id;
-
   const bySlug = await prisma.cafe.findFirst({ where: { slug: s }, select: { id: true } });
   if (bySlug) return bySlug.id;
-
   console.warn(`[place-pg] Unknown cafe id '${s}' — using fallback Demo Cafe.`);
   return FALLBACK_CAFE_ID;
 }
+
+type ItemSelection = {
+  it: OrderItemInput;
+  menuItemIdBig: bigint | null;
+  valueIds: bigint[];               // chosen MenuItemOptionValue ids (deduped)
+  resolvedValues: Array<{           // hydrated from DB, used for price + persistence
+    id: bigint;
+    valueName: string;
+    extraPrice: number;
+    optionId: bigint;
+    optionName: string;
+  }>;
+  baseUnitPrice: number;            // authoritative from DB if menuItem exists, else client unitPrice
+  computedUnitPrice: number;        // base + sum(extraPrice)
+};
 
 export async function POST(req: Request) {
   let input: PlaceOrderInput;
@@ -102,9 +115,103 @@ export async function POST(req: Request) {
     }
   }
 
+  // Collect every distinct chosen MenuItemOptionValue id across all items.
+  const selections: ItemSelection[] = (items as OrderItemInput[]).map((it) => {
+    const menuItemIdBig = safeBigInt(it.productId);
+    const raw = (it.options as { optionValueIds?: unknown[] } | undefined)?.optionValueIds;
+    const valueIds: bigint[] = [];
+    if (Array.isArray(raw)) {
+      for (const v of raw) {
+        const b = safeBigInt(v);
+        if (b !== null) valueIds.push(b);
+      }
+    }
+    return {
+      it,
+      menuItemIdBig,
+      valueIds: Array.from(new Set(valueIds.map((b) => b.toString()))).map((s) => BigInt(s)),
+      resolvedValues: [],
+      baseUnitPrice: it.unitPrice,
+      computedUnitPrice: it.unitPrice,
+    };
+  });
+
+  // Single round-trip to hydrate all values + their parent option groups.
+  const allValueIds = Array.from(new Set(selections.flatMap((s) => s.valueIds.map((v) => v.toString())))).map((s) => BigInt(s));
+  const valueRows = allValueIds.length > 0
+    ? await prisma.menuItemOptionValue.findMany({
+        where: { id: { in: allValueIds } },
+        include: { option: { select: { id: true, name: true, menuItemId: true, minSelect: true, maxSelect: true, type: true } } },
+      })
+    : [];
+  const valueById = new Map(valueRows.map((v) => [v.id.toString(), v]));
+
+  // Also fetch authoritative base prices for items that exist in DB.
+  const menuItemIds = selections
+    .map((s) => s.menuItemIdBig)
+    .filter((v): v is bigint => v !== null);
+  const baseRows = menuItemIds.length > 0
+    ? await prisma.menuItem.findMany({
+        where: { id: { in: menuItemIds } },
+        select: { id: true, price: true },
+      })
+    : [];
+  const baseById = new Map(baseRows.map((r) => [r.id.toString(), Number(r.price)]));
+
+  // Per-item: resolve, validate, recompute price.
+  for (const sel of selections) {
+    if (sel.menuItemIdBig && baseById.has(sel.menuItemIdBig.toString())) {
+      sel.baseUnitPrice = baseById.get(sel.menuItemIdBig.toString())!;
+    }
+    let extras = 0;
+    const byOption = new Map<string, { id: bigint; name: string; chosen: number; minSelect: number; maxSelect: number; type: string }>();
+    for (const vid of sel.valueIds) {
+      const v = valueById.get(vid.toString());
+      if (!v) continue;
+      // Modifier value must belong to the item being ordered.
+      if (sel.menuItemIdBig && v.option.menuItemId !== sel.menuItemIdBig) continue;
+      extras += Number(v.extraPrice);
+      sel.resolvedValues.push({
+        id: v.id,
+        valueName: v.valueName,
+        extraPrice: Number(v.extraPrice),
+        optionId: v.option.id,
+        optionName: v.option.name,
+      });
+      const key = v.option.id.toString();
+      const existing = byOption.get(key);
+      if (existing) existing.chosen += 1;
+      else byOption.set(key, {
+        id: v.option.id,
+        name: v.option.name,
+        chosen: 1,
+        minSelect: v.option.minSelect,
+        maxSelect: v.option.maxSelect,
+        type: v.option.type,
+      });
+    }
+    // Enforce min/max per option group that the customer touched.
+    for (const grp of byOption.values()) {
+      if (grp.maxSelect > 0 && grp.chosen > grp.maxSelect) {
+        return NextResponse.json(
+          { success: false, message: `'${grp.name}' allows at most ${grp.maxSelect} choice(s).` },
+          { status: 400 }
+        );
+      }
+      if (grp.minSelect > 0 && grp.chosen < grp.minSelect) {
+        return NextResponse.json(
+          { success: false, message: `'${grp.name}' requires at least ${grp.minSelect} choice(s).` },
+          { status: 400 }
+        );
+      }
+    }
+    sel.computedUnitPrice = round3(sel.baseUnitPrice + extras);
+  }
+
+  // Subtotal from server-recomputed unit prices, not client-sent.
   let subtotal = 0;
-  for (const it of items as OrderItemInput[]) {
-    subtotal += it.unitPrice * it.quantity;
+  for (const sel of selections) {
+    subtotal += sel.computedUnitPrice * sel.it.quantity;
   }
   const discountAmount = Number(input.rewardDiscount ?? 0);
   const taxAmount = 0;
@@ -134,21 +241,29 @@ export async function POST(req: Request) {
         },
       });
 
-      for (const it of items as OrderItemInput[]) {
-        const menuItemIdBig = safeBigInt(it.productId);
-        await tx.orderItem.create({
+      for (const sel of selections) {
+        const created = await tx.orderItem.create({
           data: {
             orderId: newOrder.id,
-            menuItemId: menuItemIdBig ?? BigInt(0),
-            itemName: it.productName ?? it.nameEn ?? "Item",
-            unitPrice: round3(it.unitPrice),
-            quantity: it.quantity,
-            totalPrice: round3(it.unitPrice * it.quantity),
-            notes: it.notes ?? null,
+            menuItemId: sel.menuItemIdBig ?? BigInt(0),
+            itemName: sel.it.productName ?? sel.it.nameEn ?? "Item",
+            unitPrice: sel.computedUnitPrice,
+            quantity: sel.it.quantity,
+            totalPrice: round3(sel.computedUnitPrice * sel.it.quantity),
+            notes: sel.it.notes ?? null,
           },
         });
+        if (sel.resolvedValues.length > 0) {
+          await tx.orderItemOption.createMany({
+            data: sel.resolvedValues.map((v) => ({
+              orderItemId: created.id,
+              optionName: v.optionName,
+              optionValue: v.valueName,
+              extraPrice: v.extraPrice,
+            })),
+          });
+        }
       }
-
       return newOrder;
     });
 

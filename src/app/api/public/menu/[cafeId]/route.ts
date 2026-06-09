@@ -5,10 +5,10 @@ import prisma from "@/config/prisma";
  * GET /api/public/menu/[cafeId]
  *
  * Public, unauthenticated menu for the customer-facing storefront.
- * Returns categories + items in the shape CustomerMenuClient expects.
+ * Returns categories + items, each item carrying its structured
+ * modifier groups + choices for the customer modifier picker.
  *
- * Resolves cafeId by numeric id, cafeCode, or slug (matches the rules
- * of /api/public/cafes/[id] and /api/orders/place-pg/resolveCafeId).
+ * Resolves cafeId by numeric id, cafeCode, or slug.
  */
 async function resolveCafeId(raw: string): Promise<bigint | null> {
   if (/^\d+$/.test(raw)) {
@@ -18,19 +18,11 @@ async function resolveCafeId(raw: string): Promise<bigint | null> {
         select: { id: true },
       });
       if (exists) return exists.id;
-    } catch {
-      /* fall through */
-    }
+    } catch { /* fall through */ }
   }
-  const byCode = await prisma.cafe.findFirst({
-    where: { cafeCode: raw },
-    select: { id: true },
-  });
+  const byCode = await prisma.cafe.findFirst({ where: { cafeCode: raw }, select: { id: true } });
   if (byCode) return byCode.id;
-  const bySlug = await prisma.cafe.findFirst({
-    where: { slug: raw },
-    select: { id: true },
-  });
+  const bySlug = await prisma.cafe.findFirst({ where: { slug: raw }, select: { id: true } });
   if (bySlug) return bySlug.id;
   return null;
 }
@@ -57,6 +49,17 @@ export async function GET(
       prisma.menuItem.findMany({
         where: { cafeId: realCafeId, status: "active", isAvailable: true },
         orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+        include: {
+          options: {
+            orderBy: { id: "asc" },
+            include: {
+              values: {
+                where: { status: "active" },
+                orderBy: { sortOrder: "asc" },
+              },
+            },
+          },
+        },
       }),
     ]);
 
@@ -88,7 +91,25 @@ export async function GET(
           isFeatured: p.isFeatured,
           isAvailable: p.isAvailable,
           sortOrder: p.sortOrder,
-          options: (p.optionsData as unknown[] | null) ?? [],
+          // Structured options for the customer modifier picker. Falls back
+          // to the legacy free-form optionsData JSON blob if no structured
+          // groups exist yet for this item.
+          options: p.options.length > 0
+            ? p.options.map((opt) => ({
+                id: String(opt.id),
+                name: opt.name,
+                type: opt.type,
+                isRequired: opt.isRequired,
+                minSelect: opt.minSelect,
+                maxSelect: opt.maxSelect,
+                values: opt.values.map((v) => ({
+                  id: String(v.id),
+                  valueName: v.valueName,
+                  extraPrice: Number(v.extraPrice),
+                  sortOrder: v.sortOrder,
+                })),
+              }))
+            : ((p.optionsData as unknown[] | null) ?? []),
         })),
       },
     });
