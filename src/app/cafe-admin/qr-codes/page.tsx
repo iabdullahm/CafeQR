@@ -14,10 +14,9 @@ export default function QRManagement() {
   const db = useFirestore();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   
-  // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
-  const userProfileRef = useMemoFirebase(() => null, []);
-  const { data: userProfile } = useDoc(userProfileRef);
-  const cafeId = userProfile?.cafeId;
+  // cafeId straight off the JWT-shimmed user — useDoc(null) returned
+  // null permanently and the page stayed on 'Loading data...'.
+  const cafeId: string | null = (user as any)?.cafeId ?? null;
 
   const configRef = useMemoFirebase(() => db && cafeId ? doc(db, 'cafes', cafeId, 'config', 'settings') : null, [db, cafeId]);
   const { data: configDoc } = useDoc(configRef);
@@ -337,4 +336,3 @@ export default function QRManagement() {
     </div>
   );
 }
-
