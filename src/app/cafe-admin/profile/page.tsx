@@ -25,11 +25,12 @@ export default function CafeProfile() {
     name: "", description: "", email: "", phone: "", website: "", address: "", city: "", country: "", instagram: "", facebook: "", twitter: "", primaryColor: "#f59e0b", themeMode: "light"
   });
 
-  // JWT migration: role + cafeId come from useUser() directly; no Firestore profile lookup.
-  const userProfileRef = useMemoFirebase(() => null, []);
-  const { data: userProfile, isLoading: profileLoading } = useDoc(userProfileRef);
-
-  const cafeId = userProfile?.cafeId;
+  // cafeId comes straight from the JWT-shimmed user. useDoc(null) returns
+  // null forever under the Phase 4d shim, so the old userProfile?.cafeId
+  // was permanently undefined and handleSubmit bailed at `if (!cafeId)`.
+  const userProfile: any = user;
+  const profileLoading = false;
+  const cafeId: string | null = (user as any)?.cafeId ?? null;
   const cafeRef = useMemoFirebase(() => {
     return (db && cafeId) ? doc(db, 'cafes', cafeId) : null;
   }, [db, cafeId]);
@@ -92,8 +93,15 @@ export default function CafeProfile() {
   };
 
   const handleSubmit = async () => {
-    if (!cafeId) return;
-    
+    if (!cafeId) {
+      toast({
+        title: "Session error",
+        description: "No cafe attached to your account. Please log out and back in.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
     const updates = {
       name: formData.name,
@@ -354,7 +362,6 @@ export default function CafeProfile() {
                              <div className={`h-3 w-10 ${formData.themeMode === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} rounded`} />
                           </div>
                           <div className={`h-32 rounded-2xl ${formData.themeMode === 'dark' ? 'bg-slate-900' : 'bg-white shadow-sm'} p-3 border ${formData.themeMode === 'dark' ? 'border-slate-800' : 'border-slate-100'} flex flex-col justify-end`}>
-                             <div className={`h-3 w-20 ${formData.themeMode === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} rounded mb-1`} />
                              <div className={`h-3 w-8 ${formData.themeMode === 'dark' ? 'bg-slate-800' : 'bg-slate-200'} rounded`} />
                           </div>
                        </div>
