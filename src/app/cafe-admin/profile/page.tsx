@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,27 +53,34 @@ export default function CafeProfile() {
     }
   }, [cafeId, cafeData, cafeLoading]);
 
-  const activeCafe = cafeData || pgFallback || {};
+  // Stabilise the activeCafe reference. cafeData and pgFallback come from
+  // hooks that return fresh nulls each render under the Phase 4d shim, so
+  // the old `cafeData || pgFallback || {}` recreated an empty object on
+  // every render -> the form-prefill effect re-fired -> setFormData ->
+  // re-render -> React error #185 (infinite update depth).
+  const activeCafe = useMemo(() => cafeData || pgFallback || null, [cafeData, pgFallback]);
 
+  // Prefill the form exactly once from whichever source resolves first.
+  const prefilled = useRef(false);
   useEffect(() => {
-    if (activeCafe && !formData.name) {
-       setFormData({
-         name: activeCafe.name || "",
-         description: activeCafe.description || "",
-         email: activeCafe.email || activeCafe.owner_email || "",
-         phone: activeCafe.phone || "",
-         website: activeCafe.website || "",
-         address: activeCafe.address || "",
-         city: activeCafe.city || "",
-         country: activeCafe.country || "",
-         instagram: activeCafe.social?.instagram || "",
-         facebook: activeCafe.social?.facebook || "",
-         twitter: activeCafe.social?.twitter || "",
-         primaryColor: activeCafe.theme?.primaryColor || "#f59e0b",
-         themeMode: activeCafe.theme?.mode || "light"
-       });
-    }
-  }, [activeCafe]); // eslint-disable-line
+    if (!activeCafe || prefilled.current) return;
+    prefilled.current = true;
+    setFormData({
+       name: activeCafe.name || "",
+       description: activeCafe.description || "",
+       email: activeCafe.email || activeCafe.owner_email || "",
+       phone: activeCafe.phone || "",
+       website: activeCafe.website || "",
+       address: activeCafe.address || "",
+       city: activeCafe.city || "",
+       country: activeCafe.country || "",
+       instagram: activeCafe.social?.instagram || "",
+       facebook: activeCafe.social?.facebook || "",
+       twitter: activeCafe.social?.twitter || "",
+       primaryColor: activeCafe.theme?.primaryColor || "#f59e0b",
+       themeMode: activeCafe.theme?.mode || "light"
+    });
+  }, [activeCafe]);
 
   const configRef = useMemoFirebase(() => db && cafeId ? doc(db, 'cafes', cafeId, 'config', 'settings') : null, [db, cafeId]);
   const { data: configDoc } = useDoc(configRef);
