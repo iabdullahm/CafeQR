@@ -387,14 +387,29 @@ export default function LoyaltyManagement() {
                         )
                      }
                   ]}
-                  data={(customers || []).map(c => ({
-                     name: c.name || c.phone || 'Guest',
-                     cups: c.cups || 0,
-                     remaining: Math.max(0, cupsReq - (c.cups || 0)),
-                     earned: c.rewardsEarned || 0,
-                     redeemed: c.rewardsRedeemed || 0,
-                     lastVisit: new Date(c.lastVisit?.toDate() || c.createdAt?.toDate() || Date.now()).toLocaleDateString()
-                  }))}
+                  data={(customers || []).map(c => {
+                     // Customers come from Postgres as ISO strings now, not Firestore Timestamps.
+                     // The old c.lastVisit?.toDate() crashed because strings don't have .toDate(),
+                     // which is why the loyalty page was blowing up for Blue Coast (and any
+                     // tenant whose customer rows are in Postgres).
+                     const visitRaw = c.lastVisit || c.lastSeenAt || c.updatedAt || c.createdAt;
+                     let visitDate: Date;
+                     if (visitRaw && typeof visitRaw === 'object' && typeof visitRaw.toDate === 'function') {
+                        visitDate = visitRaw.toDate();
+                     } else if (visitRaw) {
+                        visitDate = new Date(visitRaw);
+                     } else {
+                        visitDate = new Date();
+                     }
+                     return {
+                        name: c.name || c.phone || 'Guest',
+                        cups: c.cups || 0,
+                        remaining: Math.max(0, cupsReq - (c.cups || 0)),
+                        earned: c.rewardsEarned || 0,
+                        redeemed: c.rewardsRedeemed || 0,
+                        lastVisit: isNaN(visitDate.getTime()) ? '—' : visitDate.toLocaleDateString(),
+                     };
+                  })}
                 />
              </TabsContent>
              <TabsContent value="transactions" className="m-0 border-none outline-none">
@@ -415,10 +430,9 @@ export default function LoyaltyManagement() {
                         )
                      },
                      { key: "count", label: "Cups Count", className: "font-bold" },
-                     { key: "reward", label: "Reward Item" },
-                     { key: "date", label: "Date", className: "text-muted-foreground text-sm" },
-                     { 
-                        key: "status", 
+                     { key: "reward", label: "Reward Type" },
+                     {
+                        key: "status",
                         label: "Status",
                         render: (row) => (
                            <Badge variant="outline" className={
