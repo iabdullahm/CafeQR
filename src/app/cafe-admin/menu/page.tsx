@@ -378,9 +378,24 @@ export default function MenuManagement() {
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full md:w-auto">
           <TabsList className="bg-muted p-1 h-auto flex flex-wrap justify-start gap-1">
             <TabsTrigger value="all">{isArabic ? 'الكل' : 'All'}</TabsTrigger>
-            {CATEGORIES.map(c => (
-              <TabsTrigger key={c.id} value={c.id}>{isArabic ? c.ar : c.en}</TabsTrigger>
-            ))}
+            {(() => {
+              // Build a deduped list of category slugs actually in use:
+              //  - any seeded slug that has at least one product in it
+              //  - every owner-created custom category (always shown, even
+              //    if the owner hasn't put products in it yet)
+              const inUse = new Set<string>((products || []).map((p) => p.category).filter(Boolean));
+              const seedShown = CATEGORIES.filter((c) => inUse.has(c.id));
+              return [
+                ...seedShown.map((c) => (
+                  <TabsTrigger key={c.id} value={c.id}>{isArabic ? c.ar : c.en}</TabsTrigger>
+                )),
+                ...customCategories.map((c) => (
+                  <TabsTrigger key={c.id} value={c.nameEn} className="text-amber-700">
+                    {isArabic ? c.nameAr : c.nameEn}
+                  </TabsTrigger>
+                )),
+              ];
+            })()}
           </TabsList>
         </Tabs>
         <div className="relative w-full md:w-64">
