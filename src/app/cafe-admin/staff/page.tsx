@@ -279,11 +279,16 @@ export default function StaffManagementPage() {
                        <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild className="gap-2 cursor-pointer p-0" onSelect={(e) => e.preventDefault()}>
                              <div className="w-full h-full px-2 py-1.5">
-                                <ChangeRoleModal staffMember={row} customTrigger={
-                                   <div className="flex gap-2 items-center cursor-pointer w-full text-sm">
-                                      <Shield className="h-4 w-4 text-muted-foreground" /> {t("Change Role", "تغيير الصلاحية")}
-                                   </div>
-                                } />
+                                <ChangeRoleModal
+                                   staffMember={row}
+                                   cafeId={cafeId}
+                                   onUpdated={() => { void refetchStaff(); }}
+                                   customTrigger={
+                                     <div className="flex gap-2 items-center cursor-pointer w-full text-sm">
+                                        <Shield className="h-4 w-4 text-muted-foreground" /> {t("Change Role", "تغيير الصلاحية")}
+                                     </div>
+                                   }
+                                />
                              </div>
                           </DropdownMenuItem>
                           <DropdownMenuItem className="gap-2 cursor-pointer">
