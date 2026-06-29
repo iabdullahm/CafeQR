@@ -16,8 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, CreditCard, RefreshCw, ShieldCheck, PauseCircle, XOctagon, Loader2 } from "lucide-react";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
+// Firestore imports removed in Phase 4d. State now lives in Postgres.
 
 interface SubscriptionManagementModalProps {
   cafe: any;
@@ -28,37 +27,90 @@ interface SubscriptionManagementModalProps {
 export function SubscriptionManagementModal({ cafe, open, onOpenChange }: SubscriptionManagementModalProps) {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const { toast } = useToast();
-  const db = useFirestore();
 
   if (!cafe) return null;
 
   const currentPlan = cafe.subscription?.planId?.toLowerCase() || cafe.plan?.toLowerCase() || "free";
   const subStatus = cafe.subscription?.status || "active";
 
-  const handleAction = async (action: string, _data?: any) => {
-    // Post-Phase 4d: Firestore client is a null no-op, and there are no
-    // Postgres /api/super-admin/subscriptions/* mutation endpoints yet.
-    // The previous code silently exited at `if (!db) return;` so the
-    // super-admin would click 'Pause' / 'Cancel' / 'Renew' / 'Change Plan'
-    // and see nothing happen at all. Surface that clearly instead.
-    void _data;
+  const handleAction = async (
+    action: string,
+    data?: { plan?: string; billingCycle?: "monthly" | "yearly" }
+  ) => {
+    // Wired to PATCH /api/super-admin/subscriptions/[id]. The UI uses
+    // legacy verb names (renew_sub, pause_sub, ...); we map them to the
+    // server's vocabulary here.
+    const subId: string | undefined = cafe.subscription?.id;
+    if (!subId) {
+      toast({
+        title: "No subscription on file",
+        description: "This cafe doesn't have a subscription row yet. Create one from Plans first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const verbMap: Record<string, string> = {
+      renew_sub: "renew",
+      pause_sub: "pause",
+      cancel_sub: "cancel",
+      change_plan: "change_plan",
+      resume_sub: "resume",
+    };
+    const serverAction = verbMap[action] ?? action;
+
     setLoadingAction(action);
-    await new Promise((r) => setTimeout(r, 300));
-    toast({
-      title: "Not implemented yet",
-      description: "Subscription billing actions need a Postgres endpoint. Please update the cafe directly in the database for now, or use the Suspend/Activate buttons on the CRM row.",
-      variant: "destructive",
-    });
-    setLoadingAction(null);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const body: Record<string, unknown> = { action: serverAction };
+      if (serverAction === "change_plan") {
+        const planSlug = data?.plan?.toLowerCase();
+        const planId = cafe.subscription?.planMap?.[planSlug ?? ""];
+        if (!planId) {
+          throw new Error(
+            `Cannot resolve plan '${planSlug}' to a planId. Add planMap on the cafe row server-side.`
+          );
+        }
+        body.planId = planId;
+        if (data?.billingCycle) body.billingCycle = data.billingCycle;
+      }
+      const res = await fetch(`/api/super-admin/subscriptions/${subId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json().catch(() => ({} as Record<string, unknown>));
+      if (!res.ok || (json as { success?: boolean }).success === false) {
+        throw new Error(((json as { message?: string }).message) || `HTTP ${res.status}`);
+      }
+
+      const msgs: Record<string, string> = {
+        renew: "Subscription renewed.",
+        pause: "Subscription paused. Service stays live until endDate.",
+        cancel: "Subscription cancelled.",
+        change_plan: `Plan changed${data?.plan ? ` to ${data.plan.toUpperCase()}` : ""}.`,
+        resume: "Subscription reactivated.",
+      };
+      toast({ title: "Done", description: msgs[serverAction] ?? "Updated." });
+      onOpenChange(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Action failed";
+      toast({ title: "Failed", description: msg, variant: "destructive" });
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
   const onSubmitPlanChange = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    handleAction("change_plan", {
-      plan: fd.get("plan"),
-      billingCycle: fd.get("billingCycle"),
-    });
+    const plan = String(fd.get("plan") ?? "");
+    const cycleRaw = String(fd.get("billingCycle") ?? "monthly");
+    const billingCycle: "monthly" | "yearly" = cycleRaw === "yearly" ? "yearly" : "monthly";
+    handleAction("change_plan", { plan, billingCycle });
   };
 
   return (

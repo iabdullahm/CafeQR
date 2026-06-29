@@ -79,6 +79,21 @@ export default function SubscriptionManagement() {
   const [selectedCafeForPlan, setSelectedCafeForPlan] = useState<any>(null);
   const [isChangingPlan, setIsChangingPlan] = useState(false);
   const [newPlanSelection, setNewPlanSelection] = useState("free");
+  // Plan slug -> planId map. Needed to call the PATCH endpoint, which
+  // expects a planId rather than a slug. Lazy-loaded once.
+  const [planSlugToId, setPlanSlugToId] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    fetch('/api/super-admin/plans', { headers: tok ? { Authorization: `Bearer ${tok}` } : undefined, cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : null)
+      .then((j) => {
+        if (!j?.success || !Array.isArray(j.data)) return;
+        const m: Record<string, string> = {};
+        for (const p of j.data) m[(p.slug || p.name || '').toLowerCase()] = p.id;
+        setPlanSlugToId(m);
+      })
+      .catch(() => {});
+  }, []);
 
   // Postgres polling for subscriptions (the page calls them 'cafes' in vars).
   const [cafes, setCafes] = useState<any[]>([]);
@@ -196,26 +211,65 @@ export default function SubscriptionManagement() {
     });
   }, [cafes, searchTerm, statusFilter, cycleFilter, paymentFilter]);
 
-  // Actions — both endpoints are stubs until the Postgres subscription
-  // mutation surface lands. The previous code bailed silently at !db and
-  // then pretended the action succeeded; now we surface the truth.
-  const handleToggleAutoRenew = async (_id: string, _current: boolean) => {
-    void _id; void _current;
-    toast({
-      title: "Not implemented yet",
-      description: "Need PATCH /api/super-admin/subscriptions/[id] to flip auto-renew. Coming soon.",
-      variant: "destructive",
+  // Actions — wired to PATCH /api/super-admin/subscriptions/[id].
+  // Both update the local `cafes` array in place so the user sees the
+  // result immediately without waiting for the 30s polling tick.
+  const patchSub = async (id: string, body: Record<string, unknown>) => {
+    const tok = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const res = await fetch(`/api/super-admin/subscriptions/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(tok ? { Authorization: `Bearer ${tok}` } : {}),
+      },
+      body: JSON.stringify(body),
     });
+    const json = await res.json().catch(() => ({} as { success?: boolean; data?: unknown; message?: string }));
+    if (!res.ok || (json as { success?: boolean }).success === false) {
+      throw new Error(((json as { message?: string }).message) || `HTTP ${res.status}`);
+    }
+    return (json as { data?: Record<string, unknown> }).data;
+  };
+
+  const handleToggleAutoRenew = async (id: string, _current: boolean) => {
+    void _current;
+    try {
+      const updated = await patchSub(id, { action: "toggle_auto_renew" });
+      setCafes((prev) => prev.map((c) => (c.id === id ? { ...c, ...updated } : c)));
+      toast({ title: "Auto-renew updated." });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed";
+      toast({ title: "Failed", description: msg, variant: "destructive" });
+    }
   };
 
   const handleChangePlan = async () => {
     if (!selectedCafeForPlan) return;
-    toast({
-      title: "Not implemented yet",
-      description: `Need PATCH /api/super-admin/subscriptions/[id] to switch plan to ${newPlanSelection.toUpperCase()}. Coming soon.`,
-      variant: "destructive",
-    });
-    setSelectedCafeForPlan(null);
+    const slug = (newPlanSelection || "").toLowerCase();
+    const planId = planSlugToId[slug];
+    if (!planId) {
+      toast({
+        title: "Unknown plan",
+        description: `No plan with slug '${slug}'. Refresh the page or seed the plan in Plans.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsChangingPlan(true);
+    try {
+      const updated = await patchSub(selectedCafeForPlan.id, {
+        action: "change_plan",
+        planId,
+      });
+      setCafes((prev) => prev.map((c) => (c.id === selectedCafeForPlan.id ? { ...c, ...updated } : c)));
+      toast({ title: "Plan changed", description: `Switched to ${slug.toUpperCase()}.` });
+      setSelectedCafeForPlan(null);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed";
+      toast({ title: "Failed", description: msg, variant: "destructive" });
+    } finally {
+      setIsChangingPlan(false);
+    }
   };
 
   const getStatusBadge = (row: any) => {

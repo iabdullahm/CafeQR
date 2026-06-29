@@ -16,6 +16,12 @@ import { withAuth } from "@/middleware/auth-helpers";
 
 export async function GET(req: Request) {
   return withAuth(req, ["SUPER_ADMIN"], async () => {
+    // PlanMap: slug -> id, shared across all rows so the modal can
+    // resolve a slug like "pro" to a planId when calling change_plan.
+    const plans = await prisma.plan.findMany({ select: { id: true, slug: true, name: true } });
+    const planMap: Record<string, string> = {};
+    for (const p of plans) planMap[(p.slug || p.name || "").toLowerCase()] = String(p.id);
+
     const cafes = await prisma.cafe.findMany({
       where: { deletedAt: null },
       orderBy: { createdAt: "desc" },
@@ -61,6 +67,7 @@ export async function GET(req: Request) {
                 id: String(sub.id),
                 planId: planCode,
                 status: subStatus,
+                planMap, // slug -> planId for the change_plan modal
               }
             : null,
           ordersCount: c._count.orders,
