@@ -19,6 +19,7 @@ import {
 import { AuthGuard } from "@/components/auth-guard";
 import { AddStaffModal } from "@/components/staff/add-staff-modal";
 import { ChangeRoleModal } from "@/components/staff/change-role-modal";
+import { ResetPasswordModal } from "@/components/staff/reset-password-modal";
 import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
@@ -291,8 +292,18 @@ export default function StaffManagementPage() {
                                 />
                              </div>
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2 cursor-pointer">
-                             <Key className="h-4 w-4 text-muted-foreground" /> {t("Reset Password", "إعادة ضبط كلمة المرور")}
+                          <DropdownMenuItem asChild className="gap-2 cursor-pointer p-0" onSelect={(e) => e.preventDefault()}>
+                             <div className="w-full h-full px-2 py-1.5">
+                                <ResetPasswordModal
+                                   staffMember={row}
+                                   cafeId={cafeId}
+                                   customTrigger={
+                                     <div className="flex gap-2 items-center cursor-pointer w-full text-sm">
+                                        <Key className="h-4 w-4 text-muted-foreground" /> {t("Reset Password", "إعادة ضبط كلمة المرور")}
+                                     </div>
+                                   }
+                                />
+                             </div>
                           </DropdownMenuItem>
                           {row.role !== 'OWNER' && (
                              <>
