@@ -112,6 +112,14 @@ export async function GET(
             : ((p.optionsData as unknown[] | null) ?? []),
         })),
       },
+    }, {
+      // PERF: every QR scan hits this endpoint; menu changes are rare.
+      // s-maxage=60: Vercel CDN caches for 60s.
+      // stale-while-revalidate=300: serve stale up to 5 min while we
+      // refetch in the background — keeps p99 flat during dinner rush.
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
     });
   } catch (err) {
     console.error("[/api/public/menu/[cafeId]] error:", err);

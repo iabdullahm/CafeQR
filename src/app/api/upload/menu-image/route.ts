@@ -51,7 +51,17 @@ export async function POST(req: Request) {
         );
       }
 
-      const cafeId = user.cafeId || "shared";
+      // SECURITY: previously fell back to "shared" if the JWT had no
+      // cafeId, so every such caller wrote to the SAME folder. Refuse
+      // the upload — only valid path is a tenant upload (SUPER_ADMIN
+      // must impersonate a cafe first).
+      if (!user.cafeId) {
+        return NextResponse.json(
+          { success: false, message: "Your account has no cafe assigned. Switch to a cafe before uploading images." },
+          { status: 403 }
+        );
+      }
+      const cafeId = user.cafeId;
       const extMatch = file.name.match(/\.([a-zA-Z0-9]+)$/);
       const ext = extMatch ? extMatch[1].toLowerCase() : "jpg";
       const pathname = `products/${cafeId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;

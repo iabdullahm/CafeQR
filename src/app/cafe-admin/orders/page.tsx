@@ -73,7 +73,10 @@ export default function OrderManagement() {
       }
     };
     void fetchOrders();
-    const iv = setInterval(fetchOrders, 5000);
+    // PERF: 5s -> 8s. At 50 cafes x 8 staff = 400 tabs, peak load
+    // on /api/cafes/[id]/orders drops from ~80/s to ~50/s while
+    // staying near-real-time in the dining room.
+    const iv = setInterval(fetchOrders, 8000);
     return () => { alive = false; clearInterval(iv); };
   }, [cafeId]);
 
