@@ -68,6 +68,7 @@ import {
   User,
   RefreshCw
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SupportPage() {
     const [ticketsData, setTicketsData] = useState<any[]>([]);
@@ -90,6 +91,68 @@ export default function SupportPage() {
     return () => { alive = false; clearInterval(iv); };
   }, [])
   const tickets = ticketsData || [];
+  const { toast } = useToast();
+
+  // Refetch helper so action handlers can refresh after PATCH.
+  const reloadTickets = async () => {
+    try {
+      const tok = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch("/api/super-admin/support-tickets?limit=200", {
+        headers: tok ? { Authorization: `Bearer ${tok}` } : undefined,
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const j = await res.json();
+      if (j.success && Array.isArray(j.data)) setTicketsData(j.data);
+    } catch { /* ignore */ }
+  };
+
+  const patchTicket = async (id: string, body: Record<string, unknown>) => {
+    const tok = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const res = await fetch(`/api/super-admin/support-tickets/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(tok ? { Authorization: `Bearer ${tok}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({} as Record<string, unknown>));
+    if (!res.ok || (json as { success?: boolean }).success === false) {
+      throw new Error(((json as { message?: string }).message) || `HTTP ${res.status}`);
+    }
+  };
+
+  const handleResolve = async (ticket: any) => {
+    try {
+      await patchTicket(ticket.id, { status: "resolved" });
+      toast({ title: "Ticket resolved.", description: ticket.ticketNumber ?? "" });
+      void reloadTickets();
+    } catch (err) {
+      toast({ title: "Failed", description: err instanceof Error ? err.message : "—", variant: "destructive" });
+    }
+  };
+
+  const handleEscalate = async (ticket: any) => {
+    try {
+      await patchTicket(ticket.id, { priority: "urgent" });
+      toast({ title: "Ticket escalated to urgent." });
+      void reloadTickets();
+    } catch (err) {
+      toast({ title: "Failed", description: err instanceof Error ? err.message : "—", variant: "destructive" });
+    }
+  };
+
+  const handleClose = async (ticket: any) => {
+    if (!confirm(`Close ticket ${ticket.ticketNumber || ticket.id}? Customer can still reply to reopen.`)) return;
+    try {
+      await patchTicket(ticket.id, { status: "closed" });
+      toast({ title: "Ticket closed." });
+      void reloadTickets();
+    } catch (err) {
+      toast({ title: "Failed", description: err instanceof Error ? err.message : "—", variant: "destructive" });
+    }
+  };
 
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -310,16 +373,16 @@ export default function SupportPage() {
                               <UserPlus className="h-4 w-4 text-muted-foreground" /> Assign Agent
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            {ticket.status !== 'Resolved' && ticket.status !== 'Closed' && (
-                              <DropdownMenuItem className="gap-2 cursor-pointer text-green-600 focus:text-green-600 focus:bg-green-50">
+                            {ticket.status !== 'resolved' && ticket.status !== 'closed' && ticket.status !== 'Resolved' && ticket.status !== 'Closed' && (
+                              <DropdownMenuItem className="gap-2 cursor-pointer text-green-600 focus:text-green-600 focus:bg-green-50" onClick={() => handleResolve(ticket)}>
                                 <CheckCircle2 className="h-4 w-4" /> Resolve Ticket
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem className="gap-2 cursor-pointer text-orange-600 focus:text-orange-600 focus:bg-orange-50">
+                            <DropdownMenuItem className="gap-2 cursor-pointer text-orange-600 focus:text-orange-600 focus:bg-orange-50" onClick={() => handleEscalate(ticket)}>
                               <ArrowUpRight className="h-4 w-4" /> Escalate Issue
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="gap-2 cursor-pointer text-muted-foreground">
+                            <DropdownMenuItem className="gap-2 cursor-pointer text-muted-foreground" onClick={() => handleClose(ticket)}>
                               <Archive className="h-4 w-4" /> Close Ticket
                             </DropdownMenuItem>
                           </DropdownMenuContent>
