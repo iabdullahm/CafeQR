@@ -25,38 +25,21 @@ export function ChangeRoleModal({ staffMember, customTrigger }: ChangeRoleModalP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!db) return;
-    
+    // Post-Phase 4d: Firestore client is null shim. There is no Postgres
+    // PATCH endpoint for cafe-user role changes yet — the previous code
+    // silently bailed and looked like a successful click. Tell the user.
     setLoading(true);
-
-    try {
-      const hierarchy = ["OWNER", "MANAGER", "CASHIER", "BARISTA"];
-      let primaryRole = "BARISTA";
-      for (const r of hierarchy) {
-        if (selectedRoles.includes(r)) {
-          primaryRole = r;
-          break;
-        }
-      }
-
-      await updateDoc(doc(db, "users", staffMember.id), {
-        roles: selectedRoles,
-        role: primaryRole,
-      });
-
-      setLoading(false);
-      setOpen(false);
-      
-      toast({
-        title: "Roles Updated",
-        description: `Permissions for ${staffMember.name || 'this member'} have been updated.`,
-      });
-    } catch (error: any) {
-      console.error("Error updating roles:", error);
-      toast({ title: "Error", description: "Failed to update permissions.", variant: "destructive" });
-      setLoading(false);
-    }
+    await new Promise((r) => setTimeout(r, 300));
+    toast({
+      title: "Not implemented yet",
+      description: "Updating roles needs the new /api/cafes/[id]/staff/[userId] PATCH endpoint. Until then, remove the staff member and re-add them with the new role.",
+      variant: "destructive",
+    });
+    setLoading(false);
   };
+  void selectedRoles;
+  void staffMember;
+  void updateDoc;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

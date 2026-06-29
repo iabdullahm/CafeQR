@@ -147,9 +147,16 @@ export default function CustomersPage() {
 
   const exportCSV = () => {
     if (!filteredCustomers || filteredCustomers.length === 0) return;
+    // Postgres returns ISO strings; .toDate() crashed CSV export.
+    const fmt = (v: any): string => {
+      if (!v) return "";
+      if (typeof v === "object" && typeof v.toDate === "function") return v.toDate().toLocaleString();
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? "" : d.toLocaleString();
+    };
     const header = "Phone,Name,Total Orders,Total Spent,Status,Last Order\n";
-    const csv = filteredCustomers.map(c => 
-      `"${c.phone || 'Guest'}","${c.name || 'Unknown'}","${c.totalOrders}","${c.totalSpent}","${getCustomerIntelligence(c).status}","${new Date(c.lastVisit?.toDate() || c.createdAt?.toDate() || Date.now()).toLocaleString()}"`
+    const csv = filteredCustomers.map(c =>
+      `"${c.phone || 'Guest'}","${c.name || 'Unknown'}","${c.totalOrders}","${c.totalSpent}","${getCustomerIntelligence(c).status}","${fmt(c.lastVisit || c.createdAt)}"`
     ).join("\n");
     const blob = new Blob([header + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
-
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -81,7 +81,14 @@ export default function LeadsPage() {
                   {leads.map((lead) => (
                     <TableRow key={lead.id} className="hover:bg-muted/30">
                       <TableCell className="font-medium">
-                        {lead.createdAt ? format(lead.createdAt.toDate(), 'dd MMM yyyy, HH:mm') : 'Unknown'}
+                        {(() => {
+                          const raw: any = lead.createdAt;
+                          if (!raw) return 'Unknown';
+                          try {
+                            const d = typeof raw === 'object' && typeof raw.toDate === 'function' ? raw.toDate() : new Date(raw);
+                            return isNaN(d.getTime()) ? 'Unknown' : format(d, 'dd MMM yyyy, HH:mm');
+                          } catch { return 'Unknown'; }
+                        })()}
                       </TableCell>
                       <TableCell className="font-bold text-foreground">{lead.cafeName}</TableCell>
                       <TableCell>{lead.ownerName}</TableCell>

@@ -196,29 +196,26 @@ export default function SubscriptionManagement() {
     });
   }, [cafes, searchTerm, statusFilter, cycleFilter, paymentFilter]);
 
-  // Actions
-  const handleToggleAutoRenew = async (id: string, current: boolean) => {
-    if (!db) return;
-    try {
-      /* TODO: PATCH /api/super-admin/subscriptions/[id] endpoint */
-      toast({ title: `Auto-renew turned ${!current ? 'on' : 'off'} successfully.` });
-    } catch (e: any) {
-      toast({ title: "Failed to update subscription", variant: "destructive" });
-    }
+  // Actions — both endpoints are stubs until the Postgres subscription
+  // mutation surface lands. The previous code bailed silently at !db and
+  // then pretended the action succeeded; now we surface the truth.
+  const handleToggleAutoRenew = async (_id: string, _current: boolean) => {
+    void _id; void _current;
+    toast({
+      title: "Not implemented yet",
+      description: "Need PATCH /api/super-admin/subscriptions/[id] to flip auto-renew. Coming soon.",
+      variant: "destructive",
+    });
   };
 
   const handleChangePlan = async () => {
-    if (!db || !selectedCafeForPlan) return;
-    setIsChangingPlan(true);
-    try {
-      /* TODO: PATCH /api/super-admin/subscriptions/[id] endpoint */
-      toast({ title: `Plan successfully changed to ${newPlanSelection.toUpperCase()}` });
-      setSelectedCafeForPlan(null);
-    } catch (e: any) {
-      toast({ title: "Failed to update plan", variant: "destructive" });
-    } finally {
-      setIsChangingPlan(false);
-    }
+    if (!selectedCafeForPlan) return;
+    toast({
+      title: "Not implemented yet",
+      description: `Need PATCH /api/super-admin/subscriptions/[id] to switch plan to ${newPlanSelection.toUpperCase()}. Coming soon.`,
+      variant: "destructive",
+    });
+    setSelectedCafeForPlan(null);
   };
 
   const getStatusBadge = (row: any) => {

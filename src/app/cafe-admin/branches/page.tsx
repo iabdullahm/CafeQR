@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
-import { doc, deleteDoc } from "firebase/firestore";
+import { collection, query, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useCafe } from "@/hooks/use-cafe";
 
@@ -121,9 +121,24 @@ export default function BranchesManagement() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="gap-2 focus:bg-muted"><ToggleLeft className="h-4 w-4 text-muted-foreground" /> {t("Disable Branch", "تعطيل الفرع")}</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive gap-2 focus:bg-destructive/10 focus:text-destructive"
-                          onClick={() => deleteDoc(doc(db!, 'cafes', cafeId!, 'branches', branch.id))}
+                          onClick={async () => {
+                            // Post-Phase 4d: db is null shim. Route through Postgres DELETE.
+                            if (!confirm(t("Delete this branch? This cannot be undone.", "هل أنت متأكد من حذف الفرع؟"))) return;
+                            try {
+                              const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+                              const res = await fetch(`/api/cafes/${cafeId}/branches/${branch.id}`, {
+                                method: "DELETE",
+                                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                              });
+                              const j = await res.json().catch(() => ({}));
+                              if (!res.ok || j?.success === false) throw new Error(j?.message || `HTTP ${res.status}`);
+                              await refetchBranches();
+                            } catch (err: any) {
+                              alert(`${t("Delete failed", "فشل الحذف")}: ${err?.message || "unknown"}`);
+                            }
+                          }}
                         >
                           <Trash2 className="h-4 w-4" /> {t("Delete Branch", "حذف الفرع")}
                         </DropdownMenuItem>

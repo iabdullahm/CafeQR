@@ -35,43 +35,21 @@ export function SubscriptionManagementModal({ cafe, open, onOpenChange }: Subscr
   const currentPlan = cafe.subscription?.planId?.toLowerCase() || cafe.plan?.toLowerCase() || "free";
   const subStatus = cafe.subscription?.status || "active";
 
-  const handleAction = async (action: string, data?: any) => {
-    if (!db) return;
+  const handleAction = async (action: string, _data?: any) => {
+    // Post-Phase 4d: Firestore client is a null no-op, and there are no
+    // Postgres /api/super-admin/subscriptions/* mutation endpoints yet.
+    // The previous code silently exited at `if (!db) return;` so the
+    // super-admin would click 'Pause' / 'Cancel' / 'Renew' / 'Change Plan'
+    // and see nothing happen at all. Surface that clearly instead.
+    void _data;
     setLoadingAction(action);
-    try {
-      const cafeRef = doc(db, "cafes", cafe.id);
-
-      switch (action) {
-        case "change_plan":
-          await updateDoc(cafeRef, {
-            plan: data.plan,
-            "subscription.planId": data.plan,
-            "subscription.updatedAt": serverTimestamp(),
-            "subscription.billingCycle": data.billingCycle
-          });
-          toast({ title: "Plan Updated", description: `The cafe plan has been successfully changed to ${data.plan.toUpperCase()}.` });
-          onOpenChange(false);
-          break;
-        case "renew_sub":
-          await updateDoc(cafeRef, { "subscription.status": "active" });
-          toast({ title: "Subscription Renewed", description: "The manual renewal was recorded successfully." });
-          break;
-        case "pause_sub":
-          await updateDoc(cafeRef, { "subscription.status": "paused" });
-          toast({ title: "Subscription Paused", description: "The cafe billing and access have been paused." });
-          break;
-        case "cancel_sub":
-          await updateDoc(cafeRef, { "subscription.status": "canceled" });
-          toast({ title: "Subscription Canceled", description: "The cafe subscription is canceled.", variant: "destructive" });
-          break;
-        default:
-          break;
-      }
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "An error occurred.", variant: "destructive" });
-    } finally {
-      setLoadingAction(null);
-    }
+    await new Promise((r) => setTimeout(r, 300));
+    toast({
+      title: "Not implemented yet",
+      description: "Subscription billing actions need a Postgres endpoint. Please update the cafe directly in the database for now, or use the Suspend/Activate buttons on the CRM row.",
+      variant: "destructive",
+    });
+    setLoadingAction(null);
   };
 
   const onSubmitPlanChange = (e: React.FormEvent<HTMLFormElement>) => {
