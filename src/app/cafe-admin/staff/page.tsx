@@ -79,11 +79,16 @@ export default function StaffManagementPage() {
     // We don't need to do anything here because we will write to firestore directly in the modal
   };
 
-  const handleRemoveAccess = async (staffId: string) => {
+  const handleRemoveAccess = async (userId: string) => {
+    if (!userId) {
+      toast({ title: t("Error", "خطأ"), description: "Missing userId on row.", variant: "destructive" });
+      return;
+    }
     if (confirm(t("Are you sure you want to remove this staff member's access?", "هل أنت متأكد من إزالة صلاحية هذا الموظف؟"))) {
        try {
          const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-         const res = await fetch(`/api/cafes/${cafeId}/staff/${staffId}`, {
+         // BUGFIX: was using row.id (CafeUser link id); endpoint expects userId.
+         const res = await fetch(`/api/cafes/${cafeId}/staff/${userId}`, {
            method: 'DELETE',
            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
          });
@@ -93,6 +98,39 @@ export default function StaffManagementPage() {
        } catch {
          toast({ title: t("Error", "خطأ"), description: t("Failed to remove staff.", "فشل في إزالة الموظف."), variant: "destructive" });
        }
+    }
+  };
+
+  // Suspend / Activate uses the existing PATCH endpoint's `status` field.
+  // We pass active|suspended directly because the endpoint validates the
+  // enum on its side.
+  const handleToggleStatus = async (userId: string, currentStatus: string) => {
+    if (!userId) {
+      toast({ title: t("Error", "خطأ"), description: "Missing userId on row.", variant: "destructive" });
+      return;
+    }
+    const wantSuspend = currentStatus === "Active" || currentStatus === "active";
+    const nextStatus = wantSuspend ? "suspended" : "active";
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch(`/api/cafes/${cafeId}/staff/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!res.ok) throw new Error("toggle failed");
+      toast({
+        title: wantSuspend
+          ? t("Staff suspended", "تم تعليق الموظف")
+          : t("Staff reactivated", "تم إعادة تنشيط الموظف"),
+      });
+      void refetchStaff();
+    } catch {
+      toast({
+        title: t("Error", "خطأ"),
+        description: t("Failed to update status.", "فشل تحديث الحالة."),
+        variant: "destructive",
+      });
     }
   };
 
@@ -308,9 +346,17 @@ export default function StaffManagementPage() {
                           {row.role !== 'OWNER' && (
                              <>
                                 <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="gap-2 cursor-pointer"
+                                  onClick={() => handleToggleStatus(row.userId, row.status)}
+                                >
+                                   {row.status === "Active"
+                                     ? t("Suspend", "تعليق")
+                                     : t("Activate", "تنشيط")}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   className="gap-2 cursor-pointer text-destructive focus:text-destructive"
-                                  onClick={() => handleRemoveAccess(row.id)}
+                                  onClick={() => handleRemoveAccess(row.userId)}
                                 >
                                    {t("Remove Access", "إزالة الصلاحية")}
                                 </DropdownMenuItem>
