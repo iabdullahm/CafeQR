@@ -225,6 +225,8 @@ model CafeUser {
   user   User        @relation(fields: [userId], references: [id])
   branch CafeBranch? @relation(fields: [branchId], references: [id])
 
+  @@index([cafeId, userId])
+  @@index([userId])
   @@map("cafe_users")
 }
 
@@ -335,6 +337,8 @@ model QRCode {
   tables   CafeTable[] @relation("TableQR")
   scanLogs QRScanLog[]
 
+  @@index([cafeId])
+  @@index([branchId])
   @@map("qr_codes")
 }
 
@@ -424,6 +428,7 @@ model MenuItemOption {
   menuItem MenuItem              @relation(fields: [menuItemId], references: [id])
   values   MenuItemOptionValue[]
 
+  @@index([menuItemId])
   @@map("menu_item_options")
 }
 
@@ -439,6 +444,7 @@ model MenuItemOptionValue {
 
   option MenuItemOption @relation(fields: [optionId], references: [id])
 
+  @@index([optionId])
   @@map("menu_item_option_values")
 }
 
@@ -458,6 +464,8 @@ model Customer {
   orders         Order[]
   loyaltyAccount LoyaltyAccount? @relation("CustomerLoyalty")
 
+  @@index([cafeId, createdAt])
+  @@index([cafeId, phone])
   @@map("customers")
 }
 
@@ -509,6 +517,8 @@ model OrderItem {
   menuItem MenuItem          @relation(fields: [menuItemId], references: [id])
   options  OrderItemOption[]
 
+  @@index([orderId])
+  @@index([menuItemId])
   @@map("order_items")
 }
 
