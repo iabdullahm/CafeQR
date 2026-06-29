@@ -81,7 +81,7 @@ export default function CafeManagement() {
   const fetchCafes = useCallback(async () => {
     try {
       const jwt = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      const res = await fetch("/api/super-admin/cafes", {
+      const res = await fetch("/api/super-admin/cafes?limit=200", {
         headers: jwt ? { Authorization: `Bearer ${jwt}` } : {},
         cache: "no-store",
       });

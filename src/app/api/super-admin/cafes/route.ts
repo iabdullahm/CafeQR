@@ -1,35 +1,35 @@
 /**
  * GET /api/super-admin/cafes
  *
- * Returns the full tenant list for the Super-Admin CRM page. Each row is
- * shaped to match the legacy Firestore document fields the UI was built
- * against (name, slug, owner_name, owner_email, isActive, subscription,
- * ordersCount, createdAt, updatedAt) so we don't have to rewrite the
- * table columns.
+ * Returns the tenant list for the Super-Admin CRM page. Cursor-paginated
+ * via ?cursor=<id>&limit=<n> with nextCursor in the response (default
+ * limit 50, max 200). Each row shape matches legacy Firestore field
+ * names so the UI doesn't need to rewrite its columns.
  *
- * Pure JWT auth via withAuth(['SUPER_ADMIN']).
+ * Pure JWT auth via withAuth(["SUPER_ADMIN"]).
  */
 
 import { NextResponse } from "next/server";
 import prisma from "@/config/prisma";
 import { withAuth } from "@/middleware/auth-helpers";
+import { parsePagination, sliceForPage } from "@/utils/pagination";
 
 export async function GET(req: Request) {
   return withAuth(req, ["SUPER_ADMIN"], async () => {
     // PlanMap: slug -> id, shared across all rows so the modal can
-    // resolve a slug like "pro" to a planId when calling change_plan.
+    // resolve "pro" to a planId when calling change_plan.
     const plans = await prisma.plan.findMany({ select: { id: true, slug: true, name: true } });
     const planMap: Record<string, string> = {};
     for (const p of plans) planMap[(p.slug || p.name || "").toLowerCase()] = String(p.id);
 
+    const { limit, cursorArg, take } = parsePagination(req);
     const cafes = await prisma.cafe.findMany({
+      ...cursorArg,
       where: { deletedAt: null },
-      orderBy: { createdAt: "desc" },
-      take: 500,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take,
       include: {
-        owner: {
-          select: { id: true, fullName: true, email: true },
-        },
+        owner: { select: { id: true, fullName: true, email: true } },
         subscriptions: {
           orderBy: { createdAt: "desc" },
           take: 1,
@@ -38,10 +38,11 @@ export async function GET(req: Request) {
         _count: { select: { orders: true } },
       },
     });
+    const { data, nextCursor } = sliceForPage(cafes, limit, (c) => String(c.id));
 
     return NextResponse.json({
       success: true,
-      data: cafes.map((c) => {
+      data: data.map((c) => {
         const sub = c.subscriptions[0];
         const subStatus = sub?.status ?? null;
         const planCode = (sub?.plan?.slug || sub?.plan?.name || "free").toLowerCase();
@@ -75,6 +76,7 @@ export async function GET(req: Request) {
           updatedAt: c.updatedAt.toISOString(),
         };
       }),
+      nextCursor,
     });
   });
 }

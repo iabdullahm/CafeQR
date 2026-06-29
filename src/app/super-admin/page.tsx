@@ -63,7 +63,7 @@ export default function SuperAdminDashboard() {
     const headers: Record<string, string> = jwt ? { Authorization: `Bearer ${jwt}` } : {};
     try {
       const [cafesRes, plansRes] = await Promise.all([
-        fetch("/api/super-admin/cafes", { headers, cache: "no-store" }),
+        fetch("/api/super-admin/cafes?limit=200", { headers, cache: "no-store" }),
         fetch("/api/super-admin/plans", { headers, cache: "no-store" }),
       ]);
       if (cafesRes.ok) {

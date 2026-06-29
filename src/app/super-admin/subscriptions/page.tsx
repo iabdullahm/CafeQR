@@ -104,7 +104,7 @@ export default function SubscriptionManagement() {
     const headers = tok ? { Authorization: `Bearer ${tok}` } : undefined;
     const load = async () => {
       try {
-        const res = await fetch('/api/super-admin/subscriptions', { headers, cache: 'no-store' });
+        const res = await fetch('/api/super-admin/subscriptions?limit=200', { headers, cache: 'no-store' });
         if (!res.ok) return;
         const json = await res.json();
         if (alive && json.success && Array.isArray(json.data)) setCafes(json.data);

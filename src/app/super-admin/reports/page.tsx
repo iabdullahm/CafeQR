@@ -84,7 +84,7 @@ export default function ReportsPage() {
     const jwt = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     const headers: Record<string, string> = jwt ? { Authorization: `Bearer ${jwt}` } : {};
     try {
-      const res = await fetch("/api/super-admin/cafes", { headers, cache: "no-store" });
+      const res = await fetch("/api/super-admin/cafes?limit=200", { headers, cache: "no-store" });
       if (!res.ok) { setCafes([]); return; }
       const j = await res.json();
       setCafes(Array.isArray(j?.data) ? j.data : []);
