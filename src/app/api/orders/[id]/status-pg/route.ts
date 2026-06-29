@@ -98,6 +98,29 @@ export async function PATCH(
     );
   }
 
+  // ---- Authorise BEFORE mutating ----
+  // SECURITY: the old code updated first then checked cafe ownership,
+  // which left a window where an OWNER of cafe A could race to flip the
+  // status of a cafe B order before the check ran. We now read first,
+  // verify, and only then write. SUPER_ADMIN bypasses the gate.
+  const existing = await prisma.order.findUnique({
+    where: { id: orderIdBig },
+    select: { id: true, cafeId: true },
+  });
+  if (!existing) {
+    return NextResponse.json(
+      { success: false, message: "Order not found" },
+      { status: 404 }
+    );
+  }
+  const isSuper = (payload.roles ?? []).includes("SUPER_ADMIN");
+  if (!isSuper && payload.cafeId && String(existing.cafeId) !== String(payload.cafeId)) {
+    return NextResponse.json(
+      { success: false, message: "Order belongs to a different cafe" },
+      { status: 403 }
+    );
+  }
+
   // ---- Update ----
   try {
     const updated = await prisma.order.update({
@@ -108,16 +131,6 @@ export async function PATCH(
         cancelledAt: requestedStatus === "cancelled" ? new Date() : undefined,
       },
     });
-
-    // Cross-cafe guard: if the caller has a cafeId in the JWT, deny
-    // updates to orders that don't belong to that cafe.
-    if (payload.cafeId && String(updated.cafeId) !== String(payload.cafeId)) {
-      // Roll back by reverting status — best-effort.
-      return NextResponse.json(
-        { success: false, message: "Order belongs to a different cafe" },
-        { status: 403 }
-      );
-    }
 
     return NextResponse.json({
       success: true,

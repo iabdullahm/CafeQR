@@ -103,6 +103,24 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+  // SECURITY / DoS guard: cap the order size so a malicious client cannot
+  // queue gigabyte-sized writes or OOM the server with a single POST.
+  const MAX_ITEMS = 100;
+  const MAX_QTY = 99;
+  if (items.length > MAX_ITEMS) {
+    return NextResponse.json(
+      { success: false, message: `Too many items (max ${MAX_ITEMS}).` },
+      { status: 400 }
+    );
+  }
+  for (const it of items as OrderItemInput[]) {
+    if (typeof it.quantity === "number" && it.quantity > MAX_QTY) {
+      return NextResponse.json(
+        { success: false, message: `Quantity too high (max ${MAX_QTY} per item).` },
+        { status: 400 }
+      );
+    }
+  }
   if (!VALID_INPUT_TYPES.includes(type as ValidInputType)) {
     return NextResponse.json({ success: false, message: `Invalid type: ${type}` }, { status: 400 });
   }

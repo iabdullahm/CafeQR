@@ -40,6 +40,11 @@ interface CheckoutBody {
 }
 
 export async function POST(req: Request) {
+  // SECURITY: Endpoint was unauthenticated — anyone could generate a
+  // checkout link or probe for valid subscription/invoice references.
+  // Now requires a signed-in OWNER/MANAGER/SUPER_ADMIN.
+  const { withAuth } = await import("@/middleware/auth-helpers");
+  return withAuth(req, ["SUPER_ADMIN", "OWNER", "MANAGER"], async () => {
   try {
     const body = (await req.json()) as CheckoutBody;
 
@@ -98,4 +103,5 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+  });
 }

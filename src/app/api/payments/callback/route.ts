@@ -79,8 +79,18 @@ export async function POST(req: Request) {
   };
 
   if (!verifyResponseHash(fields, receivedHash)) {
+    // SECURITY: log enough to detect brute-force / forgery probes,
+    // but don't echo full payload back to the caller.
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      "unknown";
     console.warn("[amwal-callback] Hash mismatch", {
+      ip,
+      ua: req.headers.get("user-agent") || "unknown",
       reference: payload.MerchantReference,
+      txnType: payload.TxnType,
+      receivedHashLen: (receivedHash || "").length,
     });
     return NextResponse.json(
       { success: false, message: "Hash mismatch" },

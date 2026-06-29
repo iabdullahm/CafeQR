@@ -78,8 +78,27 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       if (!body.fullName || !body.email || !body.password || !body.roleName) {
         return NextResponse.json({ success: false, message: "fullName, email, password, roleName required" }, { status: 400 });
       }
+      // SECURITY: password must be reasonably strong. Previous flow allowed "1".
+      if (body.password.length < 8) {
+        return NextResponse.json(
+          { success: false, message: "Password must be at least 8 characters." },
+          { status: 400 }
+        );
+      }
+      // SECURITY: restrict role assignment so an OWNER cannot self-promote
+      // to SUPER_ADMIN by sending roleName="SUPER_ADMIN".
+      const ASSIGNABLE_ROLES = new Set(["OWNER", "MANAGER", "CASHIER", "KITCHEN"]);
+      const SUPER_ASSIGNABLE = new Set([...ASSIGNABLE_ROLES, "SUPER_ADMIN"]);
+      const wantedRole = body.roleName.toUpperCase();
+      const allowed = caller.roles?.includes("SUPER_ADMIN") ? SUPER_ASSIGNABLE : ASSIGNABLE_ROLES;
+      if (!allowed.has(wantedRole)) {
+        return NextResponse.json(
+          { success: false, message: `Role ${body.roleName} cannot be assigned by you.` },
+          { status: 403 }
+        );
+      }
       const email = body.email.toLowerCase().trim();
-      const role = await prisma.role.findUnique({ where: { name: body.roleName.toUpperCase() } });
+      const role = await prisma.role.findUnique({ where: { name: wantedRole } });
       if (!role) return NextResponse.json({ success: false, message: `Role ${body.roleName} not found` }, { status: 400 });
 
       const passwordHash = await bcrypt.hash(body.password, 10);
