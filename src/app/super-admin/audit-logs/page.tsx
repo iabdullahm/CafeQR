@@ -54,23 +54,60 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 export default function AuditLogsPage() {
     const [logsData, setLogsData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  // Cursor pagination: nextCursor comes from the server; null means
+  // "no more pages". loadingMore is separate from isLoading so the
+  // initial spinner doesn't double-fire when the user clicks Load More.
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const fetchAuthHeaders = () => {
+    const tok = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    return tok ? { Authorization: `Bearer ${tok}` } : undefined;
+  };
+
   useEffect(() => {
     let alive = true;
-    const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const headers = tok ? { Authorization: `Bearer ${tok}` } : undefined;
     const load = async () => {
       try {
-        const res = await fetch('/api/super-admin/audit-logs?limit=200', { headers, cache: 'no-store' });
+        const res = await fetch("/api/super-admin/audit-logs?limit=200", { headers: fetchAuthHeaders(), cache: "no-store" });
         if (!res.ok) return;
         const json = await res.json();
-        if (alive && json.success && Array.isArray(json.data)) setLogsData(json.data);
+        if (alive && json.success && Array.isArray(json.data)) {
+          setLogsData(json.data);
+          setNextCursor(json.nextCursor ?? null);
+        }
       } catch { /* ignore */ }
       finally { if (alive) setIsLoading(false); }
     };
     void load();
+    // Note: polling intentionally does NOT reset the cursor — that
+    // would yank "Load more" results away from the user. Only the
+    // initial page refreshes here. Old rows that move within the
+    // first page may briefly disappear if a new row is inserted at
+    // the top; acceptable trade-off for keeping the manual page
+    // visible.
     const iv = setInterval(load, 30000);
     return () => { alive = false; clearInterval(iv); };
-  }, [])
+  }, []);
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(
+        `/api/super-admin/audit-logs?limit=200&cursor=${encodeURIComponent(nextCursor)}`,
+        { headers: fetchAuthHeaders(), cache: "no-store" }
+      );
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setLogsData((prev) => [...prev, ...json.data]);
+        setNextCursor(json.nextCursor ?? null);
+      }
+    } catch { /* ignore */ }
+    finally { setLoadingMore(false); }
+  };
+
   const logs = logsData || [];
 
   const [selectedLog, setSelectedLog] = useState<any>(null);
@@ -299,6 +336,13 @@ export default function AuditLogsPage() {
                 ))}
               </TableBody>
             </Table>
+          </div>
+        )}
+        {nextCursor && (
+          <div className="flex justify-center p-4 border-t bg-muted/20">
+            <Button variant="outline" size="sm" onClick={loadMore} disabled={loadingMore}>
+              {loadingMore ? "Loading..." : `Load more (${logs.length} loaded)`}
+            </Button>
           </div>
         )}
       </Card>

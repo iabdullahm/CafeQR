@@ -97,6 +97,8 @@ export default function SubscriptionManagement() {
   // Postgres polling for subscriptions (the page calls them 'cafes' in vars).
   const [cafes, setCafes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   useEffect(() => {
     let alive = true;
     const tok = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -106,7 +108,10 @@ export default function SubscriptionManagement() {
         const res = await fetch('/api/super-admin/subscriptions?limit=200', { headers, cache: 'no-store' });
         if (!res.ok) return;
         const json = await res.json();
-        if (alive && json.success && Array.isArray(json.data)) setCafes(json.data);
+        if (alive && json.success && Array.isArray(json.data)) {
+          setCafes(json.data);
+          setNextCursor(json.nextCursor ?? null);
+        }
       } catch { /* ignore */ }
       finally { if (alive) setIsLoading(false); }
     };
@@ -114,6 +119,25 @@ export default function SubscriptionManagement() {
     const iv = setInterval(load, 30000);
     return () => { alive = false; clearInterval(iv); };
   }, [])
+
+  const loadMoreSubs = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const tok = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch(
+        `/api/super-admin/subscriptions?limit=200&cursor=${encodeURIComponent(nextCursor)}`,
+        { headers: tok ? { Authorization: `Bearer ${tok}` } : undefined, cache: "no-store" }
+      );
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setCafes((prev) => [...prev, ...json.data]);
+        setNextCursor(json.nextCursor ?? null);
+      }
+    } catch { /* ignore */ }
+    finally { setLoadingMore(false); }
+  };
 
   // Computed KPIs & Aggregations
   const { 
@@ -577,6 +601,13 @@ export default function SubscriptionManagement() {
                    })}
                  </TableBody>
                </Table>
+             </div>
+           )}
+           {nextCursor && (
+             <div className="flex justify-center p-4 border-t bg-muted/20">
+               <Button variant="outline" size="sm" onClick={loadMoreSubs} disabled={loadingMore}>
+                 {loadingMore ? "Loading..." : `Load more (${cafes.length} loaded)`}
+               </Button>
              </div>
            )}
         </CardContent>

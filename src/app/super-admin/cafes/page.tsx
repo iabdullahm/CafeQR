@@ -77,6 +77,8 @@ export default function CafeManagement() {
   // Cafes (Postgres via /api/super-admin/cafes — polling refresh)
   const [cafes, setCafes] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const fetchCafes = useCallback(async () => {
     try {
@@ -90,6 +92,7 @@ export default function CafeManagement() {
         throw new Error(json.message || `Failed to load cafes (${res.status})`);
       }
       setCafes(Array.isArray(json.data) ? json.data : []);
+      setNextCursor(json.nextCursor ?? null);
     } catch (e: unknown) {
       console.error("fetchCafes failed", e);
       setCafes([]);
@@ -97,6 +100,25 @@ export default function CafeManagement() {
       setIsLoading(false);
     }
   }, []);
+
+  const loadMoreCafes = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const jwt = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch(
+        `/api/super-admin/cafes?limit=200&cursor=${encodeURIComponent(nextCursor)}`,
+        { headers: jwt ? { Authorization: `Bearer ${jwt}` } : {}, cache: "no-store" }
+      );
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setCafes((prev) => [...(prev ?? []), ...json.data]);
+        setNextCursor(json.nextCursor ?? null);
+      }
+    } catch { /* ignore */ }
+    finally { setLoadingMore(false); }
+  };
 
   useEffect(() => {
     fetchCafes();
@@ -458,12 +480,20 @@ export default function CafeManagement() {
         </div>
       </div>
 
-      <DataTableReusable 
-        columns={columns} 
-        data={filteredCafes} 
+      <DataTableReusable
+        columns={columns}
+        data={filteredCafes}
         isLoading={isLoading}
         onRowClick={(row) => router.push(`/super-admin/cafes/${row.id}`)}
       />
+
+      {nextCursor && (
+        <div className="flex justify-center mt-4">
+          <Button variant="outline" size="sm" onClick={loadMoreCafes} disabled={loadingMore}>
+            {loadingMore ? "Loading..." : `Load more (${cafes?.length ?? 0} loaded)`}
+          </Button>
+        </div>
+      )}
 
       {/* Modals */}
       <AdminManagementModal 
