@@ -14,13 +14,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
-import { collection, query, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
+import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useCafe } from "@/hooks/use-cafe";
 
 export default function BranchesManagement() {
-  const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
   

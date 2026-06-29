@@ -7,14 +7,13 @@ import { Button } from "@/components/ui/button";
 import {
   Clock, Car, Utensils, Timer, PackageOpen, CheckCircle, Printer
 } from "lucide-react";
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
+import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { useCafe } from "@/hooks/use-cafe";
 
 export default function KDSManagement() {
-  const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
   const [updatingId, setUpdatingId] = useState<string | null>(null);

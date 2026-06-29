@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+;
 
 import { 
   Card, 
@@ -99,7 +99,6 @@ const PERMISSION_LIST = [
 ];
 
 export default function UsersRolesManagement() {
-  const db = useFirestore();
     const [usersData, setUsersData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   useEffect(() => {

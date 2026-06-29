@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
+import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, doc } from "firebase/firestore";
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { DataTableReusable } from "@/components/tables/data-table-reusable";

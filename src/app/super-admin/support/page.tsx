@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+;
 
 import { 
   Search, 
@@ -70,7 +70,6 @@ import {
 } from "lucide-react";
 
 export default function SupportPage() {
-  const db = useFirestore();
     const [ticketsData, setTicketsData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   useEffect(() => {

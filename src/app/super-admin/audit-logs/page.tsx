@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+;
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function AuditLogsPage() {
-  const db = useFirestore();
     const [logsData, setLogsData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   useEffect(() => {

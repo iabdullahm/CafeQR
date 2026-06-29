@@ -8,7 +8,7 @@ import {
   Clock, Car, Utensils, CheckCircle, Timer, PackageOpen,
   CheckCircle2, Ban, Receipt, Check, Printer
 } from "lucide-react";
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
+import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { SectionHeader } from "@/components/dashboard/section-header";
@@ -17,7 +17,6 @@ import { ToastAction } from "@/components/ui/toast";
 import { ManualOrderModal } from "@/components/orders/manual-order-modal";
 
 export default function OrderManagement() {
-  const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
   const [updatingId, setUpdatingId] = useState<string | null>(null);

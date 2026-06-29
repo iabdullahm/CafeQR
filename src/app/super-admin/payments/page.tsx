@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+;
 
 import {
   Card,
@@ -95,8 +95,6 @@ export default function PaymentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const db = useFirestore();
-
     const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   useEffect(() => {

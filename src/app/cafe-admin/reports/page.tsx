@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
+import { useUser, useMemoFirebase, useDoc } from "@/firebase";
 
 import { SectionHeader } from "@/components/dashboard/section-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +17,6 @@ const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
 
 export default function ReportsPage() {
   const { user } = useUser();
-  const db = useFirestore();
-
   const [impersonatedCafeId, setImpersonatedCafeId] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState("month"); // today, week, month, year
 

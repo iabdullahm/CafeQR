@@ -19,7 +19,7 @@ import {
 import { AuthGuard } from "@/components/auth-guard";
 import { AddStaffModal } from "@/components/staff/add-staff-modal";
 import { ChangeRoleModal } from "@/components/staff/change-role-modal";
-import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection } from "@/firebase";
+import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 

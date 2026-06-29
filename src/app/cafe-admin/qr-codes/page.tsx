@@ -7,7 +7,7 @@ import { SectionHeader } from "@/components/dashboard/section-header";
 import { QrCode, Download, Printer, ExternalLink, Link2, Search, Filter, Store, Utensils, Car, MousePointerClick, Activity } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { DataTableReusable } from "@/components/tables/data-table-reusable";
-import { useUser, useFirestore, useMemoFirebase, useDoc, useCollection } from "@/firebase";
+import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 export default function QRManagement() {
   const { user } = useUser();

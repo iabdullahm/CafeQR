@@ -24,14 +24,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc } from "@/firebase";
+import { useUser, useFirestore, useMemoFirebase, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useCafe } from "@/hooks/use-cafe";
 import { QRCodeCanvas } from "qrcode.react";
 
 export default function TablesManagement() {
-  const { user } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
   
