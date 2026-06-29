@@ -249,14 +249,25 @@ export default function OrderManagement() {
     const typeInfo = getOrderTypeInfo(order);
     const locationStr = typeInfo.label === t('Car', 'سيارة') ? `${t('Car', 'سيارة')}: ${order.carPlateNumber} (${t('Spot', 'موقف')} ${order.parkingSpot})` : typeInfo.label === t('Pickup', 'استلام') ? t('Takeaway', 'سفري') : `${t('Table', 'طاولة')} ${order.table || order.tableId}`;
 
-    const itemsHtml = (order.items || []).map((item: any) => `
+    // Mod-4: receipt now prints modifier lines under each item so the
+    // customer sees exactly what they were charged for (e.g. "+ Oat milk
+    // 0.500"). Modifier price is already baked into item.totalPrice on
+    // the server — this is display only.
+    const itemsHtml = (order.items || []).map((item: any) => {
+      const mods = Array.isArray(item.modifiers) ? item.modifiers : [];
+      const modsHtml = mods.map((m: any) =>
+        `<tr><td></td><td style="font-size: 10px; padding-left: 8px;">+ ${m.choice}${m.group ? ` (${m.group})` : ''}</td><td style="text-align: right; font-size: 10px;">${m.price > 0 ? '+' + Number(m.price).toFixed(3) : ''}</td></tr>`
+      ).join('');
+      return `
       <tr>
         <td style="padding: 2px 0;">${item.quantity || item.qty}x</td>
         <td style="padding: 2px 0;">${item.nameEn || item.name}</td>
         <td style="text-align: right; padding: 2px 0;">${((item.price || item.unitPrice || item.totalPrice / (item.quantity || item.qty) || 0) * (item.quantity || item.qty)).toFixed(3)}</td>
       </tr>
+      ${modsHtml}
       ${item.notes ? `<tr><td></td><td colspan="2" style="font-size: 10px; color: #555;">Note: ${item.notes}</td></tr>` : ''}
-    `).join('');
+    `;
+    }).join('');
 
     const html = `
       <html dir="${isArabic ? 'rtl' : 'ltr'}">
@@ -390,6 +401,19 @@ export default function OrderManagement() {
                           <span className="text-primary">{item.quantity || item.qty}x</span>
                           <span>{item.nameEn || item.name}</span>
                        </div>
+                       {/* Mod-4: render modifier choices captured at order time
+                          so kitchen sees "+ Oat milk · + Extra shot". Grouped
+                          subtly under the item name. */}
+                       {Array.isArray(item.modifiers) && item.modifiers.length > 0 && (
+                         <ul className="ml-6 mt-0.5 space-y-0.5 text-[11px] font-medium text-muted-foreground">
+                           {item.modifiers.map((m: any) => (
+                             <li key={m.id} className="flex justify-between gap-2">
+                               <span>+ {m.choice}{m.group ? ` (${m.group})` : ""}</span>
+                               {m.price > 0 && <span className="tabular-nums">+{m.price.toFixed(3)}</span>}
+                             </li>
+                           ))}
+                         </ul>
+                       )}
                        {item.notes && <span className="text-xs text-red-500 ml-6 italic">{t("Note", "ملاحظة")}: {item.notes}</span>}
                     </div>
                  ))}

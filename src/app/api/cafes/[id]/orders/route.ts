@@ -88,7 +88,10 @@ export async function GET(
           take: limit,
           include: {
             items: {
-              include: { menuItem: { select: { name: true, image: true } } },
+              include: {
+                menuItem: { select: { name: true, image: true } },
+                options:  { orderBy: { id: "asc" } },
+              },
             },
             table: { select: { tableNumber: true, tableName: true } },
             customer: { select: { name: true, phone: true } },
@@ -127,6 +130,16 @@ export async function GET(
               quantity: it.quantity,
               totalPrice: Number(it.totalPrice),
               notes: it.notes,
+              // Modifier choices captured at order time as a flat
+              // [{ group, choice, price }] list — the OrderItemOption
+              // rows are immutable snapshots so renaming a modifier in
+              // the menu later does not change historical receipts.
+              modifiers: it.options.map((opt) => ({
+                id: String(opt.id),
+                group: opt.optionName,
+                choice: opt.optionValue,
+                price: Number(opt.extraPrice),
+              })),
             })),
           })),
         });

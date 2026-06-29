@@ -319,6 +319,21 @@ export default function KDSManagement() {
                           <span className="text-primary bg-primary/10 px-2 py-0.5 rounded">{item.quantity || item.qty}x</span>
                           <span className="leading-tight">{item.nameEn || item.name}</span>
                        </div>
+                       {/* Mod-4: KDS shows modifier choices BOLD because
+                          the kitchen NEEDS this info to prep the drink
+                          correctly. Bigger and tighter than on the orders
+                          page, no prices (kitchen doesn't care). */}
+                       {Array.isArray(item.modifiers) && item.modifiers.length > 0 && (
+                         <ul className="mt-2 ml-10 space-y-1 text-base font-bold text-foreground/90">
+                           {item.modifiers.map((m: any) => (
+                             <li key={m.id} className="flex items-center gap-2">
+                               <span className="text-primary">+</span>
+                               <span>{m.choice}</span>
+                               {m.group && <span className="text-xs font-medium text-muted-foreground">({m.group})</span>}
+                             </li>
+                           ))}
+                         </ul>
+                       )}
                        {item.notes && <div className="text-base font-bold text-red-600 bg-red-50 p-2 rounded mt-2">{t("Note", "ملاحظة")}: {item.notes}</div>}
                     </div>
                  ))}
