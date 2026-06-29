@@ -45,7 +45,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
-import { useFirestore } from "@/firebase";
+import { useToast } from "@/hooks/use-toast";
+import { PlanFormDialog, type PlanFormValue } from "@/components/plans/plan-form-dialog";
 
 const PIE_COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#f43f5e'];
 
@@ -58,7 +59,6 @@ const IconMap: Record<string, any> = {
 };
 
 export default function PlansManagement() {
-  const db = useFirestore();
 
   // Postgres polling for plans + cafes. Addons not yet modeled.
   const [plansData, setPlansData] = useState<any[]>([]);
@@ -155,11 +155,68 @@ export default function PlansManagement() {
       value: p.businessMetrics.subscribers
     }));
 
-  const handleInitializeTiers = async () => {
-    // TODO: PUT /api/super-admin/plans/[id] endpoint — write path not yet
-    // migrated to Postgres. Disabled to avoid Firestore writes.
-    alert("Plan initialization is temporarily disabled while the SaaS pricing engine is migrating to Postgres.");
+  const { toast: planToast } = useToast();
+  const [planDialog, setPlanDialog] = useState<{ open: boolean; mode: "create" | "edit"; initial?: PlanFormValue }>({ open: false, mode: "create" });
+
+  const openCreate = () => setPlanDialog({ open: true, mode: "create" });
+  const openEdit = (plan: any) => setPlanDialog({
+    open: true,
+    mode: "edit",
+    initial: {
+      id: String(plan.id),
+      name: plan.name,
+      slug: plan.slug,
+      description: plan.description,
+      monthlyPrice: Number(plan.monthlyPrice),
+      yearlyPrice: Number(plan.yearlyPrice),
+      currency: plan.currency,
+      maxBranches: plan.maxBranches,
+      maxTables: plan.maxTables,
+      maxProducts: plan.maxProducts,
+      maxStaffUsers: plan.maxStaffUsers,
+      trialDays: plan.trialDays,
+      isPopular: plan.isPopular,
+      status: plan.status,
+    },
+  });
+
+  // Refetch helper so dialogs can refresh the list after save/delete.
+  const reloadPlans = async () => {
+    try {
+      const tok = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch("/api/super-admin/plans", {
+        headers: tok ? { Authorization: `Bearer ${tok}` } : undefined,
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const j = await res.json();
+      if (j.success) setPlansData(j.data);
+    } catch { /* ignore */ }
   };
+
+  const handleArchivePlan = async (plan: any) => {
+    if (!plan?.id) return;
+    if (!confirm(`Archive plan "${plan.name}"? Active subscriptions on this plan will be preserved but new cafes won't see it.`)) return;
+    try {
+      const tok = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch(`/api/super-admin/plans/${plan.id}`, {
+        method: "DELETE",
+        headers: tok ? { Authorization: `Bearer ${tok}` } : undefined,
+      });
+      const json = await res.json().catch(() => ({} as Record<string, unknown>));
+      if (!res.ok || (json as { success?: boolean }).success === false) {
+        throw new Error(((json as { message?: string }).message) || `HTTP ${res.status}`);
+      }
+      const j = json as { message?: string; data?: { archived?: boolean } };
+      planToast({ title: j.data?.archived ? "Plan archived" : "Plan deleted", description: j.message ?? "" });
+      void reloadPlans();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed";
+      planToast({ title: "Failed", description: msg, variant: "destructive" });
+    }
+  };
+
+  const handleInitializeTiers = openCreate;
 
   return (
     <div className="space-y-8 pb-20 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
@@ -294,7 +351,8 @@ export default function PlansManagement() {
                             <DropdownMenuItem className="gap-2"><Ticket className="h-4 w-4" /> Assign Coupons</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="gap-2"><ToggleLeft className="h-4 w-4" /> Toggle Visibility</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive gap-2 font-bold focus:bg-destructive/10"><Trash2 className="h-4 w-4" /> Archive Plan</DropdownMenuItem>
+                            <DropdownMenuItem className="gap-2" onClick={() => openEdit(plan)}><Edit className="h-4 w-4" /> Edit Plan</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive gap-2 font-bold focus:bg-destructive/10" onClick={() => handleArchivePlan(plan)}><Trash2 className="h-4 w-4" /> Archive Plan</DropdownMenuItem>
                          </DropdownMenuContent>
                       </DropdownMenu>
                    </div>
@@ -498,6 +556,13 @@ export default function PlansManagement() {
          </button>
       )}
 
+      <PlanFormDialog
+        mode={planDialog.mode}
+        open={planDialog.open}
+        onOpenChange={(open) => setPlanDialog((p) => ({ ...p, open }))}
+        initial={planDialog.initial}
+        onSaved={reloadPlans}
+      />
     </div>
   );
 }
